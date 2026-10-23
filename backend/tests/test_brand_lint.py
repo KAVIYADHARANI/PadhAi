@@ -15,9 +15,8 @@ outside the allowed files specified in .agent/rules/20-brand-persona.md:
 - backend/tests/**
 """
 
-from pathlib import Path
 import re
-import pytest
+from pathlib import Path
 
 BRAND_PATTERNS = [
     re.compile(r"\bPadhAI\b", re.IGNORECASE),
