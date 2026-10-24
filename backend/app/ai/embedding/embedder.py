@@ -11,7 +11,7 @@ import hashlib
 import logging
 import math
 import struct
-from typing import Protocol
+from typing import Any, Protocol
 
 import httpx
 
@@ -148,6 +148,119 @@ class BGEEmbedder:
         return [vec for vec in results if vec is not None]
 
 
+_HF_MODEL_CACHE: dict[str, Any] = {}
+
+
+class HuggingFaceBGEEmbedder:
+    """Local Hugging Face BGE-M3 embedder via sentence-transformers with caching and 1024-dim validation."""
+
+    def __init__(
+        self,
+        model_name: str | None = None,
+        expected_dim: int | None = None,
+        cache: CacheInterface | None = None,
+        device: str | None = None,
+        batch_size: int = 32,
+    ) -> None:
+        self.model_name = model_name or settings.effective_embed_model
+        self.expected_dim = expected_dim or settings.effective_embed_dim
+        self.cache = cache or InMemoryCache()
+        self.batch_size = batch_size
+        self._device = device
+
+    def _resolve_device(self) -> str:
+        """Autodetect CUDA/GPU availability and fall back safely to CPU."""
+        if self._device:
+            return self._device
+        try:
+            import torch
+            if torch.cuda.is_available():
+                return "cuda"
+        except (ImportError, Exception):
+            pass
+        return "cpu"
+
+    def _get_model(self) -> Any:
+        """Load and cache the SentenceTransformer model instance on startup/first call."""
+        global _HF_MODEL_CACHE
+        if self.model_name in _HF_MODEL_CACHE:
+            return _HF_MODEL_CACHE[self.model_name]
+
+        device = self._resolve_device()
+        logger.info(
+            "Loading local Hugging Face embedding model '%s' on device '%s'...",
+            self.model_name,
+            device,
+        )
+        try:
+            from sentence_transformers import SentenceTransformer
+            model = SentenceTransformer(self.model_name, device=device)
+            _HF_MODEL_CACHE[self.model_name] = model
+            return model
+        except Exception as exc:
+            logger.error("Failed to load SentenceTransformer for '%s': %s", self.model_name, exc)
+            raise EmbeddingProviderError(
+                f"Failed to load local Hugging Face model '{self.model_name}': {exc}"
+            ) from exc
+
+    async def embed_texts(self, texts: list[str]) -> list[list[float]]:
+        """Embeds texts in batches using local BGE-M3, checking cache and validating 1024-dim output."""
+        if not texts:
+            return []
+
+        results: list[list[float] | None] = [None] * len(texts)
+        uncached_indices: list[int] = []
+        uncached_texts: list[str] = []
+
+        # 1. Check cache
+        for idx, text in enumerate(texts):
+            cache_key = make_embedding_cache_key(text, "huggingface", self.model_name)
+            cached_vec = self.cache.get(cache_key)
+            if cached_vec is not None:
+                if len(cached_vec) != self.expected_dim:
+                    raise DimensionMismatchError(
+                        f"Cached embedding dimension mismatch for model {self.model_name}: "
+                        f"expected {self.expected_dim}, got {len(cached_vec)}"
+                    )
+                results[idx] = cached_vec
+            else:
+                uncached_indices.append(idx)
+                uncached_texts.append(text)
+
+        if not uncached_texts:
+            return [vec for vec in results if vec is not None]
+
+        # 2. Local model inference in thread pool to avoid blocking async loop
+        model = self._get_model()
+        import asyncio
+
+        def _encode_batch(batch: list[str]) -> list[list[float]]:
+            embeddings = model.encode(
+                batch,
+                batch_size=self.batch_size,
+                normalize_embeddings=True,
+                show_progress_bar=False,
+            )
+            if hasattr(embeddings, "tolist"):
+                return embeddings.tolist()
+            return [list(map(float, row)) for row in embeddings]
+
+        raw_vectors = await asyncio.to_thread(_encode_batch, uncached_texts)
+
+        # 3. Validate dimension and populate cache
+        for text_str, orig_idx, vec in zip(uncached_texts, uncached_indices, raw_vectors, strict=False):
+            if len(vec) != self.expected_dim:
+                raise DimensionMismatchError(
+                    f"Local Hugging Face model '{self.model_name}' dimension mismatch: "
+                    f"expected {self.expected_dim}, got {len(vec)}"
+                )
+            results[orig_idx] = vec
+            cache_key = make_embedding_cache_key(text_str, "huggingface", self.model_name)
+            self.cache.set(cache_key, vec)
+
+        return [vec for vec in results if vec is not None]
+
+
 class FakeEmbedder:
     """Deterministic, zero-network fake embedder for tests and offline validation."""
 
@@ -157,7 +270,7 @@ class FakeEmbedder:
         force_dim: int | None = None,
         cache: CacheInterface | None = None,
     ) -> None:
-        self.expected_dim = dim or settings.EMBED_DIM
+        self.expected_dim = dim or settings.effective_embed_dim
         self.force_dim = force_dim
         self.cache = cache or InMemoryCache()
         self.call_count = 0
@@ -212,18 +325,26 @@ class FakeEmbedder:
 
 def get_embedder() -> Embedder:
     """Return configured embedder instance based on settings."""
-    if settings.EMBED_PROVIDER == "fake":
-        return FakeEmbedder(dim=settings.EMBED_DIM)
+    provider = settings.effective_embed_provider
+
+    if provider == "fake":
+        return FakeEmbedder(dim=settings.effective_embed_dim)
+
+    if provider in ("huggingface", "hf", "sentence-transformers", "local"):
+        return HuggingFaceBGEEmbedder(
+            model_name=settings.effective_embed_model,
+            expected_dim=settings.effective_embed_dim,
+        )
 
     has_key = bool(
         settings.OPENROUTER_API_KEY
-        or (settings.EMBED_PROVIDER == "groq" and settings.GROQ_API_KEY)
+        or (provider == "groq" and settings.GROQ_API_KEY)
     )
     if not has_key:
-        return FakeEmbedder(dim=settings.EMBED_DIM)
+        return FakeEmbedder(dim=settings.effective_embed_dim)
 
     return BGEEmbedder(
-        provider=settings.EMBED_PROVIDER or "openrouter",
-        model=settings.EMBED_MODEL,
-        expected_dim=settings.EMBED_DIM,
+        provider=provider or "openrouter",
+        model=settings.effective_embed_model,
+        expected_dim=settings.effective_embed_dim,
     )

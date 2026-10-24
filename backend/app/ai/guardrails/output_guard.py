@@ -84,8 +84,19 @@ def check_output_guardrails(
             audit_records=audit_records,
         )
 
+    clean_text = sanitized.strip()
+    if citations_list:
+        # Check if sources section already present at the end
+        has_sources_section = bool(
+            re.search(r"\*\*(?:Sources|Citations)\*\*", clean_text, re.IGNORECASE)
+            or re.search(r"(?:^|\n)Sources:\s*", clean_text, re.IGNORECASE)
+        )
+        if not has_sources_section:
+            sources_section = "\n\n**Sources:**\n" + "\n".join(f"- {c}" for c in citations_list)
+            clean_text = f"{clean_text}{sources_section}"
+
     return OutputGuardResult(
-        clean_reply=sanitized.strip(),
+        clean_reply=clean_text,
         citations=citations_list,
         is_grounded=True,
         audit_records=audit_records,

@@ -98,17 +98,20 @@ class Settings(BaseSettings):
         default="openrouter,groq,cerebras,google",
         description="Ordered failover provider chain",
     )
+    LLM_PROVIDER: str | None = Field(default=None, description="Primary LLM provider override (e.g. huggingface)")
+    LLM_MODEL: str | None = Field(default=None, description="Primary LLM model override")
     OPENROUTER_API_KEY: str = Field(default="", description="OpenRouter API Key")
     GROQ_API_KEY: str = Field(default="", description="Groq API Key")
     CEREBRAS_API_KEY: str = Field(default="", description="Cerebras API Key")
     GOOGLE_API_KEY: str = Field(default="", description="Google AI Studio API Key")
+    HF_TOKEN: str = Field(default="", description="Hugging Face API Token")
 
     MODEL_SMART: str = Field(
-        default="groq:llama-3.3-70b-versatile|openrouter:meta-llama/llama-3.3-70b-instruct|google:gemini-1.5-pro|cerebras:llama3.3-70b",
+        default="groq:llama-3.3-70b-versatile|openrouter:meta-llama/llama-3.3-70b-instruct|google:gemini-1.5-pro|cerebras:llama3.3-70b|huggingface:meta-llama/Llama-3.2-3B-Instruct",
         description="Smart model slug mappings per provider",
     )
     MODEL_FAST: str = Field(
-        default="groq:llama-3.1-8b-instant|openrouter:meta-llama/llama-3.1-8b-instruct|google:gemini-1.5-flash|cerebras:llama3.1-8b",
+        default="groq:llama-3.1-8b-instant|openrouter:meta-llama/llama-3.1-8b-instruct|google:gemini-1.5-flash|cerebras:llama3.1-8b|huggingface:meta-llama/Llama-3.2-3B-Instruct",
         description="Fast model slug mappings per provider",
     )
     MODEL_VISION: str | None = Field(
@@ -124,9 +127,24 @@ class Settings(BaseSettings):
     EMBED_PROVIDER: str = Field(default="", description="Hosted provider for BGE-M3")
     EMBED_MODEL: str = Field(default="BAAI/bge-m3", description="Embedding model name")
     EMBED_DIM: int = Field(default=1024, description="Vector dimension")
+    EMBEDDING_PROVIDER: str | None = Field(default=None, description="Hugging Face or custom provider name")
+    EMBEDDING_MODEL_NAME: str | None = Field(default=None, description="Hugging Face embedding model name")
+    EMBEDDING_DIMENSION: int | None = Field(default=None, description="Embedding vector dimension")
     USE_HALFVEC: bool = Field(
         default=True, description="Use halfvec(1024) instead of vector(1024)"
     )
+
+    @property
+    def effective_embed_provider(self) -> str:
+        return (self.EMBEDDING_PROVIDER or self.EMBED_PROVIDER or "").strip().lower()
+
+    @property
+    def effective_embed_model(self) -> str:
+        return self.EMBEDDING_MODEL_NAME or self.EMBED_MODEL or "BAAI/bge-m3"
+
+    @property
+    def effective_embed_dim(self) -> int:
+        return self.EMBEDDING_DIMENSION or self.EMBED_DIM or 1024
 
     # OCR (Indra)
     OCR_BACKEND: str = Field(default="indra", description="OCR backend engine")

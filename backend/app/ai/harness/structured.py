@@ -27,12 +27,19 @@ T = TypeVar("T", bound=BaseModel)
 
 
 def clean_json_text(text: str) -> str:
-    """Strip Markdown code fence wrappers and leading/trailing whitespace."""
+    """Strip Markdown code fence wrappers, thinking tags, and leading/trailing text."""
     cleaned = text.strip()
-    # Remove markdown code blocks if present
+    # Strip <think>...</think> tags if present
+    cleaned = re.sub(r"<think>[\s\S]*?</think>", "", cleaned).strip()
+    # Extract markdown code blocks if present
     match = re.search(r"```(?:json)?\s*([\s\S]*?)\s*```", cleaned)
     if match:
         cleaned = match.group(1).strip()
+    else:
+        # Fallback to outer object or array boundaries if surrounded by conversational text
+        json_match = re.search(r"(\{[\s\S]*\}|\[[\s\S]*\])", cleaned)
+        if json_match:
+            cleaned = json_match.group(1).strip()
     return cleaned
 
 
