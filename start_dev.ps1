@@ -56,7 +56,7 @@ if ($Background) {
     $backendJob = Start-Job -ScriptBlock {
         param($bDir, $uExe)
         Set-Location $bDir
-        & $uExe app.main:app --reload --port 8000
+        & $uExe app.main:app --reload --host 127.0.0.1 --port 8000
     } -ArgumentList $backendDir, $backendVenvUvicorn
 
     Write-Host "Starting Frontend as background job..." -ForegroundColor Yellow
@@ -73,7 +73,7 @@ if ($Background) {
     Write-Host "To stop both:   Stop-Job -Id $($backendJob.Id), $($frontendJob.Id); Remove-Job -Id $($backendJob.Id), $($frontendJob.Id)"
 } else {
     Write-Host "`nLaunching Backend in dedicated window..." -ForegroundColor Green
-    $backendCmd = "Set-Location '$backendDir'; & '$backendVenvUvicorn' app.main:app --reload --port 8000"
+    $backendCmd = "Set-Location '$backendDir'; & '$backendVenvUvicorn' app.main:app --reload --host 127.0.0.1 --port 8000"
     Start-Process powershell -ArgumentList "-NoExit", "-Command", "$backendCmd"
 
     Write-Host "Launching Frontend in dedicated window..." -ForegroundColor Green
@@ -84,7 +84,7 @@ if ($Background) {
 # 3. Print URLs
 Write-Host "`n------------------------------------------------------------" -ForegroundColor DarkGray
 Write-Host " [Frontend UI]   --> http://localhost:5173" -ForegroundColor Cyan
-Write-Host " [Backend API]   --> http://localhost:8000" -ForegroundColor Cyan
-Write-Host " [API Docs]      --> http://localhost:8000/docs" -ForegroundColor Cyan
-Write-Host " [Health Check]  --> http://localhost:8000/health" -ForegroundColor Cyan
+Write-Host " [Backend API]   --> http://127.0.0.1:8000" -ForegroundColor Cyan
+Write-Host " [API Docs]      --> http://127.0.0.1:8000/docs" -ForegroundColor Cyan
+Write-Host " [Health Check]  --> http://127.0.0.1:8000/health" -ForegroundColor Cyan
 Write-Host "------------------------------------------------------------`n" -ForegroundColor DarkGray
