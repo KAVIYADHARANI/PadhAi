@@ -21,6 +21,7 @@ from typing import Any
 import httpx
 
 from app.ai.harness.exceptions import (
+    AuthenticationError,
     ProviderUnavailableError,
     RateLimitExceededError,
     TimeoutError,
@@ -177,7 +178,19 @@ class LLMGateway:
         last_error: Exception | None = None
         overall_retries = 0
 
-        for provider in self.chain:
+        # Only attempt providers that have an API key configured (unless using custom test caller)
+        eligible_providers = [
+            p for p in self.chain
+            if self._custom_caller is not None or bool(self.get_api_key(p))
+        ]
+
+        if not eligible_providers:
+            raise AuthenticationError(
+                "No LLM provider API key configured. Please set GROQ_API_KEY, "
+                "OPENROUTER_API_KEY, or GOOGLE_API_KEY in your .env file."
+            )
+
+        for provider in eligible_providers:
             cb = self.circuit_breakers.setdefault(provider, CircuitBreaker())
             rl = self.rate_limiters.setdefault(provider, ProviderRateLimiter())
 
@@ -278,13 +291,16 @@ class LLMGateway:
     ) -> LLMResponse:
         """Execute HTTP request to OpenAI-compatible provider endpoint."""
         api_key = self.get_api_key(provider)
+        if not api_key:
+            raise AuthenticationError(f"No API key configured for provider '{provider}'")
+
         base_url = self._provider_base_urls.get(provider)
         if not base_url:
             raise ProviderUnavailableError(f"No base URL configured for provider '{provider}'")
 
         endpoint = f"{base_url.rstrip('/')}/chat/completions"
         headers = {
-            "Authorization": f"Bearer {api_key or ''}",
+            "Authorization": f"Bearer {api_key.strip()}",
             "Content-Type": "application/json",
         }
 

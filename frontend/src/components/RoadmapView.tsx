@@ -191,6 +191,11 @@ export const RoadmapView: React.FC<RoadmapViewProps> = ({
           <AlertCircle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
           <div className="space-y-1">
             <p className="font-semibold">{error}</p>
+            {error.toLowerCase().includes("api key") && (
+              <p className="text-slate-400 text-[11px] pt-1 leading-relaxed">
+                Tip: Configure <code className="text-brand-300 font-mono">GROQ_API_KEY</code>, <code className="text-brand-300 font-mono">OPENROUTER_API_KEY</code>, or <code className="text-brand-300 font-mono">GOOGLE_API_KEY</code> in your root <code className="text-brand-300 font-mono">.env</code> file, then restart the development server.
+              </p>
+            )}
           </div>
         </div>
       )}

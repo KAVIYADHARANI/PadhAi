@@ -95,8 +95,13 @@ class BGEEmbedder:
 
         # 2. Call embedding API in batches
         url, api_key = self._resolve_api_url_and_key()
+        if not api_key or not api_key.strip():
+            raise EmbeddingProviderError(
+                f"No API key configured for embedding provider '{self.provider}'. "
+                "Please set OPENROUTER_API_KEY in your .env file."
+            )
         headers = {
-            "Authorization": f"Bearer {api_key}",
+            "Authorization": f"Bearer {api_key.strip()}",
             "Content-Type": "application/json",
         }
 

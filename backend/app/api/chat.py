@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
+from app.ai.harness.exceptions import AuthenticationError
 from app.ai.tutor.graph import tutor_app
 from app.api.schemas import ChatHistoryResponse, ChatMessageItem
 from app.buddy.tone import ToneContext
@@ -183,7 +184,27 @@ async def chat_with_tutor(
         "tone_context": tone_ctx,
     }
 
-    result = await tutor_app.ainvoke(initial_state)
+    try:
+        result = await tutor_app.ainvoke(initial_state)
+    except AuthenticationError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=(
+                "No LLM provider API key configured. Please set GROQ_API_KEY, "
+                "OPENROUTER_API_KEY, or GOOGLE_API_KEY in your .env file."
+            ),
+        ) from exc
+    except Exception as exc:
+        err_msg = str(exc)
+        if "No LLM provider API key configured" in err_msg:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=err_msg,
+            ) from exc
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=f"Chat generation failed: {exc}",
+        ) from exc
 
     reply_text = result.get("final_reply", "")
     citations_list = result.get("citations", [])

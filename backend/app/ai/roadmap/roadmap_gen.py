@@ -23,6 +23,7 @@ from fastapi import HTTPException, status
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
+from app.ai.harness.exceptions import AuthenticationError
 from app.ai.harness.gateway import LLMGateway
 from app.ai.harness.models import ChatMessage, ModelRole
 from app.ai.harness.structured import StructuredCall
@@ -226,6 +227,15 @@ async def generate_course_roadmap(
         )
     except Exception as exc:
         logger.error("StructuredCall roadmap generation failed: %s", exc, exc_info=True)
+        err_msg = str(exc)
+        if "No LLM provider API key configured" in err_msg or isinstance(exc, AuthenticationError):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=(
+                    "No LLM provider API key configured. Please set GROQ_API_KEY, "
+                    "OPENROUTER_API_KEY, or GOOGLE_API_KEY in your .env file."
+                ),
+            ) from exc
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
             detail=f"Failed to generate study roadmap: {exc}",

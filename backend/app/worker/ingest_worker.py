@@ -17,7 +17,7 @@ from pathlib import Path
 
 from sqlalchemy.orm import Session
 
-from app.ai.embedding.embedder import BGEEmbedder, Embedder, FakeEmbedder
+from app.ai.embedding.embedder import Embedder, get_embedder
 from app.ai.harness.gateway import LLMGateway
 from app.ai.topics.topic_grouping import group_chunks_into_topics
 from app.core.config import settings
@@ -63,9 +63,7 @@ async def process_document(
     db.refresh(document)
 
     storage_backend = storage or get_storage()
-    embedder_engine = embedder or (
-        BGEEmbedder() if (settings.EMBED_PROVIDER or settings.OPENROUTER_API_KEY) else FakeEmbedder()
-    )
+    embedder_engine = embedder or get_embedder()
 
     try:
         with db.begin_nested():
@@ -126,17 +124,28 @@ async def process_document(
             db.flush()
 
             # 7. Group chunks into topics if gateway provided or available
-            if gateway is not None or settings.OPENROUTER_API_KEY or settings.GROQ_API_KEY:
+            has_llm_key = bool(
+                settings.OPENROUTER_API_KEY
+                or settings.GROQ_API_KEY
+                or settings.GOOGLE_API_KEY
+                or settings.CEREBRAS_API_KEY
+            )
+            if gateway is not None or (has_llm_key and settings.EMBED_PROVIDER != "fake"):
                 llm_gw = gateway or LLMGateway()
                 course = db.query(Course).filter(Course.id == document.course_id).first()
                 course_name = course.name if course else "Course Material"
-                await group_chunks_into_topics(
-                    course_id=document.course_id,
-                    chunks=created_chunks,
-                    gateway=llm_gw,
-                    db=db,
-                    course_name=course_name,
-                )
+                try:
+                    await group_chunks_into_topics(
+                        course_id=document.course_id,
+                        chunks=created_chunks,
+                        gateway=llm_gw,
+                        db=db,
+                        course_name=course_name,
+                    )
+                except Exception as exc:
+                    logging.getLogger("app.worker.ingest").warning(
+                        "Topic grouping skipped or failed: %s", exc
+                    )
 
             # 8. Update document metrics and ready status
             document.pages = total_pages

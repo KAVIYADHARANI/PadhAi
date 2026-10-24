@@ -302,9 +302,16 @@ export const ChatView: React.FC<ChatViewProps> = ({ course }) => {
 
       {/* Error Banner */}
       {error && (
-        <div className="px-6 py-2.5 bg-rose-500/10 border-t border-rose-500/20 text-rose-300 text-xs flex items-center gap-2">
-          <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
-          <span>{error}</span>
+        <div className="px-6 py-3 bg-rose-500/10 border-t border-rose-500/20 text-rose-300 text-xs flex items-start gap-2.5">
+          <AlertCircle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+          <div className="space-y-1">
+            <p className="font-semibold">{error}</p>
+            {error.toLowerCase().includes("api key") && (
+              <p className="text-slate-400 text-[11px] leading-relaxed">
+                Tip: Configure <code className="text-brand-300 font-mono">GROQ_API_KEY</code>, <code className="text-brand-300 font-mono">OPENROUTER_API_KEY</code>, or <code className="text-brand-300 font-mono">GOOGLE_API_KEY</code> in your root <code className="text-brand-300 font-mono">.env</code> file, then restart the development server.
+              </p>
+            )}
+          </div>
         </div>
       )}
 
