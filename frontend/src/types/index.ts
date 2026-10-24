@@ -96,3 +96,59 @@ export interface CourseProgress {
   weak_topics: number[];
 }
 
+export interface RoadmapTask {
+  id: string;
+  task: string;
+  estimated_minutes: number;
+  completed: boolean;
+}
+
+export interface RoadmapItem {
+  id: number;
+  course_id: number;
+  day: number;
+  topic_id?: number | null;
+  topic_name: string;
+  title: string;
+  learning_objectives: string[];
+  tasks: RoadmapTask[];
+  estimated_minutes: number;
+  completed: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface RoadmapProgress {
+  course_id: number;
+  total_days: number;
+  completed_days: number;
+  total_tasks: number;
+  completed_tasks: number;
+  percent_complete: number;
+  items: RoadmapItem[];
+}
+
+export interface ChatMessage {
+  id?: number;
+  role: "user" | "assistant";
+  content: string;
+  citations?: string[];
+  tone?: string | null;
+  is_sufficient?: boolean;
+  created_at?: string;
+}
+
+export interface ChatHistoryResponse {
+  course_id: number;
+  thread_id?: number | null;
+  messages: ChatMessage[];
+}
+
+export interface ChatReplyResponse {
+  reply: string;
+  citations: string[];
+  tone: string;
+  is_sufficient: boolean;
+}
+
+

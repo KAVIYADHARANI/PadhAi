@@ -207,10 +207,18 @@ class FakeEmbedder:
 
 def get_embedder() -> Embedder:
     """Return configured embedder instance based on settings."""
-    if settings.EMBED_PROVIDER == "fake" or not settings.OPENROUTER_API_KEY:
+    if settings.EMBED_PROVIDER == "fake":
         return FakeEmbedder(dim=settings.EMBED_DIM)
+
+    has_key = bool(
+        settings.OPENROUTER_API_KEY
+        or (settings.EMBED_PROVIDER == "groq" and settings.GROQ_API_KEY)
+    )
+    if not has_key:
+        return FakeEmbedder(dim=settings.EMBED_DIM)
+
     return BGEEmbedder(
-        provider=settings.EMBED_PROVIDER,
+        provider=settings.EMBED_PROVIDER or "openrouter",
         model=settings.EMBED_MODEL,
         expected_dim=settings.EMBED_DIM,
     )

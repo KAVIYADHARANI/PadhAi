@@ -83,6 +83,9 @@ class User(Base):
     guardrail_events = relationship("GuardrailEvent", back_populates="user", cascade="all, delete-orphan")
     attempts = relationship("Attempt", back_populates="user", cascade="all, delete-orphan")
     masteries = relationship("Mastery", back_populates="user", cascade="all, delete-orphan")
+    roadmap_items = relationship("RoadmapItem", back_populates="user", cascade="all, delete-orphan")
+    chat_threads = relationship("ChatThread", back_populates="user", cascade="all, delete-orphan")
+    chat_messages = relationship("ChatMessageRecord", back_populates="user", cascade="all, delete-orphan")
 
 
 class Course(Base):
@@ -110,6 +113,9 @@ class Course(Base):
     questions = relationship("Question", back_populates="course", cascade="all, delete-orphan")
     attempts = relationship("Attempt", back_populates="course", cascade="all, delete-orphan")
     masteries = relationship("Mastery", back_populates="course", cascade="all, delete-orphan")
+    roadmap_items = relationship("RoadmapItem", back_populates="course", cascade="all, delete-orphan")
+    chat_threads = relationship("ChatThread", back_populates="course", cascade="all, delete-orphan")
+    chat_messages = relationship("ChatMessageRecord", back_populates="course", cascade="all, delete-orphan")
 
 
 class Document(Base):
@@ -263,6 +269,7 @@ class Topic(Base):
     questions = relationship("Question", back_populates="topic", cascade="all, delete-orphan")
     attempts = relationship("Attempt", back_populates="topic", cascade="all, delete-orphan")
     masteries = relationship("Mastery", back_populates="topic", cascade="all, delete-orphan")
+    roadmap_items = relationship("RoadmapItem", back_populates="topic")
 
     __table_args__ = (
         Index("ix_topics_course", "course_id"),
@@ -358,3 +365,104 @@ class Mastery(Base):
         UniqueConstraint("user_id", "topic_id", name="uq_mastery_user_topic"),
         Index("ix_mastery_user_course", "user_id", "course_id"),
     )
+
+
+class RoadmapItem(Base):
+    """Daily study plan milestone for a personalized course roadmap."""
+
+    __tablename__ = "roadmap_items"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    course_id = Column(Integer, ForeignKey("courses.id", ondelete="CASCADE"), nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    day = Column(Integer, nullable=False)
+    topic_id = Column(Integer, ForeignKey("topics.id", ondelete="SET NULL"), nullable=True, index=True)
+    topic_name = Column(String(255), nullable=False)
+    title = Column(String(255), nullable=False)
+    learning_objectives = Column(JSON, nullable=False, default=list)
+    tasks = Column(JSON, nullable=False, default=list)
+    estimated_minutes = Column(Integer, default=60, nullable=False)
+    completed = Column(Boolean, default=False, nullable=False)
+    created_at = Column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(UTC),
+        nullable=False,
+    )
+    updated_at = Column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(UTC),
+        onupdate=lambda: datetime.now(UTC),
+        nullable=False,
+    )
+
+    # Relationships
+    course = relationship("Course", back_populates="roadmap_items")
+    user = relationship("User", back_populates="roadmap_items")
+    topic = relationship("Topic", back_populates="roadmap_items")
+
+    __table_args__ = (
+        Index("ix_roadmap_items_user_course", "user_id", "course_id"),
+        Index("ix_roadmap_items_course_day", "course_id", "day"),
+    )
+
+
+class ChatThread(Base):
+    """Persistent chat thread for a user and course conversation."""
+
+    __tablename__ = "chat_threads"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    course_id = Column(Integer, ForeignKey("courses.id", ondelete="CASCADE"), nullable=False, index=True)
+    created_at = Column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(UTC),
+        nullable=False,
+    )
+    updated_at = Column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(UTC),
+        onupdate=lambda: datetime.now(UTC),
+        nullable=False,
+    )
+
+    # Relationships
+    user = relationship("User", back_populates="chat_threads")
+    course = relationship("Course", back_populates="chat_threads")
+    messages = relationship("ChatMessageRecord", back_populates="thread", cascade="all, delete-orphan")
+
+    __table_args__ = (
+        Index("ix_chat_threads_user_course", "user_id", "course_id"),
+    )
+
+
+class ChatMessageRecord(Base):
+    """Individual message in a course chat thread."""
+
+    __tablename__ = "chat_messages"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    thread_id = Column(Integer, ForeignKey("chat_threads.id", ondelete="CASCADE"), nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    course_id = Column(Integer, ForeignKey("courses.id", ondelete="CASCADE"), nullable=False, index=True)
+    role = Column(String(50), nullable=False)  # "user" or "assistant"
+    content = Column(Text, nullable=False)
+    citations = Column(JSON, nullable=False, default=list)
+    tone = Column(String(50), nullable=True)
+    is_sufficient = Column(Boolean, default=True, nullable=False)
+    created_at = Column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(UTC),
+        nullable=False,
+    )
+
+    # Relationships
+    thread = relationship("ChatThread", back_populates="messages")
+    user = relationship("User", back_populates="chat_messages")
+    course = relationship("Course", back_populates="chat_messages")
+
+    __table_args__ = (
+        Index("ix_chat_messages_thread", "thread_id"),
+        Index("ix_chat_messages_user_course", "user_id", "course_id"),
+    )
+

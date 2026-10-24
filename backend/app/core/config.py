@@ -104,11 +104,11 @@ class Settings(BaseSettings):
     GOOGLE_API_KEY: str = Field(default="", description="Google AI Studio API Key")
 
     MODEL_SMART: str = Field(
-        default="openrouter:slug|groq:slug",
+        default="groq:llama-3.3-70b-versatile|openrouter:meta-llama/llama-3.3-70b-instruct|google:gemini-1.5-pro|cerebras:llama3.3-70b",
         description="Smart model slug mappings per provider",
     )
     MODEL_FAST: str = Field(
-        default="groq:slug|openrouter:slug",
+        default="groq:llama-3.1-8b-instant|openrouter:meta-llama/llama-3.1-8b-instruct|google:gemini-1.5-flash|cerebras:llama3.1-8b",
         description="Fast model slug mappings per provider",
     )
     MODEL_VISION: str | None = Field(

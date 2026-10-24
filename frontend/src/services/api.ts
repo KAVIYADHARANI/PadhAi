@@ -1,11 +1,15 @@
 import {
   AttemptResult,
   AttemptSubmission,
+  ChatHistoryResponse,
+  ChatReplyResponse,
   Course,
   CourseProgress,
   CreateCourseInput,
   Document,
   QuizResponse,
+  RoadmapItem,
+  RoadmapProgress,
   Topic,
   User,
 } from "../types";
@@ -156,5 +160,54 @@ export const api = {
   async getCourseProgress(courseId: number): Promise<CourseProgress> {
     return request<CourseProgress>(`/api/progress/${courseId}`);
   },
+
+  // Roadmap
+  async getCourseRoadmap(courseId: number): Promise<RoadmapProgress> {
+    return request<RoadmapProgress>(`/api/courses/${courseId}/roadmap`);
+  },
+
+  async generateCourseRoadmap(courseId: number, overwrite = false): Promise<RoadmapProgress> {
+    const query = overwrite ? "?overwrite=true" : "";
+    return request<RoadmapProgress>(`/api/courses/${courseId}/roadmap${query}`, {
+      method: "POST",
+    });
+  },
+
+  async updateRoadmapItem(
+    courseId: number,
+    itemId: number,
+    payload: { completed?: boolean; task_id?: string; task_completed?: boolean }
+  ): Promise<RoadmapItem> {
+    return request<RoadmapItem>(`/api/courses/${courseId}/roadmap/${itemId}`, {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    });
+  },
+
+  // Chat / Assistant
+  async getChatHistory(courseId: number): Promise<ChatHistoryResponse> {
+    return request<ChatHistoryResponse>(`/api/courses/${courseId}/chat/history`);
+  },
+
+  async sendChatMessage(
+    courseId: number,
+    message: string,
+    userToneSetting: "full" | "balanced" | "serious" | "english_only" = "balanced"
+  ): Promise<ChatReplyResponse> {
+    return request<ChatReplyResponse>(`/api/courses/${courseId}/chat`, {
+      method: "POST",
+      body: JSON.stringify({
+        message,
+        user_tone_setting: userToneSetting,
+      }),
+    });
+  },
+
+  async clearChatHistory(courseId: number): Promise<void> {
+    await request<void>(`/api/courses/${courseId}/chat/history`, {
+      method: "DELETE",
+    });
+  },
 };
+
 

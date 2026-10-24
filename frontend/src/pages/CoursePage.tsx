@@ -6,12 +6,16 @@ import {
   Calendar,
   Clock,
   HelpCircle,
+  MessageSquare,
   Sparkles,
 } from "lucide-react";
+import { MASCOT_NAME } from "../brand";
+import { ChatView } from "../components/ChatView";
 import { DocumentUpload } from "../components/DocumentUpload";
 import { MascotPlaceholder } from "../components/MascotPlaceholder";
 import { ProgressView } from "../components/ProgressView";
 import { QuizView } from "../components/QuizView";
+import { RoadmapView } from "../components/RoadmapView";
 import { Course } from "../types";
 
 interface CoursePageProps {
@@ -19,7 +23,7 @@ interface CoursePageProps {
   onBack: () => void;
 }
 
-type CourseTab = "materials" | "quiz" | "progress";
+type CourseTab = "materials" | "roadmap" | "chat" | "quiz" | "progress";
 
 export const CoursePage: React.FC<CoursePageProps> = ({ course, onBack }) => {
   const [activeTab, setActiveTab] = useState<CourseTab>("materials");
@@ -84,10 +88,10 @@ export const CoursePage: React.FC<CoursePageProps> = ({ course, onBack }) => {
       </div>
 
       {/* Navigation Tabs */}
-      <div className="flex items-center gap-2 border-b border-slate-800 pb-1">
+      <div className="flex items-center gap-2 border-b border-slate-800 pb-1 overflow-x-auto">
         <button
           onClick={() => setActiveTab("materials")}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition border ${
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition border shrink-0 ${
             activeTab === "materials"
               ? "bg-brand-500/15 border-brand-500/30 text-white"
               : "bg-transparent border-transparent text-slate-400 hover:text-slate-200"
@@ -98,8 +102,32 @@ export const CoursePage: React.FC<CoursePageProps> = ({ course, onBack }) => {
         </button>
 
         <button
+          onClick={() => setActiveTab("roadmap")}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition border shrink-0 ${
+            activeTab === "roadmap"
+              ? "bg-brand-500/15 border-brand-500/30 text-white"
+              : "bg-transparent border-transparent text-slate-400 hover:text-slate-200"
+          }`}
+        >
+          <Calendar className="w-4 h-4" />
+          <span>Study Roadmap</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab("chat")}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition border shrink-0 ${
+            activeTab === "chat"
+              ? "bg-brand-500/15 border-brand-500/30 text-white"
+              : "bg-transparent border-transparent text-slate-400 hover:text-slate-200"
+          }`}
+        >
+          <MessageSquare className="w-4 h-4" />
+          <span>Ask {MASCOT_NAME}</span>
+        </button>
+
+        <button
           onClick={() => setActiveTab("quiz")}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition border ${
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition border shrink-0 ${
             activeTab === "quiz"
               ? "bg-brand-500/15 border-brand-500/30 text-white"
               : "bg-transparent border-transparent text-slate-400 hover:text-slate-200"
@@ -111,7 +139,7 @@ export const CoursePage: React.FC<CoursePageProps> = ({ course, onBack }) => {
 
         <button
           onClick={() => setActiveTab("progress")}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition border ${
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition border shrink-0 ${
             activeTab === "progress"
               ? "bg-brand-500/15 border-brand-500/30 text-white"
               : "bg-transparent border-transparent text-slate-400 hover:text-slate-200"
@@ -146,11 +174,25 @@ export const CoursePage: React.FC<CoursePageProps> = ({ course, onBack }) => {
               <h3 className="font-semibold text-white">Document Ingestion Pipeline</h3>
               <p>
                 Once PDFs or notes are uploaded, the ingestion worker segments them into semantic chunks
-                and generates BGE-M3 vector embeddings for grounded tutor chat and interactive quizzes.
+                and generates BGE-M3 vector embeddings for grounded tutor chat, personalized study roadmaps,
+                and interactive quizzes.
               </p>
             </div>
           </div>
         </div>
+      )}
+
+      {activeTab === "roadmap" && (
+        <RoadmapView
+          course={course}
+          onGoToMaterials={() => setActiveTab("materials")}
+        />
+      )}
+
+      {activeTab === "chat" && (
+        <ChatView
+          course={course}
+        />
       )}
 
       {activeTab === "quiz" && (
@@ -170,3 +212,4 @@ export const CoursePage: React.FC<CoursePageProps> = ({ course, onBack }) => {
     </div>
   );
 };
+

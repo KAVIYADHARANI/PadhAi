@@ -117,3 +117,62 @@ class ProgressResponse(BaseModel):
     topics: list[TopicMasteryItem]
     weak_topics: list[int]
 
+
+class RoadmapTaskItem(BaseModel):
+    id: str
+    task: str
+    estimated_minutes: int = 30
+    completed: bool = False
+
+
+class RoadmapItemResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    course_id: int
+    day: int
+    topic_id: int | None = None
+    topic_name: str
+    title: str
+    learning_objectives: list[str] = Field(default_factory=list)
+    tasks: list[RoadmapTaskItem] = Field(default_factory=list)
+    estimated_minutes: int
+    completed: bool
+    created_at: datetime
+    updated_at: datetime
+
+
+class RoadmapProgressResponse(BaseModel):
+    course_id: int
+    total_days: int
+    completed_days: int
+    total_tasks: int
+    completed_tasks: int
+    percent_complete: float
+    items: list[RoadmapItemResponse]
+
+
+class RoadmapItemUpdateRequest(BaseModel):
+    completed: bool | None = None
+    task_id: str | None = None
+    task_completed: bool | None = None
+
+
+class ChatMessageItem(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    role: str
+    content: str
+    citations: list[str] = Field(default_factory=list)
+    tone: str | None = None
+    is_sufficient: bool = True
+    created_at: datetime
+
+
+class ChatHistoryResponse(BaseModel):
+    course_id: int
+    thread_id: int | None = None
+    messages: list[ChatMessageItem]
+
+

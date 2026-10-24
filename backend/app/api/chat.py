@@ -1,7 +1,6 @@
 """Chat endpoint providing grounded tutor interactions via the LangGraph pipeline."""
 
-from __future__ import annotations
-
+from datetime import UTC, datetime
 from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -9,9 +8,10 @@ from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from app.ai.tutor.graph import tutor_app
+from app.api.schemas import ChatHistoryResponse, ChatMessageItem
 from app.buddy.tone import ToneContext
 from app.core.auth import get_current_user
-from app.db.models import Course, User
+from app.db.models import ChatMessageRecord, ChatThread, Course, User
 from app.db.session import get_db
 
 router = APIRouter(prefix="/api/courses/{course_id}/chat", tags=["chat"])
@@ -39,6 +39,80 @@ class ChatResponse(BaseModel):
     is_sufficient: bool = True
 
 
+@router.get("/history", response_model=ChatHistoryResponse)
+def get_chat_history(
+    course_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> ChatHistoryResponse:
+    """Retrieves conversation history with the course tutor.
+
+    Strictly scoped to the authenticated user and course ID at the SQL level.
+    """
+    course = (
+        db.query(Course)
+        .filter(Course.id == course_id, Course.user_id == current_user.id)
+        .first()
+    )
+    if not course:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Course not found",
+        )
+
+    thread = (
+        db.query(ChatThread)
+        .filter(ChatThread.course_id == course_id, ChatThread.user_id == current_user.id)
+        .first()
+    )
+    if not thread:
+        return ChatHistoryResponse(course_id=course_id, thread_id=None, messages=[])
+
+    messages = (
+        db.query(ChatMessageRecord)
+        .filter(ChatMessageRecord.thread_id == thread.id)
+        .order_by(ChatMessageRecord.created_at.asc())
+        .all()
+    )
+
+    return ChatHistoryResponse(
+        course_id=course_id,
+        thread_id=thread.id,
+        messages=[ChatMessageItem.model_validate(m) for m in messages],
+    )
+
+
+@router.delete("/history", status_code=status.HTTP_204_NO_CONTENT)
+def clear_chat_history(
+    course_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> None:
+    """Clears conversation history for this course.
+
+    Strictly scoped to the authenticated user and course ID at the SQL level.
+    """
+    course = (
+        db.query(Course)
+        .filter(Course.id == course_id, Course.user_id == current_user.id)
+        .first()
+    )
+    if not course:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Course not found",
+        )
+
+    thread = (
+        db.query(ChatThread)
+        .filter(ChatThread.course_id == course_id, ChatThread.user_id == current_user.id)
+        .first()
+    )
+    if thread:
+        db.delete(thread)
+        db.commit()
+
+
 @router.post("", response_model=ChatResponse, status_code=status.HTTP_200_OK)
 async def chat_with_tutor(
     course_id: int,
@@ -50,6 +124,7 @@ async def chat_with_tutor(
 
     Ensures the course belongs to the authenticated user.
     Executes the LangGraph pipeline with layered guardrails and deterministic persona.
+    Persists user questions and grounded assistant replies to the chat history.
     """
     # 1. Enforce course ownership at the SQL level
     course = (
@@ -63,7 +138,32 @@ async def chat_with_tutor(
             detail="Course not found",
         )
 
-    # 2. Build ToneContext from payload
+    # 2. Find or create persistent chat thread
+    thread = (
+        db.query(ChatThread)
+        .filter(ChatThread.course_id == course_id, ChatThread.user_id == current_user.id)
+        .first()
+    )
+    if not thread:
+        thread = ChatThread(course_id=course_id, user_id=current_user.id)
+        db.add(thread)
+        db.flush()
+
+    # 3. Persist user message record
+    user_msg_record = ChatMessageRecord(
+        thread_id=thread.id,
+        user_id=current_user.id,
+        course_id=course_id,
+        role="user",
+        content=payload.message,
+        citations=[],
+        tone=None,
+        is_sufficient=True,
+    )
+    db.add(user_msg_record)
+    db.flush()
+
+    # 4. Build ToneContext from payload
     tone_ctx = ToneContext(
         minutes_since_last_session=payload.minutes_since_last_session,
         recent_miss_count=payload.recent_miss_count,
@@ -74,7 +174,7 @@ async def chat_with_tutor(
         user_tone_setting=payload.user_tone_setting,
     )
 
-    # 3. Invoke LangGraph
+    # 5. Invoke LangGraph
     initial_state = {
         "db": db,
         "user_id": current_user.id,
@@ -85,9 +185,30 @@ async def chat_with_tutor(
 
     result = await tutor_app.ainvoke(initial_state)
 
-    return ChatResponse(
-        reply=result.get("final_reply", ""),
-        citations=result.get("citations", []),
-        tone=result.get("tone", "patient"),
-        is_sufficient=result.get("is_sufficient", True),
+    reply_text = result.get("final_reply", "")
+    citations_list = result.get("citations", [])
+    tone_str = result.get("tone", "patient")
+    is_sufficient_bool = result.get("is_sufficient", True)
+
+    # 6. Persist assistant response record
+    assistant_msg_record = ChatMessageRecord(
+        thread_id=thread.id,
+        user_id=current_user.id,
+        course_id=course_id,
+        role="assistant",
+        content=reply_text,
+        citations=citations_list,
+        tone=tone_str,
+        is_sufficient=is_sufficient_bool,
     )
+    db.add(assistant_msg_record)
+    thread.updated_at = datetime.now(UTC)
+    db.commit()
+
+    return ChatResponse(
+        reply=reply_text,
+        citations=citations_list,
+        tone=tone_str,
+        is_sufficient=is_sufficient_bool,
+    )
+
