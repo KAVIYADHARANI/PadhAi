@@ -3,6 +3,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.api import chat as api_chat
 from app.api import courses as api_courses
 from app.api import documents as api_documents
 from app.api import me as api_me
@@ -42,3 +43,4 @@ def health_check() -> dict:
 app.include_router(api_me.router)
 app.include_router(api_courses.router)
 app.include_router(api_documents.router)
+app.include_router(api_chat.router)
