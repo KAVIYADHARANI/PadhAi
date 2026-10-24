@@ -76,6 +76,60 @@ describe("API Service Client", () => {
     });
   });
 
+  it("refreshes Firebase token with forceRefresh=true and retries once on 401 response", async () => {
+    // First call returns stale token, retry call returns fresh token
+    vi.mocked(firebaseService.getAuthToken)
+      .mockResolvedValueOnce("stale-token")
+      .mockResolvedValueOnce("fresh-token")
+      .mockResolvedValueOnce("fresh-token");
+
+    const authHeadersSent: string[] = [];
+    let callCount = 0;
+
+    global.fetch = vi.fn().mockImplementation((_url: string, init?: RequestInit) => {
+      callCount++;
+      const headers = init?.headers as Headers;
+      authHeadersSent.push(headers.get("Authorization") || "");
+
+      if (callCount === 1) {
+        return Promise.resolve({
+          ok: false,
+          status: 401,
+          json: () => Promise.resolve({ detail: "Invalid or expired token" }),
+        });
+      }
+
+      return Promise.resolve({
+        ok: true,
+        status: 200,
+        json: () => Promise.resolve([{ id: 1, name: "Algorithms" }]),
+      });
+    });
+
+    const courses = await api.getCourses();
+    expect(courses).toEqual([{ id: 1, name: "Algorithms" }]);
+    expect(callCount).toBe(2);
+    expect(authHeadersSent).toEqual(["Bearer stale-token", "Bearer fresh-token"]);
+    expect(firebaseService.getAuthToken).toHaveBeenCalledWith(true);
+  });
+
+  it("throws ApiError if 401 persists after retry without entering an infinite loop", async () => {
+    vi.mocked(firebaseService.getAuthToken).mockResolvedValue("token");
+
+    let callCount = 0;
+    global.fetch = vi.fn().mockImplementation(() => {
+      callCount++;
+      return Promise.resolve({
+        ok: false,
+        status: 401,
+        json: () => Promise.resolve({ detail: "Invalid or expired token" }),
+      });
+    });
+
+    await expect(api.getCourses()).rejects.toThrow(ApiError);
+    expect(callCount).toBe(2); // exactly 1 initial + 1 retry
+  });
+
   it("creates course with JSON payload", async () => {
     vi.mocked(firebaseService.getAuthToken).mockResolvedValueOnce("token");
 
@@ -167,5 +221,31 @@ describe("API Service Client", () => {
     // Header Content-Type must not be forced to application/json so browser sets boundary
     const headers = capturedInit?.headers as Headers;
     expect(headers.get("Content-Type")).toBeNull();
+  });
+
+  it("fetches course documents via getCourseDocuments", async () => {
+    vi.mocked(firebaseService.getAuthToken).mockResolvedValueOnce("token");
+
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: () =>
+        Promise.resolve([
+          {
+            id: 1,
+            course_id: 5,
+            filename: "syllabus.pdf",
+            size_bytes: 2048,
+            status: "ready",
+            created_at: "2026-10-24T00:00:00Z",
+          },
+        ]),
+    });
+
+    const docs = await api.getCourseDocuments(5);
+    expect(docs).toHaveLength(1);
+    expect(docs[0].id).toBe(1);
+    expect(docs[0].status).toBe("ready");
+    expect(docs[0].filename).toBe("syllabus.pdf");
   });
 });

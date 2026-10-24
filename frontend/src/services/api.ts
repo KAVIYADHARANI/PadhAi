@@ -22,8 +22,12 @@ export class ApiError extends Error {
   }
 }
 
-async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
-  const token = await getAuthToken();
+async function request<T>(
+  path: string,
+  options: RequestInit = {},
+  isRetry = false
+): Promise<T> {
+  const token = await getAuthToken(isRetry);
   const headers = new Headers(options.headers || {});
 
   if (token) {
@@ -51,6 +55,16 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     } catch {
       // Body not json
     }
+
+    // If 401 Unauthorized occurs on an authenticated request and we haven't retried yet,
+    // refresh the Firebase ID token and retry once without looping.
+    if (response.status === 401 && !isRetry && token) {
+      const freshToken = await getAuthToken(true);
+      if (freshToken) {
+        return request<T>(path, options, true);
+      }
+    }
+
     throw new ApiError(response.status, errorDetail);
   }
 
@@ -86,6 +100,10 @@ export const api = {
   },
 
   // Documents
+  async getCourseDocuments(courseId: number): Promise<Document[]> {
+    return request<Document[]>(`/api/courses/${courseId}/documents`);
+  },
+
   async uploadDocument(courseId: number, file: File): Promise<Document> {
     const formData = new FormData();
     formData.append("file", file);

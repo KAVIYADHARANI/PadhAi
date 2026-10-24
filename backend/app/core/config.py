@@ -2,18 +2,33 @@
 
 Reads configuration from environment variables and provides sensible defaults.
 All brand strings are strictly sourced from here per brand rules.
+
+env_file resolution
+-------------------
+env_file paths are resolved relative to *this file*, not the process CWD.
+This means the root `.env` / `.env.local` are found correctly whether
+uvicorn is started from `backend/`, the project root, or via Docker.
+Process-level environment variables always take precedence over the file.
 """
 
+from pathlib import Path
 
-from pydantic import Field
+from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+# Project root is two levels up: backend/app/core/ → backend/app/ → backend/ → root
+_PROJECT_ROOT = Path(__file__).resolve().parents[3]
 
 
 class Settings(BaseSettings):
     """Application settings schema matching README section 17."""
 
     model_config = SettingsConfigDict(
-        env_file=(".env", ".env.local"),
+        # Resolved from project root so the file is found regardless of CWD.
+        env_file=(
+            str(_PROJECT_ROOT / ".env"),
+            str(_PROJECT_ROOT / ".env.local"),
+        ),
         env_file_encoding="utf-8",
         extra="ignore",
     )
@@ -21,6 +36,29 @@ class Settings(BaseSettings):
     # Brand
     PRODUCT_NAME: str = Field(default="PadhAI", description="Platform brand name")
     MASCOT_NAME: str = Field(default="Parama-AI", description="Mascot character name")
+
+    @field_validator(
+        "GOOGLE_APPLICATION_CREDENTIALS",
+        "FIREBASE_AUTH_EMULATOR_HOST",
+        "MODEL_VISION",
+        "RETRIEVAL_MIN_SCORE",
+        "S3_ENDPOINT_URL",
+        "S3_BUCKET_NAME",
+        "S3_ACCESS_KEY_ID",
+        "S3_SECRET_ACCESS_KEY",
+        mode="before",
+    )
+    @classmethod
+    def _empty_str_to_none(cls, v: object) -> object:
+        """Coerce empty strings in .env to None for all optional fields.
+
+        pydantic-settings passes the raw string from the env-file before
+        type coercion.  An empty string is not a valid float or path, so we
+        normalise it to None here, matching the declared ``X | None`` types.
+        """
+        if v == "":
+            return None
+        return v
 
     # Database
     DATABASE_URL: str = Field(
@@ -33,7 +71,12 @@ class Settings(BaseSettings):
         default="padhai-a5585", description="Firebase Project ID"
     )
     GOOGLE_APPLICATION_CREDENTIALS: str | None = Field(
-        default=None, description="Path to Firebase admin service account key JSON"
+        default=None,
+        description=(
+            "Absolute path to a Firebase Admin SDK service-account key JSON file. "
+            "Leave unset in production when running on GCP (ADC is used instead). "
+            "Never use a Docker secrets path on Windows dev."
+        ),
     )
     FIREBASE_AUTH_EMULATOR_HOST: str | None = Field(
         default=None, description="Firebase Auth emulator host (e.g. localhost:9099)"

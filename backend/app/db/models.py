@@ -10,6 +10,7 @@ Strictly defines ONLY the tables specified in Phase 0:
 
 import json
 from datetime import UTC, datetime
+from pathlib import Path
 
 from pgvector.sqlalchemy import HALFVEC, VECTOR
 from sqlalchemy import (
@@ -128,6 +129,20 @@ class Document(Base):
     user = relationship("User", back_populates="documents")
     course = relationship("Course", back_populates="documents")
     chunks = relationship("Chunk", back_populates="document", cascade="all, delete-orphan")
+
+    @property
+    def filename(self) -> str:
+        return Path(self.file_uri).name
+
+    @property
+    def size_bytes(self) -> int | None:
+        try:
+            p = Path(self.file_uri)
+            if p.exists():
+                return p.stat().st_size
+        except Exception:
+            pass
+        return None
 
     __table_args__ = (
         Index("ix_documents_user_course", "user_id", "course_id"),

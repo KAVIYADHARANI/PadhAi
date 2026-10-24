@@ -50,6 +50,14 @@ if (-not (Test-Path (Join-Path $frontendDir "node_modules"))) {
     }
 }
 
+# 1c. Docker PostgreSQL Check
+if (Get-Command docker -ErrorAction SilentlyContinue) {
+    Write-Host "`nEnsuring PostgreSQL (pgvector) container is running..." -ForegroundColor Cyan
+    docker compose up -d postgres
+} else {
+    Write-Warning "Docker is not found in PATH. Ensure PostgreSQL with pgvector is accessible on localhost:5432."
+}
+
 # 2. Execution Mode
 if ($Background) {
     Write-Host "`nStarting Backend as background job..." -ForegroundColor Yellow

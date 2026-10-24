@@ -38,7 +38,8 @@ class DocumentResponse(BaseModel):
 
     id: int
     course_id: int
-    file_uri: str
+    filename: str
+    size_bytes: int | None = None
     pages: int | None = None
     pages_ocr: int | None = None
     ocr_avg_conf: float | None = None

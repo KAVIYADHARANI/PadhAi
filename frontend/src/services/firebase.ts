@@ -69,10 +69,13 @@ export async function logout(): Promise<void> {
   await firebaseSignOut(auth);
 }
 
-export async function getAuthToken(): Promise<string | null> {
+export async function getAuthToken(forceRefresh = false): Promise<string | null> {
+  if (typeof auth.authStateReady === "function") {
+    await auth.authStateReady();
+  }
   const current = auth.currentUser;
   if (!current) {
     return null;
   }
-  return current.getIdToken();
+  return current.getIdToken(forceRefresh);
 }

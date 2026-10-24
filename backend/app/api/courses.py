@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
+from fastapi import APIRouter, BackgroundTasks, Depends, File, HTTPException, UploadFile, status
 from sqlalchemy.orm import Session
 
 from app.api.schemas import CourseCreate, CourseResponse, DocumentResponse
@@ -85,9 +85,48 @@ def delete_course(
     db.commit()
 
 
+def _run_ingestion_background(doc_id: int) -> None:
+    from app.db.session import SessionLocal
+    from app.worker.ingest_worker import process_document_sync
+
+    with SessionLocal() as session:
+        try:
+            process_document_sync(doc_id, session)
+        except Exception as exc:
+            logger.error("Background ingestion failed for doc %d: %s", doc_id, exc, exc_info=True)
+
+
+@router.get("/{course_id}/documents", response_model=list[DocumentResponse])
+def list_course_documents(
+    course_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> list[DocumentResponse]:
+    """Lists all documents belonging to a user's course, ordered by creation date desc."""
+    course = (
+        db.query(Course)
+        .filter(Course.id == course_id, Course.user_id == current_user.id)
+        .first()
+    )
+    if not course:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Course not found",
+        )
+
+    docs = (
+        db.query(Document)
+        .filter(Document.course_id == course.id, Document.user_id == current_user.id)
+        .order_by(Document.created_at.desc())
+        .all()
+    )
+    return [DocumentResponse.model_validate(doc) for doc in docs]
+
+
 @router.post("/{course_id}/documents", response_model=DocumentResponse, status_code=status.HTTP_201_CREATED)
 async def upload_document(
     course_id: int,
+    background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
@@ -140,14 +179,21 @@ async def upload_document(
     # Store via StorageBackend
     file_uri = storage.save(file_bytes, filename, content_type)
 
-    doc = Document(
-        course_id=course.id,
-        user_id=current_user.id,
-        file_uri=file_uri,
-        status="queued",
-    )
-    db.add(doc)
-    db.commit()
-    db.refresh(doc)
+    try:
+        doc = Document(
+            course_id=course.id,
+            user_id=current_user.id,
+            file_uri=file_uri,
+            status="queued",
+        )
+        db.add(doc)
+        db.commit()
+        db.refresh(doc)
+    except Exception:
+        db.rollback()
+        storage.delete(file_uri)
+        raise
+
+    background_tasks.add_task(_run_ingestion_background, doc.id)
 
     return DocumentResponse.model_validate(doc)

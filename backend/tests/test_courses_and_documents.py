@@ -150,3 +150,92 @@ def test_upload_validations(
     res_big = client.post(f"/api/courses/{course_id}/documents", headers=auth_headers_user1, files=big_file)
     assert res_big.status_code == 413
     assert "exceeds maximum size limit" in res_big.json()["detail"]
+
+
+def test_list_course_documents_and_isolation(
+    client: TestClient,
+    auth_headers_user1: dict,
+    auth_headers_user2: dict,
+):
+    """Test GET /api/courses/{course_id}/documents returns course docs with safe metadata and enforces user isolation."""
+    # 1. User 1 creates course
+    res_course = client.post("/api/courses", headers=auth_headers_user1, json={"name": "Quantum Physics"})
+    course_id = res_course.json()["id"]
+
+    # 2. Before upload, documents list is empty
+    res_empty_list = client.get(f"/api/courses/{course_id}/documents", headers=auth_headers_user1)
+    assert res_empty_list.status_code == 200
+    assert res_empty_list.json() == []
+
+    # 3. User 1 uploads 2 documents
+    file1 = {"file": ("lecture1.pdf", io.BytesIO(b"%PDF-1.4 sample content 1"), "application/pdf")}
+    file2 = {"file": ("lecture2.pdf", io.BytesIO(b"%PDF-1.4 sample content 2"), "application/pdf")}
+    client.post(f"/api/courses/{course_id}/documents", headers=auth_headers_user1, files=file1)
+    client.post(f"/api/courses/{course_id}/documents", headers=auth_headers_user1, files=file2)
+
+    # 4. User 1 lists documents -> sees 2 docs
+    res_list = client.get(f"/api/courses/{course_id}/documents", headers=auth_headers_user1)
+    assert res_list.status_code == 200
+    docs = res_list.json()
+    assert len(docs) == 2
+
+    for doc in docs:
+        assert doc["course_id"] == course_id
+        assert "filename" in doc
+        assert "status" in doc
+        # Security requirement: Local filesystem paths must not be exposed to frontend
+        assert "file_uri" not in doc
+        assert "/" not in doc["filename"]
+        assert "\\" not in doc["filename"]
+
+    # 5. User 2 attempts to list User 1's course documents -> 404
+    res_cross_list = client.get(f"/api/courses/{course_id}/documents", headers=auth_headers_user2)
+    assert res_cross_list.status_code == 404
+    assert res_cross_list.json()["detail"] == "Course not found"
+
+
+def test_upload_failure_cleans_up_file(
+    client: TestClient,
+    auth_headers_user1: dict,
+    monkeypatch,
+):
+    """If database save fails, stored file must be deleted to prevent orphaned files."""
+    from app.core.storage import LocalStorageBackend
+
+    course = client.post("/api/courses", headers=auth_headers_user1, json={"name": "Cleanup Test"}).json()
+    course_id = course["id"]
+
+    saved_uris = []
+    orig_save = LocalStorageBackend.save
+    orig_delete = LocalStorageBackend.delete
+
+    def tracking_save(self, file_bytes, filename, content_type):
+        uri = orig_save(self, file_bytes, filename, content_type)
+        saved_uris.append(uri)
+        return uri
+
+    deleted_uris = []
+
+    def tracking_delete(self, file_uri):
+        deleted_uris.append(file_uri)
+        return orig_delete(self, file_uri)
+
+    monkeypatch.setattr(LocalStorageBackend, "save", tracking_save)
+    monkeypatch.setattr(LocalStorageBackend, "delete", tracking_delete)
+
+    # Simulate database error on commit
+    def failing_commit(*args, **kwargs):
+        raise RuntimeError("Simulated DB failure")
+
+    from sqlalchemy.orm import Session
+    monkeypatch.setattr(Session, "commit", failing_commit)
+
+    file_payload = {"file": ("test.pdf", io.BytesIO(b"%PDF-1.4 file content"), "application/pdf")}
+    try:
+        client.post(f"/api/courses/{course_id}/documents", headers=auth_headers_user1, files=file_payload)
+    except Exception:
+        pass
+
+    assert len(saved_uris) == 1
+    assert len(deleted_uris) == 1
+    assert saved_uris[0] == deleted_uris[0]
