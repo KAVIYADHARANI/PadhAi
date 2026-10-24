@@ -44,6 +44,8 @@ share/python-wheels/
 venv/
 ENV/
 env/
+*.db
+*.sqlite3
 
 # Testing & Linting
 .pytest_cache/
