@@ -27,6 +27,7 @@ ALLOWED_EXACT_FILES = {
     "frontend/src/brand.ts",
     "backend/app/core/config.py",
     "docs/brand.md",
+    "docs/deploy.md",
     "readme.md",
     "build_playbook.md",
     ".env.example",
@@ -81,6 +82,10 @@ def test_brand_strings_only_in_allowed_files():
 
         # Skip binary files or non-source files
         if file_path.suffix.lower() in {".png", ".jpg", ".jpeg", ".ico", ".pdf", ".bin", ".lock"}:
+            continue
+
+        # Skip local uncommitted environment files (e.g. .env, .env.local)
+        if file_path.name.startswith(".env") and file_path.name != ".env.example":
             continue
 
         try:

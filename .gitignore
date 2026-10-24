@@ -5,6 +5,7 @@
 *.json
 !package.json
 !tsconfig*.json
+!firebase.json
 !lines.json
 !lines.*.json
 !cases.json
