@@ -86,6 +86,9 @@ class User(Base):
     roadmap_items = relationship("RoadmapItem", back_populates="user", cascade="all, delete-orphan")
     chat_threads = relationship("ChatThread", back_populates="user", cascade="all, delete-orphan")
     chat_messages = relationship("ChatMessageRecord", back_populates="user", cascade="all, delete-orphan")
+    study_sessions = relationship("StudySession", back_populates="user", cascade="all, delete-orphan")
+    break_events = relationship("BreakEvent", back_populates="user", cascade="all, delete-orphan")
+    buddy_state = relationship("BuddyState", back_populates="user", uselist=False, cascade="all, delete-orphan")
 
 
 class Course(Base):
@@ -116,6 +119,7 @@ class Course(Base):
     roadmap_items = relationship("RoadmapItem", back_populates="course", cascade="all, delete-orphan")
     chat_threads = relationship("ChatThread", back_populates="course", cascade="all, delete-orphan")
     chat_messages = relationship("ChatMessageRecord", back_populates="course", cascade="all, delete-orphan")
+    study_sessions = relationship("StudySession", back_populates="course", cascade="all, delete-orphan")
 
 
 class Document(Base):
@@ -465,4 +469,87 @@ class ChatMessageRecord(Base):
         Index("ix_chat_messages_thread", "thread_id"),
         Index("ix_chat_messages_user_course", "user_id", "course_id"),
     )
+
+
+class StudySession(Base):
+    """Recorded study session aggregating Pomodoro cycles and focus metrics."""
+
+    __tablename__ = "study_sessions"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    course_id = Column(Integer, ForeignKey("courses.id", ondelete="CASCADE"), nullable=False, index=True)
+    started_at = Column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(UTC),
+        nullable=False,
+    )
+    ended_at = Column(DateTime(timezone=True), nullable=True)
+    pomodoros = Column(Integer, default=0, nullable=False)
+    focus_avg = Column(Float, nullable=True)
+    drowsy_minutes = Column(Float, nullable=True)
+
+    # Relationships
+    user = relationship("User", back_populates="study_sessions")
+    course = relationship("Course", back_populates="study_sessions")
+    break_events = relationship("BreakEvent", back_populates="session", cascade="all, delete-orphan")
+
+    __table_args__ = (
+        Index("ix_study_sessions_user_course", "user_id", "course_id"),
+    )
+
+
+class BreakEvent(Base):
+    """Logged outcome of proactive or user-initiated break suggestions."""
+
+    __tablename__ = "break_events"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    session_id = Column(Integer, ForeignKey("study_sessions.id", ondelete="CASCADE"), nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    break_type = Column(String(50), nullable=False)
+    outcome = Column(String(50), nullable=False)  # "accepted" | "dismissed" | "ignored"
+    cooldown_at_time_s = Column(Integer, nullable=False)
+    created_at = Column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(UTC),
+        nullable=False,
+    )
+
+    # Relationships
+    session = relationship("StudySession", back_populates="break_events")
+    user = relationship("User", back_populates="break_events")
+
+    __table_args__ = (
+        Index("ix_break_events_session", "session_id"),
+        Index("ix_break_events_user", "user_id"),
+    )
+
+
+class BuddyState(Base):
+    """User-level study companion preferences and mode settings."""
+
+    __tablename__ = "buddy_state"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), unique=True, nullable=False, index=True)
+    persona_pack = Column(String(50), default="tanglish", nullable=False)
+    tone_mode = Column(String(50), default="balanced", nullable=False)
+    address_term = Column(String(50), default="boss", nullable=False)
+    sensitivity = Column(String(50), default="balanced", nullable=False)
+    camera_enabled = Column(Boolean, default=False, nullable=False)
+    updated_at = Column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(UTC),
+        onupdate=lambda: datetime.now(UTC),
+        nullable=False,
+    )
+
+    # Relationships
+    user = relationship("User", back_populates="buddy_state")
+
+    __table_args__ = (
+        Index("ix_buddy_state_user", "user_id"),
+    )
+
 

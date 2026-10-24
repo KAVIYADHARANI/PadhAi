@@ -1,0 +1,146 @@
+[
+  {
+    "id": "cand_break_long_01",
+    "trigger": "long_unbroken_study",
+    "tone": "friendly_checkin",
+    "text": "Nalla focus {{address_term}}! Oru 5-minute break eduthukkalaama?",
+    "reviewed_by": "pending",
+    "reviewed_on": "2026-10-25"
+  },
+  {
+    "id": "cand_break_long_02",
+    "trigger": "long_unbroken_study",
+    "tone": "friendly_checkin",
+    "text": "Romba neram padichitteenga. Oru stretch pannittu varlaama, {{address_term}}?",
+    "reviewed_by": "pending",
+    "reviewed_on": "2026-10-25"
+  },
+  {
+    "id": "cand_break_long_03",
+    "trigger": "long_unbroken_study",
+    "tone": "friendly_checkin",
+    "text": "Eye rest venum pola irukku. 20 seconds thooram paakkalaam, {{address_term}}.",
+    "reviewed_by": "pending",
+    "reviewed_on": "2026-10-25"
+  },
+  {
+    "id": "cand_break_long_04",
+    "trigger": "long_unbroken_study",
+    "tone": "friendly_checkin",
+    "text": "Thanni kudichittu konjam relax pannalaama, {{address_term}}?",
+    "reviewed_by": "pending",
+    "reviewed_on": "2026-10-25"
+  },
+  {
+    "id": "cand_break_long_05",
+    "trigger": "long_unbroken_study",
+    "tone": "friendly_checkin",
+    "text": "Super speed! Oru short walk poittu polam, {{address_term}}.",
+    "reviewed_by": "pending",
+    "reviewed_on": "2026-10-25"
+  },
+  {
+    "id": "cand_break_long_06",
+    "trigger": "long_unbroken_study",
+    "tone": "friendly_checkin",
+    "text": "Steady progress! Chinna break eduthu refresh pannikkalaam, {{address_term}}.",
+    "reviewed_by": "pending",
+    "reviewed_on": "2026-10-25"
+  },
+  {
+    "id": "cand_struggle_01",
+    "trigger": "struggling_topic",
+    "tone": "patient",
+    "text": "Kavala padatheenga {{address_term}}, step-by-step-ah breakdown pannuvom.",
+    "reviewed_by": "pending",
+    "reviewed_on": "2026-10-25"
+  },
+  {
+    "id": "cand_struggle_02",
+    "trigger": "struggling_topic",
+    "tone": "patient",
+    "text": "Indha concept konjam deep. Innoru example paakalaama, {{address_term}}?",
+    "reviewed_by": "pending",
+    "reviewed_on": "2026-10-25"
+  },
+  {
+    "id": "cand_struggle_03",
+    "trigger": "struggling_topic",
+    "tone": "patient",
+    "text": "Tension venam {{address_term}}, practice panna kandippa clear aagidum.",
+    "reviewed_by": "pending",
+    "reviewed_on": "2026-10-25"
+  },
+  {
+    "id": "cand_struggle_04",
+    "trigger": "struggling_topic",
+    "tone": "patient",
+    "text": "Namma basics-la irundhu start pannalaam, {{address_term}}.",
+    "reviewed_by": "pending",
+    "reviewed_on": "2026-10-25"
+  },
+  {
+    "id": "cand_struggle_05",
+    "trigger": "struggling_topic",
+    "tone": "patient",
+    "text": "Mistakes are part of learning. Namma koodave irukken, {{address_term}}.",
+    "reviewed_by": "pending",
+    "reviewed_on": "2026-10-25"
+  },
+  {
+    "id": "cand_struggle_06",
+    "trigger": "struggling_topic",
+    "tone": "patient",
+    "text": "Easier question try pannalaama, {{address_term}}?",
+    "reviewed_by": "pending",
+    "reviewed_on": "2026-10-25"
+  },
+  {
+    "id": "cand_streak_01",
+    "trigger": "quiz_streak",
+    "tone": "hype",
+    "text": "Aasathuringa {{address_term}}! Streak continue aagudhu!",
+    "reviewed_by": "pending",
+    "reviewed_on": "2026-10-25"
+  },
+  {
+    "id": "cand_streak_02",
+    "trigger": "quiz_streak",
+    "tone": "hype",
+    "text": "Full on fire! Adutha question-um finish pannunga, {{address_term}}!",
+    "reviewed_by": "pending",
+    "reviewed_on": "2026-10-25"
+  },
+  {
+    "id": "cand_streak_03",
+    "trigger": "quiz_streak",
+    "tone": "hype",
+    "text": "Back to back correct! Semma momentum, {{address_term}}!",
+    "reviewed_by": "pending",
+    "reviewed_on": "2026-10-25"
+  },
+  {
+    "id": "cand_streak_04",
+    "trigger": "quiz_streak",
+    "tone": "hype",
+    "text": "Unstoppable! Concept ungalukku fulla purinjirukku, {{address_term}}!",
+    "reviewed_by": "pending",
+    "reviewed_on": "2026-10-25"
+  },
+  {
+    "id": "cand_streak_05",
+    "trigger": "quiz_streak",
+    "tone": "hype",
+    "text": "Pinreenga {{address_term}}! Mastery level rocket speed-la yerudhu!",
+    "reviewed_by": "pending",
+    "reviewed_on": "2026-10-25"
+  },
+  {
+    "id": "cand_streak_06",
+    "trigger": "quiz_streak",
+    "tone": "hype",
+    "text": "Kattura focus vera level! Keep it going, {{address_term}}!",
+    "reviewed_by": "pending",
+    "reviewed_on": "2026-10-25"
+  }
+]

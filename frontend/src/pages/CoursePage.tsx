@@ -10,9 +10,9 @@ import {
   Sparkles,
 } from "lucide-react";
 import { MASCOT_NAME } from "../brand";
+import { Buddy } from "../components/buddy/Buddy";
 import { ChatView } from "../components/ChatView";
 import { DocumentUpload } from "../components/DocumentUpload";
-import { MascotPlaceholder } from "../components/MascotPlaceholder";
 import { ProgressView } from "../components/ProgressView";
 import { QuizView } from "../components/QuizView";
 import { RoadmapView } from "../components/RoadmapView";
@@ -168,7 +168,13 @@ export const CoursePage: React.FC<CoursePageProps> = ({ course, onBack }) => {
               <h2 className="text-base font-bold text-white">Companion Readiness</h2>
             </div>
 
-            <MascotPlaceholder status="standby" />
+            <div className="glass-card rounded-2xl p-5 border border-slate-800/80 flex flex-col items-center">
+              <Buddy
+                courseId={course.id}
+                onNavigateToQuiz={() => setActiveTab("quiz")}
+                onNavigateToChat={() => setActiveTab("chat")}
+              />
+            </div>
 
             <div className="glass-card rounded-2xl p-5 border border-slate-800/80 text-xs text-slate-400 space-y-2">
               <h3 className="font-semibold text-white">Document Ingestion Pipeline</h3>
@@ -208,6 +214,19 @@ export const CoursePage: React.FC<CoursePageProps> = ({ course, onBack }) => {
           courseId={course.id}
           onPracticeTopic={handleStartPracticeForTopic}
         />
+      )}
+
+      {/* Floating Study Companion when navigating other tabs */}
+      {activeTab !== "materials" && (
+        <div className="fixed bottom-6 right-6 z-40 hidden sm:block animate-in fade-in slide-in-from-bottom-4">
+          <div className="glass-card p-3 rounded-3xl border border-slate-800/90 shadow-2xl backdrop-blur-xl">
+            <Buddy
+              courseId={course.id}
+              onNavigateToQuiz={() => setActiveTab("quiz")}
+              onNavigateToChat={() => setActiveTab("chat")}
+            />
+          </div>
+        </div>
       )}
     </div>
   );

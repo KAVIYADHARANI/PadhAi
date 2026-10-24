@@ -176,3 +176,66 @@ class ChatHistoryResponse(BaseModel):
     messages: list[ChatMessageItem]
 
 
+# --- Study Sessions & Buddy State Schemas ---
+
+class StudySessionCreateRequest(BaseModel):
+    course_id: int
+
+
+class StudySessionUpdateRequest(BaseModel):
+    pomodoros: int | None = None
+    focus_avg: float | None = None
+    drowsy_minutes: float | None = None
+    ended: bool = False
+
+
+class StudySessionResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    user_id: int
+    course_id: int
+    started_at: datetime
+    ended_at: datetime | None = None
+    pomodoros: int
+    focus_avg: float | None = None
+    drowsy_minutes: float | None = None
+
+
+class BreakEventCreateRequest(BaseModel):
+    break_type: str
+    outcome: str  # "accepted" | "dismissed" | "ignored"
+    cooldown_at_time_s: int
+
+
+class BreakEventResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    session_id: int
+    user_id: int
+    break_type: str
+    outcome: str
+    cooldown_at_time_s: int
+    created_at: datetime
+
+
+class BuddySettingsResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    persona_pack: str
+    tone_mode: str
+    address_term: str
+    sensitivity: str
+    camera_enabled: bool
+
+
+class BuddySettingsUpdateRequest(BaseModel):
+    persona_pack: str | None = None
+    tone_mode: str | None = None
+    address_term: str | None = None
+    sensitivity: str | None = None
+    camera_enabled: bool | None = None
+
+
+

@@ -208,6 +208,97 @@ export const api = {
       method: "DELETE",
     });
   },
+
+  // Buddy & Sessions
+  async getBuddySettings(): Promise<BuddySettingsResponse> {
+    return request<BuddySettingsResponse>("/api/buddy/settings");
+  },
+
+  async updateBuddySettings(
+    payload: BuddySettingsUpdateRequest
+  ): Promise<BuddySettingsResponse> {
+    return request<BuddySettingsResponse>("/api/buddy/settings", {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    });
+  },
+
+  async startStudySession(courseId: number): Promise<StudySessionResponse> {
+    return request<StudySessionResponse>("/api/sessions", {
+      method: "POST",
+      body: JSON.stringify({ course_id: courseId }),
+    });
+  },
+
+  async updateStudySession(
+    sessionId: number,
+    payload: StudySessionUpdateRequest
+  ): Promise<StudySessionResponse> {
+    return request<StudySessionResponse>(`/api/sessions/${sessionId}`, {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    });
+  },
+
+  async recordBreakEvent(
+    sessionId: number,
+    payload: BreakEventCreateRequest
+  ): Promise<BreakEventResponse> {
+    return request<BreakEventResponse>(`/api/sessions/${sessionId}/break-events`, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  },
 };
+
+export interface StudySessionResponse {
+  id: number;
+  user_id: number;
+  course_id: number;
+  started_at: string;
+  ended_at?: string | null;
+  pomodoros: number;
+  focus_avg?: number | null;
+  drowsy_minutes?: number | null;
+}
+
+export interface StudySessionUpdateRequest {
+  pomodoros?: number;
+  focus_avg?: number;
+  drowsy_minutes?: number;
+  ended?: boolean;
+}
+
+export interface BreakEventResponse {
+  id: number;
+  session_id: number;
+  user_id: number;
+  break_type: string;
+  outcome: string;
+  cooldown_at_time_s: number;
+  created_at: string;
+}
+
+export interface BreakEventCreateRequest {
+  break_type: string;
+  outcome: string;
+  cooldown_at_time_s: number;
+}
+
+export interface BuddySettingsResponse {
+  persona_pack: string;
+  tone_mode: string;
+  address_term: string;
+  sensitivity: string;
+  camera_enabled: boolean;
+}
+
+export interface BuddySettingsUpdateRequest {
+  persona_pack?: string;
+  tone_mode?: string;
+  address_term?: string;
+  sensitivity?: string;
+  camera_enabled?: boolean;
+}
 
 

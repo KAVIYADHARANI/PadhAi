@@ -8,11 +8,17 @@ import { Course, CourseProgress, QuizResponse, Topic } from "../types";
 
 vi.mock("../services/api", () => ({
   api: {
+    get: vi.fn(() => Promise.resolve({ data: {} })),
+    patch: vi.fn(() => Promise.resolve({ data: {} })),
     getCourseTopics: vi.fn(),
     generateQuiz: vi.fn(),
     submitAttempt: vi.fn(),
     getCourseProgress: vi.fn(),
     getCourseDocuments: vi.fn(() => Promise.resolve([])),
+    getBuddySettings: vi.fn(() => Promise.resolve({ address_term: "boss", tone_mode: "balanced" })),
+    startStudySession: vi.fn(() => Promise.resolve({ id: 1, course_id: 1, pomodoros: 0 })),
+    updateStudySession: vi.fn(() => Promise.resolve({ id: 1 })),
+    recordBreakEvent: vi.fn(() => Promise.resolve({ id: 1 })),
   },
 }));
 
