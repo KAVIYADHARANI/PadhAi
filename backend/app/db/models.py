@@ -8,9 +8,12 @@ Strictly defines ONLY the tables specified in Phase 0:
 - guardrail_events (without message text)
 """
 
+import json
 from datetime import UTC, datetime
 
+from pgvector.sqlalchemy import HALFVEC, VECTOR
 from sqlalchemy import (
+    Boolean,
     Column,
     Date,
     DateTime,
@@ -21,9 +24,37 @@ from sqlalchemy import (
     String,
     Text,
 )
+from sqlalchemy.dialects.postgresql import TSVECTOR
 from sqlalchemy.orm import relationship
+from sqlalchemy.types import TypeDecorator
 
+from app.core.config import settings
 from app.db.session import Base
+
+
+class SQLiteVectorType(TypeDecorator):
+    """Custom type to support vector arrays in SQLite for local testing without pgvector."""
+
+    impl = Text
+    cache_ok = True
+
+    def process_bind_param(self, value, dialect):
+        if value is not None and isinstance(value, (list, tuple)):
+            return json.dumps(value)
+        return value
+
+    def process_result_value(self, value, dialect):
+        if value is not None and isinstance(value, str):
+            try:
+                return json.loads(value)
+            except Exception:
+                return value
+        return value
+
+
+vector_type = HALFVEC(settings.EMBED_DIM) if settings.USE_HALFVEC else VECTOR(settings.EMBED_DIM)
+EmbeddingType = vector_type.with_variant(SQLiteVectorType(), "sqlite")
+TSVectorType = TSVECTOR().with_variant(Text, "sqlite")
 
 
 class User(Base):
@@ -44,6 +75,7 @@ class User(Base):
     # Relationships
     courses = relationship("Course", back_populates="user", cascade="all, delete-orphan")
     documents = relationship("Document", back_populates="user", cascade="all, delete-orphan")
+    chunks = relationship("Chunk", back_populates="user", cascade="all, delete-orphan")
     llm_usage = relationship("LLMUsage", back_populates="user", cascade="all, delete-orphan")
     guardrail_events = relationship("GuardrailEvent", back_populates="user", cascade="all, delete-orphan")
 
@@ -68,6 +100,8 @@ class Course(Base):
     # Relationships
     user = relationship("User", back_populates="courses")
     documents = relationship("Document", back_populates="course", cascade="all, delete-orphan")
+    chunks = relationship("Chunk", back_populates="course", cascade="all, delete-orphan")
+    topics = relationship("Topic", back_populates="course", cascade="all, delete-orphan")
 
 
 class Document(Base):
@@ -93,6 +127,7 @@ class Document(Base):
     # Relationships
     user = relationship("User", back_populates="documents")
     course = relationship("Course", back_populates="documents")
+    chunks = relationship("Chunk", back_populates="document", cascade="all, delete-orphan")
 
     __table_args__ = (
         Index("ix_documents_user_course", "user_id", "course_id"),
@@ -142,3 +177,68 @@ class GuardrailEvent(Base):
 
     # Relationships
     user = relationship("User", back_populates="guardrail_events")
+
+
+class ChunkTopic(Base):
+    """Many-to-many relationship mapping chunks to topics."""
+
+    __tablename__ = "chunk_topics"
+
+    chunk_id = Column(Integer, ForeignKey("chunks.id", ondelete="CASCADE"), primary_key=True)
+    topic_id = Column(Integer, ForeignKey("topics.id", ondelete="CASCADE"), primary_key=True)
+
+
+class Chunk(Base):
+    """Text chunk extracted from a document, indexed for lexical and semantic retrieval."""
+
+    __tablename__ = "chunks"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    document_id = Column(Integer, ForeignKey("documents.id", ondelete="CASCADE"), nullable=False, index=True)
+    course_id = Column(Integer, ForeignKey("courses.id", ondelete="CASCADE"), nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    page = Column(Integer, nullable=False, default=1)
+    heading_path = Column(String(512), nullable=True)
+    text = Column(Text, nullable=False)
+    low_conf = Column(Boolean, default=False, nullable=False)
+    injection_flag = Column(Boolean, default=False, nullable=False)
+    embedding = Column(EmbeddingType, nullable=True)
+    tsv = Column(TSVectorType, nullable=True)
+
+    # Relationships
+    document = relationship("Document", back_populates="chunks")
+    course = relationship("Course", back_populates="chunks")
+    user = relationship("User", back_populates="chunks")
+    topics = relationship("Topic", secondary="chunk_topics", back_populates="chunks")
+
+    __table_args__ = (
+        Index("ix_chunks_user_course", "user_id", "course_id"),
+        Index("ix_chunks_tsv", "tsv", postgresql_using="gin"),
+        Index(
+            "ix_chunks_embedding",
+            "embedding",
+            postgresql_using="hnsw",
+            postgresql_ops={
+                "embedding": "halfvec_cosine_ops" if settings.USE_HALFVEC else "vector_cosine_ops"
+            },
+        ),
+    )
+
+
+class Topic(Base):
+    """Course topics for syllabus hierarchy and quiz/flashcard grouping."""
+
+    __tablename__ = "topics"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    course_id = Column(Integer, ForeignKey("courses.id", ondelete="CASCADE"), nullable=False, index=True)
+    name = Column(String(255), nullable=False)
+    parent_id = Column(Integer, ForeignKey("topics.id", ondelete="SET NULL"), nullable=True, index=True)
+
+    # Relationships
+    course = relationship("Course", back_populates="topics")
+    chunks = relationship("Chunk", secondary="chunk_topics", back_populates="topics")
+
+    __table_args__ = (
+        Index("ix_topics_course", "course_id"),
+    )

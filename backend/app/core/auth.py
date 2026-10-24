@@ -37,9 +37,27 @@ def initialize_firebase() -> None:
             firebase_admin.initialize_app(cred, options={"projectId": settings.FIREBASE_PROJECT_ID or None})
             logger.info("Firebase Admin initialized with service account credentials.")
         else:
-            project_id = settings.FIREBASE_PROJECT_ID or "default-app"
-            firebase_admin.initialize_app(options={"projectId": project_id})
-            logger.info("Firebase Admin initialized with default configuration.")
+            project_id = settings.FIREBASE_PROJECT_ID or "padhai-a5585"
+            try:
+                import google.auth
+
+                g_cred, _ = google.auth.default()
+                cred = credentials._ExternalCredentials(g_cred)
+                firebase_admin.initialize_app(cred, options={"projectId": project_id})
+                logger.info(
+                    "Firebase Admin initialized with application default credentials."
+                )
+            except Exception:
+                import google.auth.credentials
+
+                anon_cred = credentials._ExternalCredentials(
+                    google.auth.credentials.AnonymousCredentials()
+                )
+                firebase_admin.initialize_app(anon_cred, options={"projectId": project_id})
+                logger.info(
+                    "Firebase Admin initialized with public key verification for project %s.",
+                    project_id,
+                )
 
 
 # Initialize on module import
@@ -64,7 +82,7 @@ def get_current_user(
     token = auth_credentials.credentials
 
     try:
-        decoded_token = firebase_auth.verify_id_token(token)
+        decoded_token = firebase_auth.verify_id_token(token, clock_skew_seconds=10)
     except Exception as exc:
         logger.warning("Token verification failed: %s", type(exc).__name__)
         raise HTTPException(

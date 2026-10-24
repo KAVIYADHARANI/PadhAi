@@ -29,12 +29,25 @@ class Settings(BaseSettings):
     )
 
     # Auth (Firebase)
-    FIREBASE_PROJECT_ID: str = Field(default="", description="Firebase Project ID")
+    FIREBASE_PROJECT_ID: str = Field(
+        default="padhai-a5585", description="Firebase Project ID"
+    )
     GOOGLE_APPLICATION_CREDENTIALS: str | None = Field(
         default=None, description="Path to Firebase admin service account key JSON"
     )
     FIREBASE_AUTH_EMULATOR_HOST: str | None = Field(
         default=None, description="Firebase Auth emulator host (e.g. localhost:9099)"
+    )
+
+    # CORS
+    CORS_ORIGINS: list[str] = Field(
+        default=[
+            "http://localhost:5173",
+            "http://127.0.0.1:5173",
+            "http://localhost:3000",
+            "http://127.0.0.1:3000",
+        ],
+        description="Allowed CORS origins",
     )
 
     # LLM Gateway
@@ -68,6 +81,9 @@ class Settings(BaseSettings):
     EMBED_PROVIDER: str = Field(default="", description="Hosted provider for BGE-M3")
     EMBED_MODEL: str = Field(default="BAAI/bge-m3", description="Embedding model name")
     EMBED_DIM: int = Field(default=1024, description="Vector dimension")
+    USE_HALFVEC: bool = Field(
+        default=True, description="Use halfvec(1024) instead of vector(1024)"
+    )
 
     # OCR (Indra)
     OCR_BACKEND: str = Field(default="indra", description="OCR backend engine")

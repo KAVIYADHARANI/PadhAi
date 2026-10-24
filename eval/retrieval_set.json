@@ -1,0 +1,242 @@
+[
+  {
+    "id": "q01",
+    "question": "What is the function of the Program Counter in a CPU?",
+    "course_name": "Computer Systems",
+    "answerable": true,
+    "expected_page": 1,
+    "expected_keywords": ["program counter", "address", "next instruction", "fetch"]
+  },
+  {
+    "id": "q02",
+    "question": "How does the instruction register hold opcode during decoding?",
+    "course_name": "Computer Systems",
+    "answerable": true,
+    "expected_page": 1,
+    "expected_keywords": ["instruction register", "opcode", "decoding"]
+  },
+  {
+    "id": "q03",
+    "question": "Explain the stages of the standard five-stage RISC instruction pipeline.",
+    "course_name": "Computer Systems",
+    "answerable": true,
+    "expected_page": 2,
+    "expected_keywords": ["pipeline", "fetch", "decode", "execute", "memory", "writeback"]
+  },
+  {
+    "id": "q04",
+    "question": "What causes a data hazard and how can operand forwarding resolve it?",
+    "course_name": "Computer Systems",
+    "answerable": true,
+    "expected_page": 2,
+    "expected_keywords": ["data hazard", "forwarding", "stall", "dependency"]
+  },
+  {
+    "id": "q05",
+    "question": "How does branch prediction mitigate pipeline control hazards?",
+    "course_name": "Computer Systems",
+    "answerable": true,
+    "expected_page": 2,
+    "expected_keywords": ["control hazard", "branch prediction", "flush"]
+  },
+  {
+    "id": "q06",
+    "question": "What is the principle of spatial and temporal locality in memory hierarchies?",
+    "course_name": "Computer Systems",
+    "answerable": true,
+    "expected_page": 3,
+    "expected_keywords": ["temporal locality", "spatial locality", "cache"]
+  },
+  {
+    "id": "q07",
+    "question": "How does direct-mapped cache differ from set-associative cache?",
+    "course_name": "Computer Systems",
+    "answerable": true,
+    "expected_page": 3,
+    "expected_keywords": ["direct mapped", "set associative", "tag", "index", "offset"]
+  },
+  {
+    "id": "q08",
+    "question": "What is a cache write-through policy versus write-back policy?",
+    "course_name": "Computer Systems",
+    "answerable": true,
+    "expected_page": 3,
+    "expected_keywords": ["write through", "write back", "dirty bit"]
+  },
+  {
+    "id": "q09",
+    "question": "What happens during a Translation Lookaside Buffer miss?",
+    "course_name": "Computer Systems",
+    "answerable": true,
+    "expected_page": 4,
+    "expected_keywords": ["tlb miss", "page table walk", "virtual address"]
+  },
+  {
+    "id": "q10",
+    "question": "Explain how virtual memory address translation maps virtual pages to physical frames.",
+    "course_name": "Computer Systems",
+    "answerable": true,
+    "expected_page": 4,
+    "expected_keywords": ["virtual page number", "physical frame", "page table", "mmu"]
+  },
+  {
+    "id": "q11",
+    "question": "What triggers a page fault in an operating system memory manager?",
+    "course_name": "Computer Systems",
+    "answerable": true,
+    "expected_page": 4,
+    "expected_keywords": ["page fault", "valid bit", "disk swap", "interrupt"]
+  },
+  {
+    "id": "q12",
+    "question": "How does DMA (Direct Memory Access) improve I/O throughput?",
+    "course_name": "Computer Systems",
+    "answerable": true,
+    "expected_page": 5,
+    "expected_keywords": ["direct memory access", "dma controller", "bus master", "interrupt"]
+  },
+  {
+    "id": "q13",
+    "question": "What is the difference between programmed I/O and interrupt-driven I/O?",
+    "course_name": "Computer Systems",
+    "answerable": true,
+    "expected_page": 5,
+    "expected_keywords": ["polling", "interrupt driven", "status register"]
+  },
+  {
+    "id": "q14",
+    "question": "Explain memory-mapped I/O versus isolated port-mapped I/O.",
+    "course_name": "Computer Systems",
+    "answerable": true,
+    "expected_page": 5,
+    "expected_keywords": ["memory mapped io", "address space", "in out instructions"]
+  },
+  {
+    "id": "q15",
+    "question": "What role does the Arithmetic Logic Unit play in execute phase?",
+    "course_name": "Computer Systems",
+    "answerable": true,
+    "expected_page": 1,
+    "expected_keywords": ["arithmetic logic unit", "alu", "operands", "flags"]
+  },
+  {
+    "id": "q16",
+    "question": "What is structural hazard in CPU pipelining and how to prevent it?",
+    "course_name": "Computer Systems",
+    "answerable": true,
+    "expected_page": 2,
+    "expected_keywords": ["structural hazard", "resource conflict", "dual ported"]
+  },
+  {
+    "id": "q17",
+    "question": "How does multi-level cache (L1, L2, L3) reduce average memory access time?",
+    "course_name": "Computer Systems",
+    "answerable": true,
+    "expected_page": 3,
+    "expected_keywords": ["amat", "hit time", "miss rate", "miss penalty", "l1 l2 l3"]
+  },
+  {
+    "id": "q18",
+    "question": "What is inverted page table structure and when is it preferred?",
+    "course_name": "Computer Systems",
+    "answerable": true,
+    "expected_page": 4,
+    "expected_keywords": ["inverted page table", "hash anchor", "physical memory scaling"]
+  },
+  {
+    "id": "q19",
+    "question": "What is the purpose of interrupt vector table in hardware interrupt handling?",
+    "course_name": "Computer Systems",
+    "answerable": true,
+    "expected_page": 5,
+    "expected_keywords": ["interrupt vector table", "isr", "service routine", "handler address"]
+  },
+  {
+    "id": "q20",
+    "question": "How do general purpose registers reduce memory bus transactions?",
+    "course_name": "Computer Systems",
+    "answerable": true,
+    "expected_page": 1,
+    "expected_keywords": ["general purpose registers", "load store architecture", "register file"]
+  },
+  {
+    "id": "q21",
+    "question": "What is the secret recipe for baking traditional French sourdough bread?",
+    "course_name": "Computer Systems",
+    "answerable": false,
+    "expected_page": null,
+    "expected_keywords": []
+  },
+  {
+    "id": "q22",
+    "question": "Who was the prime minister of the United Kingdom during the 1832 Reform Act?",
+    "course_name": "Computer Systems",
+    "answerable": false,
+    "expected_page": null,
+    "expected_keywords": []
+  },
+  {
+    "id": "q23",
+    "question": "How do deep-sea anglerfish produce bioluminescence through symbiotic bacteria?",
+    "course_name": "Computer Systems",
+    "answerable": false,
+    "expected_page": null,
+    "expected_keywords": []
+  },
+  {
+    "id": "q24",
+    "question": "What are the rules of scoring in Olympic synchronized swimming?",
+    "course_name": "Computer Systems",
+    "answerable": false,
+    "expected_page": null,
+    "expected_keywords": []
+  },
+  {
+    "id": "q25",
+    "question": "How do astronomical spectroscopes measure the red-shift of distant quasars?",
+    "course_name": "Computer Systems",
+    "answerable": false,
+    "expected_page": null,
+    "expected_keywords": []
+  },
+  {
+    "id": "q26",
+    "question": "What are the essential ingredients of authentic Mexican Mole Poblano sauce?",
+    "course_name": "Computer Systems",
+    "answerable": false,
+    "expected_page": null,
+    "expected_keywords": []
+  },
+  {
+    "id": "q27",
+    "question": "Explain the difference between Impressionist and Expressionist painting techniques in 19th century art.",
+    "course_name": "Computer Systems",
+    "answerable": false,
+    "expected_page": null,
+    "expected_keywords": []
+  },
+  {
+    "id": "q28",
+    "question": "How do honeybees calculate solar azimuth angles during the waggle dance?",
+    "course_name": "Computer Systems",
+    "answerable": false,
+    "expected_page": null,
+    "expected_keywords": []
+  },
+  {
+    "id": "q29",
+    "question": "What are the tax implications of municipal bond yields in California state tax law?",
+    "course_name": "Computer Systems",
+    "answerable": false,
+    "expected_page": null,
+    "expected_keywords": []
+  },
+  {
+    "id": "q30",
+    "question": "What are the soil composition requirements for growing Pinot Noir grapes in Burgundy?",
+    "course_name": "Computer Systems",
+    "answerable": false,
+    "expected_page": null,
+    "expected_keywords": []
+  }
+]

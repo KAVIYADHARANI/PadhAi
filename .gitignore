@@ -5,6 +5,7 @@
 *.json
 !package.json
 !tsconfig*.json
+!firebase.json
 !lines.json
 !lines.*.json
 !cases.json
@@ -43,6 +44,8 @@ share/python-wheels/
 venv/
 ENV/
 env/
+*.db
+*.sqlite3
 
 # Testing & Linting
 .pytest_cache/

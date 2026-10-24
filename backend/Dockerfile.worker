@@ -1,0 +1,46 @@
+# Multi-stage / optimized Dockerfile for Indra OCR Ingestion Worker
+FROM python:3.11-slim
+
+# Prevent Python from writing .pyc files and enable unbuffered logging
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    INDRA_OCR_MODEL_DIR=/opt/indra_models
+
+WORKDIR /app
+
+# Install system dependencies required by ONNX Runtime / image processing
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    libgomp1 \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create non-root system user
+RUN groupadd -g 10001 appgroup && \
+    useradd -u 10000 -g appgroup -s /bin/bash -m appuser
+
+# Create model directory with appropriate permissions
+RUN mkdir -p /opt/indra_models && chown -R appuser:appgroup /opt/indra_models
+
+# Install Python packages
+COPY pyproject.toml .
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir . && \
+    pip install --no-cache-dir "indra-ocr>=0.1.0" || true
+
+# Pre-download and bake model weights into /opt/indra_models if indra-ocr is installed
+USER appuser
+RUN python -c "import indra_ocr; indra_ocr.load(model_dir='/opt/indra_models')" || true
+
+USER root
+# Copy application code
+COPY app/ ./app
+COPY alembic/ ./alembic
+COPY alembic.ini .
+
+RUN chown -R appuser:appgroup /app
+
+USER appuser
+
+# Default entrypoint for processing queued jobs
+ENTRYPOINT ["python", "-m", "app.worker.ingest_worker"]
