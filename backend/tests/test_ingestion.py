@@ -191,7 +191,7 @@ def test_chunker_preserves_headings_and_page_numbers():
 # ---------------------------------------------------------------------------
 
 
-def test_worker_processes_document_end_to_end(db_session: Session, tmp_path: Path):
+async def test_worker_processes_document_end_to_end(db_session: Session, tmp_path: Path):
     """Full lifecycle: queued -> processing -> ready, saving chunks with flags."""
     # Seed user and course
     user = User(firebase_uid="ingest_user_uid", email="ingest@example.com", display_name="Ingest User")
@@ -220,7 +220,7 @@ def test_worker_processes_document_end_to_end(db_session: Session, tmp_path: Pat
     db_session.commit()
 
     mock_ocr = MockOCREngine()
-    processed_doc = process_document(doc.id, db_session, ocr_engine=mock_ocr)
+    processed_doc = await process_document(doc.id, db_session, ocr_engine=mock_ocr)
 
     assert processed_doc.status == "ready"
     assert processed_doc.pages == 1
@@ -235,7 +235,7 @@ def test_worker_processes_document_end_to_end(db_session: Session, tmp_path: Pat
     assert any(c.injection_flag is True for c in chunks)
 
 
-def test_worker_fails_on_page_limit_exceeded(db_session: Session, tmp_path: Path):
+async def test_worker_fails_on_page_limit_exceeded(db_session: Session, tmp_path: Path):
     """Page cap violation sets status=failed with clear error message."""
     user = User(firebase_uid="cap_user_uid", email="cap@example.com")
     db_session.add(user)
@@ -263,7 +263,7 @@ def test_worker_fails_on_page_limit_exceeded(db_session: Session, tmp_path: Path
     original_cap = settings.MAX_PAGES_PER_DOC
     settings.MAX_PAGES_PER_DOC = 2
     try:
-        processed_doc = process_document(doc.id, db_session)
+        processed_doc = await process_document(doc.id, db_session)
         assert processed_doc.status == "failed"
         assert "Page limit exceeded" in (processed_doc.error or "")
     finally:

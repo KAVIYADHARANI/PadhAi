@@ -8,6 +8,7 @@ Strictly defines ONLY the tables specified in Phase 0:
 - guardrail_events (without message text)
 """
 
+import json
 from datetime import UTC, datetime
 
 from pgvector.sqlalchemy import HALFVEC, VECTOR
@@ -25,12 +26,34 @@ from sqlalchemy import (
 )
 from sqlalchemy.dialects.postgresql import TSVECTOR
 from sqlalchemy.orm import relationship
+from sqlalchemy.types import TypeDecorator
 
 from app.core.config import settings
 from app.db.session import Base
 
+
+class SQLiteVectorType(TypeDecorator):
+    """Custom type to support vector arrays in SQLite for local testing without pgvector."""
+
+    impl = Text
+    cache_ok = True
+
+    def process_bind_param(self, value, dialect):
+        if value is not None and isinstance(value, (list, tuple)):
+            return json.dumps(value)
+        return value
+
+    def process_result_value(self, value, dialect):
+        if value is not None and isinstance(value, str):
+            try:
+                return json.loads(value)
+            except Exception:
+                return value
+        return value
+
+
 vector_type = HALFVEC(settings.EMBED_DIM) if settings.USE_HALFVEC else VECTOR(settings.EMBED_DIM)
-EmbeddingType = vector_type.with_variant(Text, "sqlite")
+EmbeddingType = vector_type.with_variant(SQLiteVectorType(), "sqlite")
 TSVectorType = TSVECTOR().with_variant(Text, "sqlite")
 
 
