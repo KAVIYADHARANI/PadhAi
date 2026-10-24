@@ -174,6 +174,7 @@ class HuggingFaceBGEEmbedder:
             return self._device
         try:
             import torch
+
             if torch.cuda.is_available():
                 return "cuda"
         except (ImportError, Exception):
@@ -194,6 +195,7 @@ class HuggingFaceBGEEmbedder:
         )
         try:
             from sentence_transformers import SentenceTransformer
+
             model = SentenceTransformer(self.model_name, device=device)
             _HF_MODEL_CACHE[self.model_name] = model
             return model
@@ -248,7 +250,9 @@ class HuggingFaceBGEEmbedder:
         raw_vectors = await asyncio.to_thread(_encode_batch, uncached_texts)
 
         # 3. Validate dimension and populate cache
-        for text_str, orig_idx, vec in zip(uncached_texts, uncached_indices, raw_vectors, strict=False):
+        for text_str, orig_idx, vec in zip(
+            uncached_texts, uncached_indices, raw_vectors, strict=False
+        ):
             if len(vec) != self.expected_dim:
                 raise DimensionMismatchError(
                     f"Local Hugging Face model '{self.model_name}' dimension mismatch: "
@@ -344,10 +348,7 @@ def get_embedder() -> Embedder:
             )
             return FakeEmbedder(dim=settings.effective_embed_dim)
 
-    has_key = bool(
-        settings.OPENROUTER_API_KEY
-        or (provider == "groq" and settings.GROQ_API_KEY)
-    )
+    has_key = bool(settings.OPENROUTER_API_KEY or (provider == "groq" and settings.GROQ_API_KEY))
     if not has_key:
         return FakeEmbedder(dim=settings.effective_embed_dim)
 

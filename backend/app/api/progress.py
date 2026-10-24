@@ -31,9 +31,7 @@ def get_course_progress(
     """Retrieve topic mastery overview and ranked weak topics for a course."""
     # 1. Enforce course ownership at SQL level
     course = (
-        db.query(Course)
-        .filter(Course.id == course_id, Course.user_id == current_user.id)
-        .first()
+        db.query(Course).filter(Course.id == course_id, Course.user_id == current_user.id).first()
     )
     if not course:
         raise HTTPException(

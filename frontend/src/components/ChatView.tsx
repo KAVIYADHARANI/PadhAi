@@ -83,9 +83,12 @@ export const ChatView: React.FC<ChatViewProps> = ({ course }) => {
       const assistantMsg: ChatMessage = {
         role: "assistant",
         content: reply.reply,
+        clean_answer: reply.clean_answer || reply.reply,
+        sources: reply.sources,
         citations: reply.citations,
         tone: reply.tone,
         is_sufficient: reply.is_sufficient,
+        grounding_status: reply.grounding_status,
         created_at: new Date().toISOString(),
       };
       setMessages((prev) => [...prev, assistantMsg]);
@@ -235,13 +238,22 @@ export const ChatView: React.FC<ChatViewProps> = ({ course }) => {
               </div>
 
               <div
-                className={`max-w-[80%] rounded-2xl p-4 space-y-2.5 text-xs leading-relaxed ${
+                className={`max-w-[85%] rounded-2xl p-4 space-y-3 text-xs leading-relaxed ${
                   isUser
                     ? "bg-brand-600 text-white rounded-tr-sm shadow-md"
                     : "glass-card bg-slate-900/90 text-slate-200 border border-slate-800 rounded-tl-sm"
                 }`}
               >
-                <div className="whitespace-pre-wrap font-sans">{msg.content}</div>
+                {/* Clean Answer Body */}
+                <div className="whitespace-pre-wrap font-sans leading-relaxed">
+                  {isUser
+                    ? msg.content
+                    : (msg.clean_answer ||
+                       msg.content
+                         .replace(/\*\*Sources?:?\*\*[\s\S]*$/i, "")
+                         .replace(/\[(?:doc\s+)?p\.?\s*\d+\]/gi, "")
+                         .trim())}
+                </div>
 
                 {/* Refusal notification if context insufficient */}
                 {msg.is_sufficient === false && (
@@ -253,8 +265,29 @@ export const ChatView: React.FC<ChatViewProps> = ({ course }) => {
                   </div>
                 )}
 
-                {/* Citations Footer */}
-                {msg.citations && msg.citations.length > 0 && (
+                {/* Structured Sources Section */}
+                {!isUser && msg.sources && msg.sources.length > 0 && (
+                  <div className="pt-3 border-t border-slate-800/80 space-y-2">
+                    <span className="text-[10px] uppercase font-bold text-slate-400 flex items-center gap-1.5 tracking-wider">
+                      <BookOpen className="w-3 h-3 text-brand-400" />
+                      Sources:
+                    </span>
+                    <div className="space-y-1">
+                      {msg.sources.map((src, sIdx) => (
+                        <div
+                          key={sIdx}
+                          className="flex items-center justify-between px-3 py-1.5 rounded-lg bg-slate-950/70 border border-slate-800/90 text-[11px] font-mono text-slate-300"
+                        >
+                          <span className="text-brand-300 font-semibold">{src.document_name}</span>
+                          <span className="text-slate-400">Page {src.page}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Fallback Citation Badges if structured sources not available */}
+                {!isUser && (!msg.sources || msg.sources.length === 0) && msg.citations && msg.citations.length > 0 && (
                   <div className="pt-2 border-t border-slate-800/80 flex flex-wrap items-center gap-1.5">
                     <span className="text-[10px] uppercase font-bold text-slate-400 flex items-center gap-1">
                       <BookOpen className="w-3 h-3 text-brand-400" />
@@ -273,7 +306,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ course }) => {
 
                 {/* Assistant tone tag */}
                 {!isUser && msg.tone && (
-                  <div className="text-[10px] text-slate-400 text-right">
+                  <div className="text-[10px] text-slate-500 text-right">
                     Tone: <span className="capitalize text-slate-400">{msg.tone}</span>
                   </div>
                 )}

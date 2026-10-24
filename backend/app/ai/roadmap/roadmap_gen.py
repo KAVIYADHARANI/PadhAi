@@ -37,7 +37,9 @@ class RoadmapTaskSpec(BaseModel):
 
     id: str = Field(..., description="Unique task identifier, e.g., 'd1_t1'")
     task: str = Field(..., min_length=3, description="Concrete, actionable study task description")
-    estimated_minutes: int = Field(default=30, ge=5, le=360, description="Estimated duration in minutes")
+    estimated_minutes: int = Field(
+        default=30, ge=5, le=360, description="Estimated duration in minutes"
+    )
     completed: bool = Field(default=False, description="Initial completion status")
 
 
@@ -47,15 +49,23 @@ class RoadmapDaySpec(BaseModel):
     day: int = Field(..., ge=1, description="Day index in schedule (1, 2, ...)")
     topic_name: str = Field(..., min_length=2, description="Topic name from course materials")
     title: str = Field(..., min_length=3, description="Milestone title for the day")
-    learning_objectives: list[str] = Field(..., min_length=1, max_length=5, description="Key learning objectives")
-    tasks: list[RoadmapTaskSpec] = Field(..., min_length=1, max_length=8, description="Actionable study tasks")
-    estimated_minutes: int = Field(..., ge=10, le=720, description="Total study minutes for the day")
+    learning_objectives: list[str] = Field(
+        ..., min_length=1, max_length=5, description="Key learning objectives"
+    )
+    tasks: list[RoadmapTaskSpec] = Field(
+        ..., min_length=1, max_length=8, description="Actionable study tasks"
+    )
+    estimated_minutes: int = Field(
+        ..., ge=10, le=720, description="Total study minutes for the day"
+    )
 
 
 class RoadmapPlan(BaseModel):
     """Container for the structured study roadmap."""
 
-    days: list[RoadmapDaySpec] = Field(..., min_length=1, description="Ordered daily study milestones")
+    days: list[RoadmapDaySpec] = Field(
+        ..., min_length=1, description="Ordered daily study milestones"
+    )
 
 
 async def generate_course_roadmap(
@@ -78,11 +88,7 @@ async def generate_course_roadmap(
         List of persisted RoadmapItem instances.
     """
     # 1. Enforce course ownership at SQL level
-    course = (
-        db.query(Course)
-        .filter(Course.id == course_id, Course.user_id == user_id)
-        .first()
-    )
+    course = db.query(Course).filter(Course.id == course_id, Course.user_id == user_id).first()
     if not course:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -140,18 +146,12 @@ async def generate_course_roadmap(
         )
 
     # 4. Resolve extracted topics from database
-    topics = (
-        db.query(Topic)
-        .filter(Topic.course_id == course_id)
-        .all()
-    )
+    topics = db.query(Topic).filter(Topic.course_id == course_id).all()
 
     # Fallback topic resolution if topic grouping was skipped during upload
     if not topics:
         chunks = (
-            db.query(Chunk)
-            .filter(Chunk.course_id == course_id, Chunk.user_id == user_id)
-            .all()
+            db.query(Chunk).filter(Chunk.course_id == course_id, Chunk.user_id == user_id).all()
         )
         if not chunks:
             raise HTTPException(
@@ -163,9 +163,11 @@ async def generate_course_roadmap(
             )
 
         # Extract unique headings or fallback to course title
-        headings = list(dict.fromkeys(
-            c.heading_path.strip() for c in chunks if c.heading_path and c.heading_path.strip()
-        ))
+        headings = list(
+            dict.fromkeys(
+                c.heading_path.strip() for c in chunks if c.heading_path and c.heading_path.strip()
+            )
+        )
         if not headings:
             headings = [f"{course.name} - Core Fundamentals", f"{course.name} - Applied Concepts"]
 
@@ -174,11 +176,7 @@ async def generate_course_roadmap(
             db.add(t)
         db.commit()
 
-        topics = (
-            db.query(Topic)
-            .filter(Topic.course_id == course_id)
-            .all()
-        )
+        topics = db.query(Topic).filter(Topic.course_id == course_id).all()
 
     topic_names = [t.name for t in topics]
     topic_map = {t.name.lower().strip(): t.id for t in topics}

@@ -80,15 +80,23 @@ class User(Base):
     documents = relationship("Document", back_populates="user", cascade="all, delete-orphan")
     chunks = relationship("Chunk", back_populates="user", cascade="all, delete-orphan")
     llm_usage = relationship("LLMUsage", back_populates="user", cascade="all, delete-orphan")
-    guardrail_events = relationship("GuardrailEvent", back_populates="user", cascade="all, delete-orphan")
+    guardrail_events = relationship(
+        "GuardrailEvent", back_populates="user", cascade="all, delete-orphan"
+    )
     attempts = relationship("Attempt", back_populates="user", cascade="all, delete-orphan")
     masteries = relationship("Mastery", back_populates="user", cascade="all, delete-orphan")
     roadmap_items = relationship("RoadmapItem", back_populates="user", cascade="all, delete-orphan")
     chat_threads = relationship("ChatThread", back_populates="user", cascade="all, delete-orphan")
-    chat_messages = relationship("ChatMessageRecord", back_populates="user", cascade="all, delete-orphan")
-    study_sessions = relationship("StudySession", back_populates="user", cascade="all, delete-orphan")
+    chat_messages = relationship(
+        "ChatMessageRecord", back_populates="user", cascade="all, delete-orphan"
+    )
+    study_sessions = relationship(
+        "StudySession", back_populates="user", cascade="all, delete-orphan"
+    )
     break_events = relationship("BreakEvent", back_populates="user", cascade="all, delete-orphan")
-    buddy_state = relationship("BuddyState", back_populates="user", uselist=False, cascade="all, delete-orphan")
+    buddy_state = relationship(
+        "BuddyState", back_populates="user", uselist=False, cascade="all, delete-orphan"
+    )
 
 
 class Course(Base):
@@ -97,7 +105,9 @@ class Course(Base):
     __tablename__ = "courses"
 
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    user_id = Column(
+        Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
     name = Column(String(255), nullable=False)
     goal_days = Column(Integer, default=30, nullable=False)
     hours_per_day = Column(Float, default=1.0, nullable=False)
@@ -116,10 +126,16 @@ class Course(Base):
     questions = relationship("Question", back_populates="course", cascade="all, delete-orphan")
     attempts = relationship("Attempt", back_populates="course", cascade="all, delete-orphan")
     masteries = relationship("Mastery", back_populates="course", cascade="all, delete-orphan")
-    roadmap_items = relationship("RoadmapItem", back_populates="course", cascade="all, delete-orphan")
+    roadmap_items = relationship(
+        "RoadmapItem", back_populates="course", cascade="all, delete-orphan"
+    )
     chat_threads = relationship("ChatThread", back_populates="course", cascade="all, delete-orphan")
-    chat_messages = relationship("ChatMessageRecord", back_populates="course", cascade="all, delete-orphan")
-    study_sessions = relationship("StudySession", back_populates="course", cascade="all, delete-orphan")
+    chat_messages = relationship(
+        "ChatMessageRecord", back_populates="course", cascade="all, delete-orphan"
+    )
+    study_sessions = relationship(
+        "StudySession", back_populates="course", cascade="all, delete-orphan"
+    )
 
 
 class Document(Base):
@@ -128,8 +144,12 @@ class Document(Base):
     __tablename__ = "documents"
 
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    course_id = Column(Integer, ForeignKey("courses.id", ondelete="CASCADE"), nullable=False, index=True)
-    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    course_id = Column(
+        Integer, ForeignKey("courses.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    user_id = Column(
+        Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
     file_uri = Column(String(1024), nullable=False)
     pages = Column(Integer, nullable=True)
     pages_ocr = Column(Integer, nullable=True)
@@ -161,9 +181,11 @@ class Document(Base):
             pass
         return None
 
-    __table_args__ = (
-        Index("ix_documents_user_course", "user_id", "course_id"),
-    )
+    @property
+    def chunks_count(self) -> int:
+        return len(self.chunks) if self.chunks is not None else 0
+
+    __table_args__ = (Index("ix_documents_user_course", "user_id", "course_id"),)
 
 
 class LLMUsage(Base):
@@ -172,7 +194,9 @@ class LLMUsage(Base):
     __tablename__ = "llm_usage"
 
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    user_id = Column(
+        Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
     day = Column(Date, default=lambda: datetime.now(UTC).date(), nullable=False, index=True)
     provider = Column(String(100), nullable=False)
     model = Column(String(100), nullable=False)
@@ -183,9 +207,7 @@ class LLMUsage(Base):
     # Relationships
     user = relationship("User", back_populates="llm_usage")
 
-    __table_args__ = (
-        Index("ix_llm_usage_user_day", "user_id", "day"),
-    )
+    __table_args__ = (Index("ix_llm_usage_user_day", "user_id", "day"),)
 
 
 class GuardrailEvent(Base):
@@ -197,7 +219,9 @@ class GuardrailEvent(Base):
     __tablename__ = "guardrail_events"
 
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    user_id = Column(
+        Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
     layer = Column(String(100), nullable=False)
     rule = Column(String(100), nullable=False)
     action = Column(String(100), nullable=False)
@@ -226,9 +250,15 @@ class Chunk(Base):
     __tablename__ = "chunks"
 
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    document_id = Column(Integer, ForeignKey("documents.id", ondelete="CASCADE"), nullable=False, index=True)
-    course_id = Column(Integer, ForeignKey("courses.id", ondelete="CASCADE"), nullable=False, index=True)
-    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    document_id = Column(
+        Integer, ForeignKey("documents.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    course_id = Column(
+        Integer, ForeignKey("courses.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    user_id = Column(
+        Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
     page = Column(Integer, nullable=False, default=1)
     heading_path = Column(String(512), nullable=True)
     text = Column(Text, nullable=False)
@@ -263,9 +293,16 @@ class Topic(Base):
     __tablename__ = "topics"
 
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    course_id = Column(Integer, ForeignKey("courses.id", ondelete="CASCADE"), nullable=False, index=True)
+    course_id = Column(
+        Integer, ForeignKey("courses.id", ondelete="CASCADE"), nullable=False, index=True
+    )
     name = Column(String(255), nullable=False)
-    parent_id = Column(Integer, ForeignKey("topics.id", ondelete="SET NULL"), nullable=True, index=True)
+    parent_id = Column(
+        Integer, ForeignKey("topics.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    module_name = Column(String(255), nullable=True, index=True)
+    description = Column(Text, nullable=True)
+    learning_objective = Column(Text, nullable=True)
 
     # Relationships
     course = relationship("Course", back_populates="topics")
@@ -275,9 +312,7 @@ class Topic(Base):
     masteries = relationship("Mastery", back_populates="topic", cascade="all, delete-orphan")
     roadmap_items = relationship("RoadmapItem", back_populates="topic")
 
-    __table_args__ = (
-        Index("ix_topics_course", "course_id"),
-    )
+    __table_args__ = (Index("ix_topics_course", "course_id"),)
 
 
 class Question(Base):
@@ -286,8 +321,12 @@ class Question(Base):
     __tablename__ = "questions"
 
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    course_id = Column(Integer, ForeignKey("courses.id", ondelete="CASCADE"), nullable=False, index=True)
-    topic_id = Column(Integer, ForeignKey("topics.id", ondelete="CASCADE"), nullable=False, index=True)
+    course_id = Column(
+        Integer, ForeignKey("courses.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    topic_id = Column(
+        Integer, ForeignKey("topics.id", ondelete="CASCADE"), nullable=False, index=True
+    )
     stem = Column(Text, nullable=False)
     question_type = Column(String(50), default="mcq", nullable=False)
     options = Column(JSON, nullable=False)
@@ -306,9 +345,7 @@ class Question(Base):
     topic = relationship("Topic", back_populates="questions")
     attempts = relationship("Attempt", back_populates="question", cascade="all, delete-orphan")
 
-    __table_args__ = (
-        Index("ix_questions_course_topic", "course_id", "topic_id"),
-    )
+    __table_args__ = (Index("ix_questions_course_topic", "course_id", "topic_id"),)
 
 
 class Attempt(Base):
@@ -317,10 +354,18 @@ class Attempt(Base):
     __tablename__ = "attempts"
 
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
-    question_id = Column(Integer, ForeignKey("questions.id", ondelete="CASCADE"), nullable=False, index=True)
-    course_id = Column(Integer, ForeignKey("courses.id", ondelete="CASCADE"), nullable=False, index=True)
-    topic_id = Column(Integer, ForeignKey("topics.id", ondelete="CASCADE"), nullable=False, index=True)
+    user_id = Column(
+        Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    question_id = Column(
+        Integer, ForeignKey("questions.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    course_id = Column(
+        Integer, ForeignKey("courses.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    topic_id = Column(
+        Integer, ForeignKey("topics.id", ondelete="CASCADE"), nullable=False, index=True
+    )
     selected_answer = Column(String(255), nullable=False)
     correct = Column(Boolean, nullable=False)
     time_ms = Column(Integer, default=0, nullable=False)
@@ -348,9 +393,15 @@ class Mastery(Base):
     __tablename__ = "mastery"
 
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
-    course_id = Column(Integer, ForeignKey("courses.id", ondelete="CASCADE"), nullable=False, index=True)
-    topic_id = Column(Integer, ForeignKey("topics.id", ondelete="CASCADE"), nullable=False, index=True)
+    user_id = Column(
+        Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    course_id = Column(
+        Integer, ForeignKey("courses.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    topic_id = Column(
+        Integer, ForeignKey("topics.id", ondelete="CASCADE"), nullable=False, index=True
+    )
     score = Column(Float, default=0.0, nullable=False)
     attempts_count = Column(Integer, default=0, nullable=False)
     updated_at = Column(
@@ -377,10 +428,16 @@ class RoadmapItem(Base):
     __tablename__ = "roadmap_items"
 
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    course_id = Column(Integer, ForeignKey("courses.id", ondelete="CASCADE"), nullable=False, index=True)
-    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    course_id = Column(
+        Integer, ForeignKey("courses.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    user_id = Column(
+        Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
     day = Column(Integer, nullable=False)
-    topic_id = Column(Integer, ForeignKey("topics.id", ondelete="SET NULL"), nullable=True, index=True)
+    topic_id = Column(
+        Integer, ForeignKey("topics.id", ondelete="SET NULL"), nullable=True, index=True
+    )
     topic_name = Column(String(255), nullable=False)
     title = Column(String(255), nullable=False)
     learning_objectives = Column(JSON, nullable=False, default=list)
@@ -416,8 +473,12 @@ class ChatThread(Base):
     __tablename__ = "chat_threads"
 
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
-    course_id = Column(Integer, ForeignKey("courses.id", ondelete="CASCADE"), nullable=False, index=True)
+    user_id = Column(
+        Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    course_id = Column(
+        Integer, ForeignKey("courses.id", ondelete="CASCADE"), nullable=False, index=True
+    )
     created_at = Column(
         DateTime(timezone=True),
         default=lambda: datetime.now(UTC),
@@ -433,11 +494,11 @@ class ChatThread(Base):
     # Relationships
     user = relationship("User", back_populates="chat_threads")
     course = relationship("Course", back_populates="chat_threads")
-    messages = relationship("ChatMessageRecord", back_populates="thread", cascade="all, delete-orphan")
-
-    __table_args__ = (
-        Index("ix_chat_threads_user_course", "user_id", "course_id"),
+    messages = relationship(
+        "ChatMessageRecord", back_populates="thread", cascade="all, delete-orphan"
     )
+
+    __table_args__ = (Index("ix_chat_threads_user_course", "user_id", "course_id"),)
 
 
 class ChatMessageRecord(Base):
@@ -446,9 +507,15 @@ class ChatMessageRecord(Base):
     __tablename__ = "chat_messages"
 
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    thread_id = Column(Integer, ForeignKey("chat_threads.id", ondelete="CASCADE"), nullable=False, index=True)
-    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
-    course_id = Column(Integer, ForeignKey("courses.id", ondelete="CASCADE"), nullable=False, index=True)
+    thread_id = Column(
+        Integer, ForeignKey("chat_threads.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    user_id = Column(
+        Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    course_id = Column(
+        Integer, ForeignKey("courses.id", ondelete="CASCADE"), nullable=False, index=True
+    )
     role = Column(String(50), nullable=False)  # "user" or "assistant"
     content = Column(Text, nullable=False)
     citations = Column(JSON, nullable=False, default=list)
@@ -477,8 +544,12 @@ class StudySession(Base):
     __tablename__ = "study_sessions"
 
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
-    course_id = Column(Integer, ForeignKey("courses.id", ondelete="CASCADE"), nullable=False, index=True)
+    user_id = Column(
+        Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    course_id = Column(
+        Integer, ForeignKey("courses.id", ondelete="CASCADE"), nullable=False, index=True
+    )
     started_at = Column(
         DateTime(timezone=True),
         default=lambda: datetime.now(UTC),
@@ -492,11 +563,11 @@ class StudySession(Base):
     # Relationships
     user = relationship("User", back_populates="study_sessions")
     course = relationship("Course", back_populates="study_sessions")
-    break_events = relationship("BreakEvent", back_populates="session", cascade="all, delete-orphan")
-
-    __table_args__ = (
-        Index("ix_study_sessions_user_course", "user_id", "course_id"),
+    break_events = relationship(
+        "BreakEvent", back_populates="session", cascade="all, delete-orphan"
     )
+
+    __table_args__ = (Index("ix_study_sessions_user_course", "user_id", "course_id"),)
 
 
 class BreakEvent(Base):
@@ -505,8 +576,12 @@ class BreakEvent(Base):
     __tablename__ = "break_events"
 
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    session_id = Column(Integer, ForeignKey("study_sessions.id", ondelete="CASCADE"), nullable=False, index=True)
-    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    session_id = Column(
+        Integer, ForeignKey("study_sessions.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    user_id = Column(
+        Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
     break_type = Column(String(50), nullable=False)
     outcome = Column(String(50), nullable=False)  # "accepted" | "dismissed" | "ignored"
     cooldown_at_time_s = Column(Integer, nullable=False)
@@ -532,7 +607,9 @@ class BuddyState(Base):
     __tablename__ = "buddy_state"
 
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), unique=True, nullable=False, index=True)
+    user_id = Column(
+        Integer, ForeignKey("users.id", ondelete="CASCADE"), unique=True, nullable=False, index=True
+    )
     persona_pack = Column(String(50), default="tanglish", nullable=False)
     tone_mode = Column(String(50), default="balanced", nullable=False)
     address_term = Column(String(50), default="boss", nullable=False)
@@ -548,8 +625,4 @@ class BuddyState(Base):
     # Relationships
     user = relationship("User", back_populates="buddy_state")
 
-    __table_args__ = (
-        Index("ix_buddy_state_user", "user_id"),
-    )
-
-
+    __table_args__ = (Index("ix_buddy_state_user", "user_id"),)

@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 
 from app.ai.harness.exceptions import AuthenticationError
 from app.ai.tutor.graph import tutor_app
-from app.api.schemas import ChatHistoryResponse, ChatMessageItem
+from app.api.schemas import ChatHistoryResponse, ChatMessageItem, SourceReference
 from app.buddy.tone import ToneContext
 from app.core.auth import get_current_user
 from app.db.models import ChatMessageRecord, ChatThread, Course, User
@@ -35,9 +35,12 @@ class ChatResponse(BaseModel):
     """Response returned by the tutor."""
 
     reply: str
+    clean_answer: str | None = None
+    sources: list[SourceReference] = Field(default_factory=list)
     citations: list[str] = Field(default_factory=list)
     tone: str = "patient"
     is_sufficient: bool = True
+    grounding_status: str = "grounded"
 
 
 @router.get("/history", response_model=ChatHistoryResponse)
@@ -51,9 +54,7 @@ def get_chat_history(
     Strictly scoped to the authenticated user and course ID at the SQL level.
     """
     course = (
-        db.query(Course)
-        .filter(Course.id == course_id, Course.user_id == current_user.id)
-        .first()
+        db.query(Course).filter(Course.id == course_id, Course.user_id == current_user.id).first()
     )
     if not course:
         raise HTTPException(
@@ -94,9 +95,7 @@ def clear_chat_history(
     Strictly scoped to the authenticated user and course ID at the SQL level.
     """
     course = (
-        db.query(Course)
-        .filter(Course.id == course_id, Course.user_id == current_user.id)
-        .first()
+        db.query(Course).filter(Course.id == course_id, Course.user_id == current_user.id).first()
     )
     if not course:
         raise HTTPException(
@@ -129,9 +128,7 @@ async def chat_with_tutor(
     """
     # 1. Enforce course ownership at the SQL level
     course = (
-        db.query(Course)
-        .filter(Course.id == course_id, Course.user_id == current_user.id)
-        .first()
+        db.query(Course).filter(Course.id == course_id, Course.user_id == current_user.id).first()
     )
     if not course:
         raise HTTPException(
@@ -207,7 +204,11 @@ async def chat_with_tutor(
         ) from exc
 
     reply_text = result.get("final_reply", "")
+    clean_ans = result.get("clean_answer", reply_text)
     citations_list = result.get("citations", [])
+    raw_sources = result.get("sources", [])
+    grounding_status = result.get("grounding_status", "grounded")
+    sources_list = [SourceReference(**s) if isinstance(s, dict) else s for s in raw_sources]
     tone_str = result.get("tone", "patient")
     is_sufficient_bool = result.get("is_sufficient", True)
 
@@ -228,8 +229,10 @@ async def chat_with_tutor(
 
     return ChatResponse(
         reply=reply_text,
+        clean_answer=clean_ans,
+        sources=sources_list,
         citations=citations_list,
         tone=tone_str,
         is_sufficient=is_sufficient_bool,
+        grounding_status=grounding_status,
     )
-

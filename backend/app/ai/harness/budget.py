@@ -87,7 +87,7 @@ class RequestBudget:
             resolved_out = max(25, completion_chars // 4) if completion_chars > 0 else 25
 
         self.calls_used += calls
-        self.tokens_used += (resolved_in + resolved_out)
+        self.tokens_used += resolved_in + resolved_out
         self.tool_rounds_used += tool_rounds
 
         if self.tokens_used > self.max_tokens:

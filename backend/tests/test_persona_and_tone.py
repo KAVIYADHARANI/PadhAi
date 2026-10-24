@@ -60,16 +60,28 @@ from app.persona.prompt_builder import (
         ),
         # 7. Returning after gap (>24h / 1440 mins) & not yet teased -> Playful
         (
-            ToneContext(minutes_since_last_session=1500.0, teased_this_session=False, user_tone_setting="balanced"),
+            ToneContext(
+                minutes_since_last_session=1500.0,
+                teased_this_session=False,
+                user_tone_setting="balanced",
+            ),
             "playful",
         ),
         (
-            ToneContext(minutes_since_last_session=2880.0, teased_this_session=False, user_tone_setting="full"),
+            ToneContext(
+                minutes_since_last_session=2880.0,
+                teased_this_session=False,
+                user_tone_setting="full",
+            ),
             "playful",
         ),
         # 8. Returning after gap, but already teased this session -> Max one tease per session enforced
         (
-            ToneContext(minutes_since_last_session=1500.0, teased_this_session=True, user_tone_setting="balanced"),
+            ToneContext(
+                minutes_since_last_session=1500.0,
+                teased_this_session=True,
+                user_tone_setting="balanced",
+            ),
             "patient",
         ),
         # 9. Normal default study session -> Patient
@@ -92,7 +104,12 @@ def test_seed_lines_bank_loaded():
 
     for line in pack.lines:
         assert line.id
-        assert line.trigger in {"struggling_topic", "low_quiz_score", "mastery_gained", "long_unbroken_study"}
+        assert line.trigger in {
+            "struggling_topic",
+            "low_quiz_score",
+            "mastery_gained",
+            "long_unbroken_study",
+        }
         assert line.tone in {"patient", "hype", "friendly_checkin"}
         assert line.reviewed_by == "pending"
         assert line.text

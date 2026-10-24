@@ -24,7 +24,9 @@ def fake_llm():
 
 @pytest.mark.asyncio
 async def test_structured_call_valid_json(fake_llm):
-    fake_llm.add_response('{"summary": "Physics notes", "confidence": 0.95, "tags": ["physics", "waves"]}')
+    fake_llm.add_response(
+        '{"summary": "Physics notes", "confidence": 0.95, "tags": ["physics", "waves"]}'
+    )
     gateway = LLMGateway(caller=fake_llm.complete, base_backoff_s=0.0)
     structured = StructuredCall(gateway=gateway)
 
@@ -67,7 +69,9 @@ async def test_structured_call_retries_on_invalid_output_then_succeeds(fake_llm)
     # Attempt 0 returns invalid JSON (missing required 'summary' and wrong type for confidence)
     fake_llm.add_response('{"confidence": "not-a-number"}')
     # Attempt 1 returns valid JSON
-    fake_llm.add_response('{"summary": "Recovered summary", "confidence": 0.9, "tags": ["repaired"]}')
+    fake_llm.add_response(
+        '{"summary": "Recovered summary", "confidence": 0.9, "tags": ["repaired"]}'
+    )
 
     gateway = LLMGateway(caller=fake_llm.complete, base_backoff_s=0.0)
     structured = StructuredCall(gateway=gateway)
@@ -88,8 +92,10 @@ async def test_structured_call_retries_on_invalid_output_then_succeeds(fake_llm)
 async def test_structured_call_raises_after_max_retries_exhausted(fake_llm):
     # Enqueue invalid JSON across initial attempt + 2 retries (total 3 attempts)
     fake_llm.add_response('{"invalid": true}')
-    fake_llm.add_response('not even json')
-    fake_llm.add_response('{"summary": 123, "confidence": 5.0}')  # confidence > 1.0 violates Field constraint
+    fake_llm.add_response("not even json")
+    fake_llm.add_response(
+        '{"summary": 123, "confidence": 5.0}'
+    )  # confidence > 1.0 violates Field constraint
 
     gateway = LLMGateway(caller=fake_llm.complete, base_backoff_s=0.0)
     structured = StructuredCall(gateway=gateway)

@@ -26,7 +26,9 @@ def test_start_study_session_and_course_ownership(
     assert data["ended_at"] is None
 
     # 3. Cross-user course protection (user 2 cannot start session on user 1's course)
-    res_forbidden = client.post("/api/sessions", json={"course_id": course["id"]}, headers=auth_headers_user2)
+    res_forbidden = client.post(
+        "/api/sessions", json={"course_id": course["id"]}, headers=auth_headers_user2
+    )
     assert res_forbidden.status_code == 404
 
 
@@ -42,7 +44,9 @@ def test_update_study_session_and_record_break_events(
     )
     course_id = course_res.json()["id"]
 
-    res_start = client.post("/api/sessions", json={"course_id": course_id}, headers=auth_headers_user1)
+    res_start = client.post(
+        "/api/sessions", json={"course_id": course_id}, headers=auth_headers_user1
+    )
     session_id = res_start.json()["id"]
 
     # Record break event
@@ -51,7 +55,9 @@ def test_update_study_session_and_record_break_events(
         "outcome": "accepted",
         "cooldown_at_time_s": 900,
     }
-    res_break = client.post(f"/api/sessions/{session_id}/breaks", json=break_payload, headers=auth_headers_user1)
+    res_break = client.post(
+        f"/api/sessions/{session_id}/breaks", json=break_payload, headers=auth_headers_user1
+    )
     assert res_break.status_code == 201
     break_data = res_break.json()
     assert break_data["break_type"] == "pomodoro"
@@ -64,7 +70,9 @@ def test_update_study_session_and_record_break_events(
         "drowsy_minutes": 2.5,
         "ended": True,
     }
-    res_update = client.patch(f"/api/sessions/{session_id}", json=update_payload, headers=auth_headers_user1)
+    res_update = client.patch(
+        f"/api/sessions/{session_id}", json=update_payload, headers=auth_headers_user1
+    )
     assert res_update.status_code == 200
     update_data = res_update.json()
     assert update_data["pomodoros"] == 2

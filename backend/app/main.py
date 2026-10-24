@@ -54,5 +54,3 @@ app.include_router(api_progress.router)
 app.include_router(api_roadmap.router)
 app.include_router(api_sessions.router)
 app.include_router(api_buddy.router)
-
-

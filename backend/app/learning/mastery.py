@@ -66,7 +66,11 @@ def mastery_score(
         # Calculate effective days ago
         if att.timestamp is not None:
             # Normalize naive datetimes to UTC if necessary
-            ts = att.timestamp if att.timestamp.tzinfo is not None else att.timestamp.replace(tzinfo=UTC)
+            ts = (
+                att.timestamp
+                if att.timestamp.tzinfo is not None
+                else att.timestamp.replace(tzinfo=UTC)
+            )
             delta = (ref_now - ts).total_seconds()
             effective_days_ago = max(0.0, delta / 86400.0)
         else:

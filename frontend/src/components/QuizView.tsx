@@ -43,6 +43,23 @@ export const QuizView: React.FC<QuizViewProps> = ({
   const [quizComplete, setQuizComplete] = useState(false);
   const [history, setHistory] = useState<AttemptResult[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [reprocessingTopics, setReprocessingTopics] = useState(false);
+
+  const handleReprocessTopics = async () => {
+    try {
+      setReprocessingTopics(true);
+      setError(null);
+      const updated = await api.reprocessCourseTopics(courseId);
+      setTopics(updated);
+      if (updated.length > 0) {
+        setSelectedTopicId(updated[0].id);
+      }
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to re-extract topics.");
+    } finally {
+      setReprocessingTopics(false);
+    }
+  };
 
   // Load course topics on mount
   useEffect(() => {
@@ -232,20 +249,42 @@ export const QuizView: React.FC<QuizViewProps> = ({
     );
   }
 
+
+
+  // Group topics by module
+  const groupedTopics = topics.reduce<Record<string, Topic[]>>((acc, t) => {
+    const mod = t.module_name || "General Concepts";
+    if (!acc[mod]) acc[mod] = [];
+    acc[mod].push(t);
+    return acc;
+  }, {});
+
   // Render 4: Topic Selection Screen (before quiz start)
   if (questions.length === 0) {
     return (
       <div className="glass-panel rounded-3xl p-6 sm:p-8 max-w-2xl mx-auto space-y-6">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-brand-500/10 border border-brand-500/20 text-brand-400 flex items-center justify-center">
-            <BookOpen className="w-5 h-5" />
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-brand-500/10 border border-brand-500/20 text-brand-400 flex items-center justify-center">
+              <BookOpen className="w-5 h-5" />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-white">Select Topic for Practice Quiz</h2>
+              <p className="text-xs text-slate-400">
+                Questions are strictly grounded in your course materials.
+              </p>
+            </div>
           </div>
-          <div>
-            <h2 className="text-xl font-bold text-white">Select Topic for Practice Quiz</h2>
-            <p className="text-xs text-slate-400">
-              Questions are strictly grounded in your course materials.
-            </p>
-          </div>
+
+          <button
+            onClick={handleReprocessTopics}
+            disabled={reprocessingTopics}
+            title="Re-extract syllabus topics from uploaded documents"
+            className="text-[11px] font-semibold text-slate-400 hover:text-brand-300 flex items-center gap-1.5 p-2 rounded-xl hover:bg-slate-800/60 transition disabled:opacity-50"
+          >
+            <RotateCcw className={`w-3.5 h-3.5 ${reprocessingTopics ? "animate-spin" : ""}`} />
+            <span>Re-extract Topics</span>
+          </button>
         </div>
 
         {error && (
@@ -255,24 +294,55 @@ export const QuizView: React.FC<QuizViewProps> = ({
           </div>
         )}
 
-        <div className="space-y-3">
-          <label className="text-xs font-semibold text-slate-300 block">Syllabus Topic</label>
-          <div className="grid grid-cols-1 gap-2 max-h-60 overflow-y-auto pr-1">
-            {topics.map((t) => (
-              <button
-                key={t.id}
-                onClick={() => setSelectedTopicId(t.id)}
-                className={`flex items-center justify-between p-3.5 rounded-xl text-left text-xs transition border ${
-                  selectedTopicId === t.id
-                    ? "bg-brand-500/15 border-brand-500/40 text-white font-bold"
-                    : "bg-slate-900/40 hover:bg-slate-800/60 border-slate-800 text-slate-300 font-medium"
-                }`}
-              >
-                <span>{t.name}</span>
-                {selectedTopicId === t.id && (
-                  <CheckCircle2 className="w-4 h-4 text-brand-400 shrink-0 ml-2" />
-                )}
-              </button>
+        <div className="space-y-4">
+          <label className="text-xs font-semibold text-slate-300 block">Syllabus Curriculum Modules</label>
+          <div className="space-y-4 max-h-[360px] overflow-y-auto pr-1">
+            {Object.entries(groupedTopics).map(([moduleName, moduleTopics]) => (
+              <div key={moduleName} className="space-y-2">
+                <div className="flex items-center gap-2 px-1">
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-brand-400">
+                    {moduleName}
+                  </span>
+                  <div className="h-px bg-slate-800 flex-1" />
+                </div>
+
+                <div className="grid grid-cols-1 gap-2">
+                  {moduleTopics.map((t) => {
+                    const isSelected = selectedTopicId === t.id;
+                    const pagesText = t.pages && t.pages.length > 0 ? ` • Pages ${t.pages.join(", ")}` : "";
+                    const chunkText = t.chunks_count ? `${t.chunks_count} source sections` : "1 section";
+
+                    return (
+                      <button
+                        key={t.id}
+                        onClick={() => setSelectedTopicId(t.id)}
+                        className={`p-3.5 rounded-xl text-left text-xs transition border flex flex-col gap-1.5 ${
+                          isSelected
+                            ? "bg-brand-500/15 border-brand-500/40 text-white shadow-md shadow-brand-500/10"
+                            : "bg-slate-900/40 hover:bg-slate-800/60 border-slate-800 text-slate-300"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between w-full">
+                          <span className="font-bold text-slate-100 text-sm">{t.name}</span>
+                          {isSelected && (
+                            <CheckCircle2 className="w-4 h-4 text-brand-400 shrink-0 ml-2" />
+                          )}
+                        </div>
+
+                        {t.learning_objective && (
+                          <p className="text-[11px] text-slate-400 leading-relaxed font-normal">
+                            {t.learning_objective}
+                          </p>
+                        )}
+
+                        <div className="flex items-center gap-2 text-[10px] text-slate-500 font-mono mt-0.5">
+                          <span>{chunkText}{pagesText}</span>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
             ))}
           </div>
         </div>

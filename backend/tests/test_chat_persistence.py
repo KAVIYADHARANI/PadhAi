@@ -22,7 +22,9 @@ def chat_user(db_session):
 
 @pytest.fixture
 def other_chat_user(db_session):
-    user = User(firebase_uid="uid_chat_2", email="chat2@example.com", display_name="Other Chat User")
+    user = User(
+        firebase_uid="uid_chat_2", email="chat2@example.com", display_name="Other Chat User"
+    )
     db_session.add(user)
     db_session.commit()
     db_session.refresh(user)
@@ -43,9 +45,7 @@ def chat_course(db_session, chat_user):
     return course
 
 
-def test_chat_persistence_and_history_lifecycle(
-    client, chat_user, other_chat_user, chat_course
-):
+def test_chat_persistence_and_history_lifecycle(client, chat_user, other_chat_user, chat_course):
     """Verifies that chat conversations are persisted to DB, retrievable, clearable, and isolated."""
     app.dependency_overrides[get_current_user] = lambda: chat_user
 
@@ -65,7 +65,9 @@ def test_chat_persistence_and_history_lifecycle(
             "is_sufficient": True,
         }
 
-        with patch("app.api.chat.tutor_app.ainvoke", new=AsyncMock(return_value=mock_pipeline_result)):
+        with patch(
+            "app.api.chat.tutor_app.ainvoke", new=AsyncMock(return_value=mock_pipeline_result)
+        ):
             post_res = client.post(
                 f"/api/courses/{chat_course.id}/chat",
                 json={"message": "What is virtual memory?"},

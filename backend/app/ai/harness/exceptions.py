@@ -84,4 +84,3 @@ class AuthenticationError(HarnessError):
 
     def __init__(self, message: str = "Invalid or missing LLM provider API credentials"):
         super().__init__(message, error_code="AUTHENTICATION_ERROR")
-

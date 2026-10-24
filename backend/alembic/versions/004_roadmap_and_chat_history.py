@@ -5,9 +5,11 @@ Revises: 003_phase3_quizzes_and_mastery
 Create Date: 2026-10-25 01:00:00.000000
 
 """
+
 from collections.abc import Sequence
 
 import sqlalchemy as sa
+
 from alembic import op
 
 # revision identifiers, used by Alembic.
@@ -53,8 +55,12 @@ def upgrade() -> None:
     op.create_index("ix_roadmap_items_course_id", "roadmap_items", ["course_id"], unique=False)
     op.create_index("ix_roadmap_items_user_id", "roadmap_items", ["user_id"], unique=False)
     op.create_index("ix_roadmap_items_topic_id", "roadmap_items", ["topic_id"], unique=False)
-    op.create_index("ix_roadmap_items_user_course", "roadmap_items", ["user_id", "course_id"], unique=False)
-    op.create_index("ix_roadmap_items_course_day", "roadmap_items", ["course_id", "day"], unique=False)
+    op.create_index(
+        "ix_roadmap_items_user_course", "roadmap_items", ["user_id", "course_id"], unique=False
+    )
+    op.create_index(
+        "ix_roadmap_items_course_day", "roadmap_items", ["course_id", "day"], unique=False
+    )
 
     # 2. Chat threads
     op.create_table(
@@ -81,7 +87,9 @@ def upgrade() -> None:
     op.create_index("ix_chat_threads_id", "chat_threads", ["id"], unique=False)
     op.create_index("ix_chat_threads_user_id", "chat_threads", ["user_id"], unique=False)
     op.create_index("ix_chat_threads_course_id", "chat_threads", ["course_id"], unique=False)
-    op.create_index("ix_chat_threads_user_course", "chat_threads", ["user_id", "course_id"], unique=False)
+    op.create_index(
+        "ix_chat_threads_user_course", "chat_threads", ["user_id", "course_id"], unique=False
+    )
 
     # 3. Chat messages
     op.create_table(
@@ -111,7 +119,9 @@ def upgrade() -> None:
     op.create_index("ix_chat_messages_user_id", "chat_messages", ["user_id"], unique=False)
     op.create_index("ix_chat_messages_course_id", "chat_messages", ["course_id"], unique=False)
     op.create_index("ix_chat_messages_thread", "chat_messages", ["thread_id"], unique=False)
-    op.create_index("ix_chat_messages_user_course", "chat_messages", ["user_id", "course_id"], unique=False)
+    op.create_index(
+        "ix_chat_messages_user_course", "chat_messages", ["user_id", "course_id"], unique=False
+    )
 
 
 def downgrade() -> None:

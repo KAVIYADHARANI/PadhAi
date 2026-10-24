@@ -145,7 +145,7 @@ async def submit_attempt(
         )
 
     # 3. Deterministic grading
-    is_correct = (payload.selected_answer.strip().lower() == question.answer.strip().lower())
+    is_correct = payload.selected_answer.strip().lower() == question.answer.strip().lower()
 
     # 4. Save attempt
     attempt = Attempt(

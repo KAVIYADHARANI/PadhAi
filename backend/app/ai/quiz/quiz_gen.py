@@ -32,11 +32,25 @@ class GeneratedQuestion(BaseModel):
     """Pydantic schema for a single generated question."""
 
     stem: str = Field(..., description="Neutral question stem testing student understanding.")
-    options: list[str] = Field(..., min_length=2, max_length=6, description="Multiple-choice options.")
-    answer: str = Field(..., description="The correct answer string, must be an exact match with one of the options.")
-    explanation: str = Field(..., description="Clear explanation citing evidence from source chunk(s).")
-    source_chunk_ids: list[int] = Field(..., min_length=1, description="IDs of source chunks used to ground this question.")
-    difficulty: float = Field(default=1.0, ge=0.5, le=3.0, description="Difficulty weight (1.0 easy, 1.5 medium, 2.0 hard).")
+    options: list[str] = Field(
+        ..., min_length=2, max_length=6, description="Multiple-choice options."
+    )
+    answer: str = Field(
+        ...,
+        description="The correct answer string, must be an exact match with one of the options.",
+    )
+    explanation: str = Field(
+        ..., description="Clear explanation citing evidence from source chunk(s)."
+    )
+    source_chunk_ids: list[int] = Field(
+        ..., min_length=1, description="IDs of source chunks used to ground this question."
+    )
+    difficulty: float = Field(
+        default=1.0,
+        ge=0.5,
+        le=3.0,
+        description="Difficulty weight (1.0 easy, 1.5 medium, 2.0 hard).",
+    )
 
 
 class GeneratedQuiz(BaseModel):
@@ -66,17 +80,26 @@ def get_topic_chunks(
         .all()
     )
 
-    # 2. Fallback: If no topic mappings exist yet, retrieve course chunks
+    # 2. Targeted fallback: match topic name in heading_path or text
     if not chunks:
-        chunks = (
-            db.query(Chunk)
-            .filter(
-                Chunk.course_id == course_id,
-                Chunk.user_id == user_id,
+        topic = db.query(Topic).filter(Topic.id == topic_id, Topic.course_id == course_id).first()
+        if topic:
+            topic_clean = topic.name.lower()
+            course_chunks = (
+                db.query(Chunk)
+                .filter(
+                    Chunk.course_id == course_id,
+                    Chunk.user_id == user_id,
+                )
+                .all()
             )
-            .limit(limit)
-            .all()
-        )
+            matched = [
+                c
+                for c in course_chunks
+                if topic_clean in (c.heading_path or "").lower() or topic_clean in c.text.lower()
+            ]
+            if matched:
+                chunks = matched[:limit]
 
     return chunks
 
@@ -134,20 +157,12 @@ async def generate_quiz(
 ) -> list[Question]:
     """Generate or retrieve cached grounded quiz questions for a topic."""
     # Verify course ownership
-    course = (
-        db.query(Course)
-        .filter(Course.id == course_id, Course.user_id == user_id)
-        .first()
-    )
+    course = db.query(Course).filter(Course.id == course_id, Course.user_id == user_id).first()
     if not course:
         raise ValueError(f"Course {course_id} not found or access denied.")
 
     # Verify topic exists in course
-    topic = (
-        db.query(Topic)
-        .filter(Topic.id == topic_id, Topic.course_id == course_id)
-        .first()
-    )
+    topic = db.query(Topic).filter(Topic.id == topic_id, Topic.course_id == course_id).first()
     if not topic:
         raise ValueError(f"Topic {topic_id} not found in course {course_id}.")
 

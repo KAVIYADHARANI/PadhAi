@@ -124,9 +124,7 @@ class LLMGateway:
         }
 
         # Circuit breakers & rate limiters per provider
-        self.circuit_breakers: dict[str, CircuitBreaker] = {
-            p: CircuitBreaker() for p in self.chain
-        }
+        self.circuit_breakers: dict[str, CircuitBreaker] = {p: CircuitBreaker() for p in self.chain}
         self.rate_limiters: dict[str, ProviderRateLimiter] = {
             p: ProviderRateLimiter(rpm_limit=60) for p in self.chain
         }
@@ -199,8 +197,7 @@ class LLMGateway:
 
         # Only attempt providers that have an API key configured (unless using custom test caller)
         eligible_providers = [
-            p for p in self.chain
-            if self._custom_caller is not None or bool(self.get_api_key(p))
+            p for p in self.chain if self._custom_caller is not None or bool(self.get_api_key(p))
         ]
 
         if not eligible_providers:
@@ -214,9 +211,7 @@ class LLMGateway:
             rl = self.rate_limiters.setdefault(provider, ProviderRateLimiter())
 
             if not cb.is_available():
-                logger.warning(
-                    "Skipping provider '%s': circuit breaker is OPEN", provider
-                )
+                logger.warning("Skipping provider '%s': circuit breaker is OPEN", provider)
                 continue
 
             if not rl.can_call():
@@ -235,8 +230,7 @@ class LLMGateway:
                     # Jittered exponential backoff
                     backoff = min(
                         self._max_backoff_s,
-                        self._base_backoff_s * (2 ** (attempt - 1))
-                        + random.uniform(0, 0.05),
+                        self._base_backoff_s * (2 ** (attempt - 1)) + random.uniform(0, 0.05),
                     )
                     if backoff > 0:
                         await asyncio.sleep(backoff)
@@ -248,9 +242,7 @@ class LLMGateway:
                         # Use custom caller / FakeLLM
                         response = await self._custom_caller(request, provider, model)
                     else:
-                        response = await self._execute_http_call(
-                            request, provider, model
-                        )
+                        response = await self._execute_http_call(request, provider, model)
 
                     # Success!
                     cb.record_success()
@@ -349,9 +341,13 @@ class LLMGateway:
         if res.status_code == 429:
             raise RateLimitExceededError(f"Provider {provider} returned 429: {res.text}")
         if res.status_code >= 500:
-            raise ProviderUnavailableError(f"Provider {provider} returned server error {res.status_code}")
+            raise ProviderUnavailableError(
+                f"Provider {provider} returned server error {res.status_code}"
+            )
         if res.status_code != 200:
-            raise ProviderUnavailableError(f"Provider {provider} returned HTTP {res.status_code}: {res.text}")
+            raise ProviderUnavailableError(
+                f"Provider {provider} returned HTTP {res.status_code}: {res.text}"
+            )
 
         data = res.json()
         content = data["choices"][0]["message"]["content"]

@@ -72,6 +72,7 @@ def client(db_session: Session, tmp_path) -> Generator[TestClient, None, None]:
 
     # Override storage dependency to use temp directory
     test_storage = LocalStorageBackend(base_dir=str(tmp_path / "storage"))
+
     def override_get_storage():
         return test_storage
 
@@ -87,6 +88,7 @@ def client(db_session: Session, tmp_path) -> Generator[TestClient, None, None]:
 @pytest.fixture(autouse=True)
 def mock_firebase_verify():
     """Mocks Firebase Admin verify_id_token for deterministic offline authentication tests."""
+
     def fake_verify_id_token(token: str, *args, **kwargs):
         if token == "token_user_1":
             return {

@@ -5,9 +5,11 @@ Revises: 002_phase1_chunks_and_topics
 Create Date: 2026-10-25 00:30:00.000000
 
 """
+
 from collections.abc import Sequence
 
 import sqlalchemy as sa
+
 from alembic import op
 
 # revision identifiers, used by Alembic.
@@ -44,7 +46,9 @@ def upgrade() -> None:
     op.create_index("ix_questions_id", "questions", ["id"], unique=False)
     op.create_index("ix_questions_course_id", "questions", ["course_id"], unique=False)
     op.create_index("ix_questions_topic_id", "questions", ["topic_id"], unique=False)
-    op.create_index("ix_questions_course_topic", "questions", ["course_id", "topic_id"], unique=False)
+    op.create_index(
+        "ix_questions_course_topic", "questions", ["course_id", "topic_id"], unique=False
+    )
 
     # 2. Attempts table
     op.create_table(

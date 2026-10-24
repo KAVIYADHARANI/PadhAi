@@ -54,7 +54,10 @@ def test_tracer_rejects_smuggled_text_in_categorical_fields():
     # Attempting to sneak a 500-char prompt or message into categorical 'agent' field
     fake_prompt = "Explain this long document " * 20
 
-    with pytest.raises(ValueError, match="Privacy violation: string field 'agent' exceeds allowable categorical length"):
+    with pytest.raises(
+        ValueError,
+        match="Privacy violation: string field 'agent' exceeds allowable categorical length",
+    ):
         tracer.record(
             request_id="req-1",
             user_id=1,

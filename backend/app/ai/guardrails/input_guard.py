@@ -15,13 +15,17 @@ from dataclasses import dataclass, field
 MAX_MESSAGE_LENGTH = 2000
 
 DISTRESS_PATTERNS = [
-    re.compile(r"\b(suicide|kill myself|end my life|want to die|hurt myself|self[- ]harm)\b", re.IGNORECASE),
+    re.compile(
+        r"\b(suicide|kill myself|end my life|want to die|hurt myself|self[- ]harm)\b", re.IGNORECASE
+    ),
     re.compile(r"\b(can't go on|hopeless|depressed|end it all)\b", re.IGNORECASE),
 ]
 
 INJECTION_PATTERNS = [
     re.compile(r"ignore\s+(all\s+)?(previous|prior|above)\s+instructions?", re.IGNORECASE),
-    re.compile(r"(reveal|print|show|dump)\s+(your\s+)?(system\s+prompt|instructions)", re.IGNORECASE),
+    re.compile(
+        r"(reveal|print|show|dump)\s+(your\s+)?(system\s+prompt|instructions)", re.IGNORECASE
+    ),
     re.compile(r"\b(jailbreak|dan\s+mode|developer\s+mode)\b", re.IGNORECASE),
     re.compile(r"\byou\s+are\s+now\s+an\s+unrestricted\b", re.IGNORECASE),
     re.compile(r"<\s*/?\s*(system|instruction|prompt)\s*>", re.IGNORECASE),
@@ -66,9 +70,7 @@ def check_input_guardrails(message: str) -> InputGuardResult:
     # 1. Length check
     if len(message) > MAX_MESSAGE_LENGTH:
         result.is_blocked = True
-        result.response_override = (
-            f"Your message is too long (maximum {MAX_MESSAGE_LENGTH} characters). Please ask a more concise question."
-        )
+        result.response_override = f"Your message is too long (maximum {MAX_MESSAGE_LENGTH} characters). Please ask a more concise question."
         result.audit_records.append(
             GuardrailAuditRecord(layer="input", rule="length_limit", action="blocked_length")
         )
@@ -81,7 +83,9 @@ def check_input_guardrails(message: str) -> InputGuardResult:
             result.is_distress = True
             result.response_override = DISTRESS_SUPPORT_REPLY
             result.audit_records.append(
-                GuardrailAuditRecord(layer="wellbeing", rule="distress_detector", action="routed_support")
+                GuardrailAuditRecord(
+                    layer="wellbeing", rule="distress_detector", action="routed_support"
+                )
             )
             return result
 
@@ -90,7 +94,9 @@ def check_input_guardrails(message: str) -> InputGuardResult:
         if pattern.search(message):
             result.injection_flag = True
             result.audit_records.append(
-                GuardrailAuditRecord(layer="input", rule="injection_heuristic", action="flagged_injection")
+                GuardrailAuditRecord(
+                    layer="input", rule="injection_heuristic", action="flagged_injection"
+                )
             )
             break
 

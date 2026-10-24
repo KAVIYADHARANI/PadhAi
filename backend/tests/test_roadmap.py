@@ -18,7 +18,9 @@ from app.main import app
 
 @pytest.fixture
 def test_user(db_session):
-    user = User(firebase_uid="uid_roadmap_1", email="user1@example.com", display_name="Roadmap User")
+    user = User(
+        firebase_uid="uid_roadmap_1", email="user1@example.com", display_name="Roadmap User"
+    )
     db_session.add(user)
     db_session.commit()
     db_session.refresh(user)

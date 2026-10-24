@@ -12,9 +12,11 @@ import pytest
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def _reset_firebase():
     """Clear the Firebase Admin app registry so initialize_firebase() re-runs."""
     import firebase_admin
+
     # Copy list first to avoid mutating during iteration
     for app_name in list(firebase_admin._apps.keys()):
         firebase_admin.delete_app(firebase_admin.get_app(app_name))
@@ -23,6 +25,7 @@ def _reset_firebase():
 # ---------------------------------------------------------------------------
 # initialize_firebase() – configuration and credential path tests
 # ---------------------------------------------------------------------------
+
 
 class TestInitializeFirebase:
     """Unit tests for the initialize_firebase() function."""
@@ -36,13 +39,17 @@ class TestInitializeFirebase:
     def test_emulator_mode_sets_env_var_and_no_credentials(self, monkeypatch):
         """Emulator path must set FIREBASE_AUTH_EMULATOR_HOST env-var and call
         initialize_app with no credential argument."""
-        monkeypatch.setattr("app.core.config.settings.FIREBASE_AUTH_EMULATOR_HOST", "localhost:9099")
+        monkeypatch.setattr(
+            "app.core.config.settings.FIREBASE_AUTH_EMULATOR_HOST", "localhost:9099"
+        )
         monkeypatch.setattr("app.core.config.settings.FIREBASE_PROJECT_ID", "demo-padhai")
         monkeypatch.setattr("app.core.config.settings.GOOGLE_APPLICATION_CREDENTIALS", None)
 
         import os
+
         with patch("firebase_admin.initialize_app") as mock_init:
             from app.core import auth
+
             auth.initialize_firebase()
 
         mock_init.assert_called_once_with(options={"projectId": "demo-padhai"})
@@ -50,12 +57,17 @@ class TestInitializeFirebase:
 
     def test_emulator_mode_does_not_use_certificate(self, monkeypatch):
         """Emulator path must NOT call credentials.Certificate."""
-        monkeypatch.setattr("app.core.config.settings.FIREBASE_AUTH_EMULATOR_HOST", "localhost:9099")
+        monkeypatch.setattr(
+            "app.core.config.settings.FIREBASE_AUTH_EMULATOR_HOST", "localhost:9099"
+        )
         monkeypatch.setattr("app.core.config.settings.GOOGLE_APPLICATION_CREDENTIALS", None)
 
-        with patch("firebase_admin.initialize_app"), \
-             patch("firebase_admin.credentials.Certificate") as mock_cert:
+        with (
+            patch("firebase_admin.initialize_app"),
+            patch("firebase_admin.credentials.Certificate") as mock_cert,
+        ):
             from app.core import auth
+
             auth.initialize_firebase()
 
         mock_cert.assert_not_called()
@@ -74,9 +86,12 @@ class TestInitializeFirebase:
         monkeypatch.setattr("app.core.config.settings.FIREBASE_PROJECT_ID", "padhai-a5585")
 
         fake_cred = MagicMock()
-        with patch("firebase_admin.credentials.Certificate", return_value=fake_cred) as mock_cert, \
-             patch("firebase_admin.initialize_app") as mock_init:
+        with (
+            patch("firebase_admin.credentials.Certificate", return_value=fake_cred) as mock_cert,
+            patch("firebase_admin.initialize_app") as mock_init,
+        ):
             from app.core import auth
+
             auth.initialize_firebase()
 
         mock_cert.assert_called_once_with(str(key_file))
@@ -92,6 +107,7 @@ class TestInitializeFirebase:
         )
 
         from app.core import auth
+
         with pytest.raises(RuntimeError, match="does not exist"):
             auth.initialize_firebase()
 
@@ -104,6 +120,7 @@ class TestInitializeFirebase:
 
         with patch("firebase_admin.initialize_app") as mock_init:
             from app.core import auth
+
             auth.initialize_firebase()
 
         mock_init.assert_called_once_with(options={"projectId": "padhai-a5585"})
@@ -116,6 +133,7 @@ class TestInitializeFirebase:
 
         with patch("firebase_admin.initialize_app", side_effect=Exception("ADC failed")):
             from app.core import auth
+
             with pytest.raises(RuntimeError) as exc_info:
                 auth.initialize_firebase()
 
@@ -132,9 +150,12 @@ class TestInitializeFirebase:
         monkeypatch.setattr("app.core.config.settings.GOOGLE_APPLICATION_CREDENTIALS", None)
 
         fake_app = MagicMock()
-        with patch.dict("firebase_admin._apps", {"[DEFAULT]": fake_app}), \
-             patch("firebase_admin.initialize_app") as mock_init:
+        with (
+            patch.dict("firebase_admin._apps", {"[DEFAULT]": fake_app}),
+            patch("firebase_admin.initialize_app") as mock_init,
+        ):
             from app.core import auth
+
             auth.initialize_firebase()
 
         mock_init.assert_not_called()
@@ -148,6 +169,7 @@ class TestInitializeFirebase:
 
         with patch("firebase_admin.initialize_app") as mock_init:
             from app.core import auth
+
             auth.initialize_firebase()
 
         call_args = mock_init.call_args
@@ -159,6 +181,7 @@ class TestInitializeFirebase:
 # ---------------------------------------------------------------------------
 # get_current_user() – HTTP dependency tests (uses the conftest mocks)
 # ---------------------------------------------------------------------------
+
 
 def test_unauthenticated_request_returns_401(client):
     """Requests without Authorization header must be rejected with 401."""

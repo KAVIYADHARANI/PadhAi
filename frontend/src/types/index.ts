@@ -33,6 +33,8 @@ export interface Document {
   pages_ocr?: number | null;
   ocr_avg_conf?: number | null;
   error?: string | null;
+  chunks_count?: number;
+  is_indexed?: boolean;
   created_at: string;
 }
 
@@ -45,6 +47,11 @@ export interface Topic {
   course_id: number;
   name: string;
   parent_id?: number | null;
+  module_name?: string | null;
+  description?: string | null;
+  learning_objective?: string | null;
+  chunks_count?: number;
+  pages?: number[];
 }
 
 export interface QuizQuestion {
@@ -128,13 +135,24 @@ export interface RoadmapProgress {
   items: RoadmapItem[];
 }
 
+export interface SourceReference {
+  document_id: number;
+  document_name: string;
+  page: number;
+  chunk_id?: number | null;
+  heading?: string | null;
+}
+
 export interface ChatMessage {
   id?: number;
   role: "user" | "assistant";
   content: string;
+  clean_answer?: string;
+  sources?: SourceReference[];
   citations?: string[];
   tone?: string | null;
   is_sufficient?: boolean;
+  grounding_status?: string;
   created_at?: string;
 }
 
@@ -146,9 +164,12 @@ export interface ChatHistoryResponse {
 
 export interface ChatReplyResponse {
   reply: string;
+  clean_answer?: string;
+  sources?: SourceReference[];
   citations: string[];
   tone: string;
   is_sufficient: boolean;
+  grounding_status?: string;
 }
 
 

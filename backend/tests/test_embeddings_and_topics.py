@@ -141,9 +141,15 @@ async def test_topic_grouping_auto_recovers_missing_chunk_indices(db_session: Se
     db_session.add(doc)
     db_session.commit()
 
-    c0 = Chunk(document_id=doc.id, course_id=course.id, user_id=user.id, page=1, text="OSI Model Layer 1")
-    c1 = Chunk(document_id=doc.id, course_id=course.id, user_id=user.id, page=2, text="OSI Model Layer 2")
-    c2 = Chunk(document_id=doc.id, course_id=course.id, user_id=user.id, page=3, text="Routing protocols")
+    c0 = Chunk(
+        document_id=doc.id, course_id=course.id, user_id=user.id, page=1, text="OSI Model Layer 1"
+    )
+    c1 = Chunk(
+        document_id=doc.id, course_id=course.id, user_id=user.id, page=2, text="OSI Model Layer 2"
+    )
+    c2 = Chunk(
+        document_id=doc.id, course_id=course.id, user_id=user.id, page=3, text="Routing protocols"
+    )
     db_session.add_all([c0, c1, c2])
     db_session.commit()
 
@@ -184,7 +190,9 @@ async def test_topic_grouping_auto_recovers_missing_chunk_indices(db_session: Se
 # ---------------------------------------------------------------------------
 
 
-async def test_full_worker_pipeline_saves_embeddings_and_topics(db_session: Session, tmp_path: Path):
+async def test_full_worker_pipeline_saves_embeddings_and_topics(
+    db_session: Session, tmp_path: Path
+):
     """End-to-end: document becomes ready with chunks containing vectors and topics mapped."""
     user = User(firebase_uid="e2e_user", email="e2e@example.com")
     db_session.add(user)

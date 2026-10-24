@@ -45,6 +45,8 @@ class DocumentResponse(BaseModel):
     ocr_avg_conf: float | None = None
     status: str
     error: str | None = None
+    chunks_count: int = 0
+    is_indexed: bool = False
     created_at: datetime
 
 
@@ -55,6 +57,11 @@ class TopicResponse(BaseModel):
     course_id: int
     name: str
     parent_id: int | None = None
+    module_name: str | None = None
+    description: str | None = None
+    learning_objective: str | None = None
+    chunks_count: int = 0
+    pages: list[int] = Field(default_factory=list)
 
 
 class QuizGenerateRequest(BaseModel):
@@ -158,6 +165,16 @@ class RoadmapItemUpdateRequest(BaseModel):
     task_completed: bool | None = None
 
 
+class SourceReference(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    document_id: int
+    document_name: str
+    page: int
+    chunk_id: int | None = None
+    heading: str | None = None
+
+
 class ChatMessageItem(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -165,8 +182,10 @@ class ChatMessageItem(BaseModel):
     role: str
     content: str
     citations: list[str] = Field(default_factory=list)
+    sources: list[SourceReference] = Field(default_factory=list)
     tone: str | None = None
     is_sufficient: bool = True
+    grounding_status: str = "grounded"
     created_at: datetime
 
 
@@ -177,6 +196,7 @@ class ChatHistoryResponse(BaseModel):
 
 
 # --- Study Sessions & Buddy State Schemas ---
+
 
 class StudySessionCreateRequest(BaseModel):
     course_id: int
@@ -236,6 +256,3 @@ class BuddySettingsUpdateRequest(BaseModel):
     address_term: str | None = None
     sensitivity: str | None = None
     camera_enabled: bool | None = None
-
-
-

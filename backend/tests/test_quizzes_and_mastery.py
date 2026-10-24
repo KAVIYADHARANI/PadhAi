@@ -201,25 +201,27 @@ async def test_quiz_generator_success_and_caching(db_session, test_user, course_
     """Quiz generator calls LLM, saves valid questions, and returns cached questions on repeat."""
     course, topic, chunk = course_with_materials
 
-    valid_response_json = json.dumps({
-        "questions": [
-            {
-                "stem": "When do data hazards occur in pipelining?",
-                "options": [
-                    "When instructions modify data in different stages",
-                    "When cache lines are invalidated",
-                    "When clock frequency drops",
-                    "When registers are powered down",
-                ],
-                "answer": "When instructions modify data in different stages",
-                "explanation": "Data hazards occur when dependent instructions modify data in different stages [chunk "
-                + str(chunk.id)
-                + "].",
-                "source_chunk_ids": [chunk.id],
-                "difficulty": 1.5,
-            }
-        ]
-    })
+    valid_response_json = json.dumps(
+        {
+            "questions": [
+                {
+                    "stem": "When do data hazards occur in pipelining?",
+                    "options": [
+                        "When instructions modify data in different stages",
+                        "When cache lines are invalidated",
+                        "When clock frequency drops",
+                        "When registers are powered down",
+                    ],
+                    "answer": "When instructions modify data in different stages",
+                    "explanation": "Data hazards occur when dependent instructions modify data in different stages [chunk "
+                    + str(chunk.id)
+                    + "].",
+                    "source_chunk_ids": [chunk.id],
+                    "difficulty": 1.5,
+                }
+            ]
+        }
+    )
 
     mock_llm_res = LLMResponse(
         content=valid_response_json,
@@ -268,23 +270,27 @@ async def test_quiz_generator_success_and_caching(db_session, test_user, course_
 
 
 @pytest.mark.asyncio
-async def test_quiz_generator_retries_and_fails_closed(db_session, test_user, course_with_materials):
+async def test_quiz_generator_retries_and_fails_closed(
+    db_session, test_user, course_with_materials
+):
     """Quiz generator retries on invalid output and fails closed if retries are exhausted."""
     course, topic, chunk = course_with_materials
 
     # LLM always returns answer not in options
-    invalid_response_json = json.dumps({
-        "questions": [
-            {
-                "stem": "Unfixable question stem",
-                "options": ["Option A", "Option B"],
-                "answer": "Option Z",  # INVALID
-                "explanation": "Invalid explanation.",
-                "source_chunk_ids": [chunk.id],
-                "difficulty": 1.0,
-            }
-        ]
-    })
+    invalid_response_json = json.dumps(
+        {
+            "questions": [
+                {
+                    "stem": "Unfixable question stem",
+                    "options": ["Option A", "Option B"],
+                    "answer": "Option Z",  # INVALID
+                    "explanation": "Invalid explanation.",
+                    "source_chunk_ids": [chunk.id],
+                    "difficulty": 1.0,
+                }
+            ]
+        }
+    )
 
     mock_llm_res = LLMResponse(
         content=invalid_response_json,
@@ -440,7 +446,11 @@ def test_scripted_history_replay_matches_expected_weak(
     unique_topics = sorted({item["topic"] for item in history_data})
     topic_map: dict[str, Topic] = {}
     for t_name in unique_topics:
-        existing_t = db_session.query(Topic).filter(Topic.course_id == course.id, Topic.name == t_name).first()
+        existing_t = (
+            db_session.query(Topic)
+            .filter(Topic.course_id == course.id, Topic.name == t_name)
+            .first()
+        )
         if not existing_t:
             existing_t = Topic(course_id=course.id, name=t_name)
             db_session.add(existing_t)

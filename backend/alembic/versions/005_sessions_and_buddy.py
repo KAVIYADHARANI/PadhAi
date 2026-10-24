@@ -5,9 +5,11 @@ Revises: 004_roadmap_and_chat_history
 Create Date: 2026-10-25 02:00:00.000000
 
 """
+
 from collections.abc import Sequence
 
 import sqlalchemy as sa
+
 from alembic import op
 
 # revision identifiers, used by Alembic (max 32 characters for alembic_version.version_num)

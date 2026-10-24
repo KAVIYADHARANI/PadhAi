@@ -25,11 +25,7 @@ def get_buddy_settings(
     db: Session = Depends(get_db),
 ) -> BuddySettingsResponse:
     """Fetch user's study companion preferences, creating default record if missing."""
-    state = (
-        db.query(BuddyState)
-        .filter(BuddyState.user_id == current_user.id)
-        .first()
-    )
+    state = db.query(BuddyState).filter(BuddyState.user_id == current_user.id).first()
     if not state:
         state = BuddyState(
             user_id=current_user.id,
@@ -54,11 +50,7 @@ def update_buddy_settings(
     db: Session = Depends(get_db),
 ) -> BuddySettingsResponse:
     """Update user's study companion preferences."""
-    state = (
-        db.query(BuddyState)
-        .filter(BuddyState.user_id == current_user.id)
-        .first()
-    )
+    state = db.query(BuddyState).filter(BuddyState.user_id == current_user.id).first()
     if not state:
         state = BuddyState(
             user_id=current_user.id,

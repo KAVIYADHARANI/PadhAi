@@ -32,7 +32,7 @@ from app.ai.harness.gateway import LLMGateway
 from app.buddy.tone import ToneContext, select_tone
 from app.db.models import GuardrailEvent
 from app.persona.prompt_builder import build_tutor_system_prompt
-from app.retrieval.search import SearchResult, hybrid_search
+from app.retrieval.search import SearchResult, broad_course_search, hybrid_search, is_broad_query
 from app.retrieval.sufficiency import check_sufficiency
 
 logger = logging.getLogger(__name__)
@@ -56,11 +56,14 @@ class TutorState(TypedDict, total=False):
     # Intermediate / Output fields
     is_blocked: bool
     is_sufficient: bool
+    grounding_status: str
     tone: str
     retrieved_chunks: list[SearchResult]
     raw_response: str
+    clean_answer: str
     final_reply: str
     citations: list[str]
+    sources: list[dict[str, Any]]
     audit_records: list[GuardrailAuditRecord]
 
 
@@ -76,8 +79,11 @@ def guard_in_node(state: TutorState) -> dict[str, Any]:
         return {
             "is_blocked": True,
             "final_reply": guard_result.response_override or "",
+            "clean_answer": guard_result.response_override or "",
             "citations": [],
+            "sources": [],
             "is_sufficient": False,
+            "grounding_status": "blocked",
             "audit_records": records,
         }
 
@@ -103,52 +109,62 @@ async def tutor_node(state: TutorState) -> dict[str, Any]:
     message = state["message"]
     records: list[GuardrailAuditRecord] = list(state.get("audit_records", []))
 
-    # 1. Scoped hybrid retrieval
-    embedder = get_embedder()
-    vectors = await embedder.embed_texts([message])
-    q_vec = vectors[0] if vectors else [0.0] * 1024
+    # 1. Scoped hybrid or broad retrieval
+    is_broad = is_broad_query(message)
+    if is_broad:
+        results = broad_course_search(
+            course_id=course_id,
+            user_id=user_id,
+            db=db,
+            limit=10,
+        )
+        sufficiency = check_sufficiency(results, is_broad=True)
+    else:
+        embedder = get_embedder()
+        vectors = await embedder.embed_texts([message])
+        q_vec = vectors[0] if vectors else [0.0] * 1024
 
-    results = hybrid_search(
-        query_text=message,
-        query_vector=q_vec,
-        course_id=course_id,
-        user_id=user_id,
-        db=db,
-        limit=5,
-    )
-    sufficiency = check_sufficiency(results)
+        results = hybrid_search(
+            query_text=message,
+            query_vector=q_vec,
+            course_id=course_id,
+            user_id=user_id,
+            db=db,
+            limit=6,
+        )
+        sufficiency = check_sufficiency(results)
 
-    # 2. If insufficient, attempt 1 query rewrite with fast model
-    if not sufficiency.is_sufficient:
-        try:
-            rewrite_prompt = (
-                f"Rewrite this student question into 2-4 keywords for textbook index search. "
-                f"Question: {message}\nKeywords:"
-            )
-            rewrite_res = await gateway.chat_completion(
-                messages=[{"role": "user", "content": rewrite_prompt}],
-                role="fast",
-                temperature=0.0,
-                max_tokens=20,
-            )
-            rewritten_query = rewrite_res.text.strip()
-            if rewritten_query:
-                vectors_r2 = await embedder.embed_texts([rewritten_query])
-                q_vec_r2 = vectors_r2[0] if vectors_r2 else q_vec
-                results_round2 = hybrid_search(
-                    query_text=rewritten_query,
-                    query_vector=q_vec_r2,
-                    course_id=course_id,
-                    user_id=user_id,
-                    db=db,
-                    limit=5,
+        # 2. If insufficient, attempt 1 query rewrite with fast model
+        if not sufficiency.is_sufficient:
+            try:
+                rewrite_prompt = (
+                    f"Rewrite this student question into 2-4 keywords for textbook index search. "
+                    f"Question: {message}\nKeywords:"
                 )
-                sufficiency_round2 = check_sufficiency(results_round2)
-                if sufficiency_round2.is_sufficient:
-                    results = results_round2
-                    sufficiency = sufficiency_round2
-        except Exception as e:
-            logger.debug("Query rewrite fallback skipped: %s", e)
+                rewrite_res = await gateway.chat_completion(
+                    messages=[{"role": "user", "content": rewrite_prompt}],
+                    role="fast",
+                    temperature=0.0,
+                    max_tokens=20,
+                )
+                rewritten_query = rewrite_res.text.strip()
+                if rewritten_query:
+                    vectors_r2 = await embedder.embed_texts([rewritten_query])
+                    q_vec_r2 = vectors_r2[0] if vectors_r2 else q_vec
+                    results_round2 = hybrid_search(
+                        query_text=rewritten_query,
+                        query_vector=q_vec_r2,
+                        course_id=course_id,
+                        user_id=user_id,
+                        db=db,
+                        limit=6,
+                    )
+                    sufficiency_round2 = check_sufficiency(results_round2)
+                    if sufficiency_round2.is_sufficient:
+                        results = results_round2
+                        sufficiency = sufficiency_round2
+            except Exception as e:
+                logger.debug("Query rewrite fallback skipped: %s", e)
 
     # 3. Gating check: fail closed without generating hallucinations
     if not sufficiency.is_sufficient:
@@ -157,8 +173,11 @@ async def tutor_node(state: TutorState) -> dict[str, Any]:
         )
         return {
             "is_sufficient": False,
+            "grounding_status": "insufficient",
             "final_reply": INSUFFICIENT_REFUSAL,
+            "clean_answer": INSUFFICIENT_REFUSAL,
             "citations": [],
+            "sources": [],
             "retrieved_chunks": results,
             "audit_records": records,
         }
@@ -168,8 +187,8 @@ async def tutor_node(state: TutorState) -> dict[str, Any]:
     for chunk in results:
         untrusted_str = "true" if chunk.injection_flag else "false"
         formatted_chunks.append(
-            f'<document_chunk id="{chunk.chunk_id}" page="{chunk.page}" '
-            f'heading="{chunk.heading_path or ""}" untrusted="{untrusted_str}">\n'
+            f'<document_chunk id="{chunk.chunk_id}" document="{chunk.document_name or ""}" '
+            f'page="{chunk.page}" heading="{chunk.heading_path or ""}" untrusted="{untrusted_str}">\n'
             f"{chunk.text}\n"
             f"</document_chunk>"
         )
@@ -187,8 +206,9 @@ async def tutor_node(state: TutorState) -> dict[str, Any]:
     user_prompt = (
         f"{context_block}\n\n"
         f"Student question: {message}\n\n"
-        f"Answer the question thoroughly and concisely using ONLY the study materials above. "
-        f"Cite every factual claim using [doc p.N]."
+        f"Answer the question thoroughly, clearly, and concisely using the study materials above. "
+        f"Do not invent facts or extrapolate beyond what is supported. "
+        f"Write in clean, natural paragraphs without inline citation brackets."
     )
 
     # 6. Call smart model
@@ -203,6 +223,7 @@ async def tutor_node(state: TutorState) -> dict[str, Any]:
 
     return {
         "is_sufficient": True,
+        "grounding_status": "grounded",
         "tone": chosen_tone,
         "retrieved_chunks": results,
         "raw_response": llm_res.text,
@@ -219,13 +240,19 @@ def guard_out_node(state: TutorState) -> dict[str, Any]:
     # If already set (refusal or blocked), keep final_reply
     if "final_reply" in state:
         final_reply = state["final_reply"]
+        clean_answer = state.get("clean_answer", final_reply)
         citations = state.get("citations", [])
+        sources = state.get("sources", [])
+        grounding_status = state.get("grounding_status", "insufficient")
     else:
         raw_reply = state.get("raw_response", "")
         chunks = state.get("retrieved_chunks", [])
         guard_res = check_output_guardrails(raw_reply, chunks)
         final_reply = guard_res.clean_reply
+        clean_answer = guard_res.clean_answer
         citations = guard_res.citations
+        sources = guard_res.sources
+        grounding_status = "grounded" if guard_res.is_grounded else "unverified"
         records.extend(guard_res.audit_records)
 
     # Persist all audit events without text
@@ -245,7 +272,10 @@ def guard_out_node(state: TutorState) -> dict[str, Any]:
 
     return {
         "final_reply": final_reply,
+        "clean_answer": clean_answer,
         "citations": citations,
+        "sources": sources,
+        "grounding_status": grounding_status,
         "audit_records": records,
     }
 

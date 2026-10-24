@@ -128,6 +128,12 @@ export const api = {
     });
   },
 
+  async reprocessDocument(courseId: number, documentId: number): Promise<Document> {
+    return request<Document>(`/api/courses/${courseId}/documents/${documentId}/reprocess`, {
+      method: "POST",
+    });
+  },
+
   async getDocument(documentId: number): Promise<Document> {
     return request<Document>(`/api/documents/${documentId}`);
   },
@@ -135,6 +141,12 @@ export const api = {
   // Topics
   async getCourseTopics(courseId: number): Promise<Topic[]> {
     return request<Topic[]>(`/api/courses/${courseId}/topics`);
+  },
+
+  async reprocessCourseTopics(courseId: number): Promise<Topic[]> {
+    return request<Topic[]>(`/api/courses/${courseId}/reprocess-topics`, {
+      method: "POST",
+    });
   },
 
   // Quizzes & Attempts

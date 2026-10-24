@@ -18,7 +18,11 @@ from app.worker.ingest_worker import process_document
 class MockOCREngine:
     """Mock OCR engine for deterministic, offline CI testing without neural weights."""
 
-    def __init__(self, text: str = "# Scanned Chapter\nLine one content.\nLow conf line.", low_conf: bool = False):
+    def __init__(
+        self,
+        text: str = "# Scanned Chapter\nLine one content.\nLow conf line.",
+        low_conf: bool = False,
+    ):
         self.text = text
         self.called = False
         self.call_count = 0
@@ -46,9 +50,11 @@ def create_minimal_text_pdf(text: str) -> bytes:
         b"1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n"
         b"2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n"
         b"3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>\nendobj\n"
-        b"4 0 obj\n<< /Length " + str(stream_len).encode("ascii") + b" >>\nstream\n"
-        + stream_content +
-        b"\nendstream\nendobj\n"
+        b"4 0 obj\n<< /Length "
+        + str(stream_len).encode("ascii")
+        + b" >>\nstream\n"
+        + stream_content
+        + b"\nendstream\nendobj\n"
         b"5 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj\n"
         b"xref\n0 6\n"
         b"0000000000 65535 f \n"
@@ -194,7 +200,9 @@ def test_chunker_preserves_headings_and_page_numbers():
 async def test_worker_processes_document_end_to_end(db_session: Session, tmp_path: Path):
     """Full lifecycle: queued -> processing -> ready, saving chunks with flags."""
     # Seed user and course
-    user = User(firebase_uid="ingest_user_uid", email="ingest@example.com", display_name="Ingest User")
+    user = User(
+        firebase_uid="ingest_user_uid", email="ingest@example.com", display_name="Ingest User"
+    )
     db_session.add(user)
     db_session.commit()
 

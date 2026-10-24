@@ -67,9 +67,7 @@ class Settings(BaseSettings):
     )
 
     # Auth (Firebase)
-    FIREBASE_PROJECT_ID: str = Field(
-        default="padhai-a5585", description="Firebase Project ID"
-    )
+    FIREBASE_PROJECT_ID: str = Field(default="padhai-a5585", description="Firebase Project ID")
     GOOGLE_APPLICATION_CREDENTIALS: str | None = Field(
         default=None,
         description=(
@@ -124,12 +122,14 @@ class Settings(BaseSettings):
     EMBED_PROVIDER: str = Field(default="", description="Hosted provider for BGE-M3")
     EMBED_MODEL: str = Field(default="BAAI/bge-m3", description="Embedding model name")
     EMBED_DIM: int = Field(default=1024, description="Vector dimension")
-    EMBEDDING_PROVIDER: str | None = Field(default=None, description="Hugging Face or custom provider name")
-    EMBEDDING_MODEL_NAME: str | None = Field(default=None, description="Hugging Face embedding model name")
-    EMBEDDING_DIMENSION: int | None = Field(default=None, description="Embedding vector dimension")
-    USE_HALFVEC: bool = Field(
-        default=True, description="Use halfvec(1024) instead of vector(1024)"
+    EMBEDDING_PROVIDER: str | None = Field(
+        default=None, description="Hugging Face or custom provider name"
     )
+    EMBEDDING_MODEL_NAME: str | None = Field(
+        default=None, description="Hugging Face embedding model name"
+    )
+    EMBEDDING_DIMENSION: int | None = Field(default=None, description="Embedding vector dimension")
+    USE_HALFVEC: bool = Field(default=True, description="Use halfvec(1024) instead of vector(1024)")
 
     @property
     def effective_embed_provider(self) -> str:
@@ -152,7 +152,9 @@ class Settings(BaseSettings):
     OCR_THREADS: int = Field(default=2, description="Worker thread count for OCR")
     OCR_MATH: bool = Field(default=False, description="Enable slower math OCR mode")
     OCR_MIN_LINE_CONF: float = Field(default=0.80, description="Minimum line confidence threshold")
-    OCR_VLM_FALLBACK: bool = Field(default=False, description="Fallback to vision LLM on low confidence")
+    OCR_VLM_FALLBACK: bool = Field(
+        default=False, description="Fallback to vision LLM on low confidence"
+    )
     MAX_UPLOAD_MB: int = Field(default=25, description="Max upload size in megabytes")
     MAX_PAGES_PER_DOC: int = Field(default=300, description="Max pages per document")
 
@@ -161,20 +163,25 @@ class Settings(BaseSettings):
         default=0.6, description="Minimum confidence for router execution"
     )
     ROUTER_CONFIRM_BELOW: float = Field(
-        default=0.8, description="Confidence threshold below which write agents require confirmation"
+        default=0.8,
+        description="Confidence threshold below which write agents require confirmation",
     )
     RETRIEVAL_MIN_SCORE: float | None = Field(
         default=None, description="Retrieval sufficiency gate score threshold"
     )
 
     # Persona
-    PERSONA_PACK: str = Field(default="tanglish", description="Active persona pack: tanglish | english")
+    PERSONA_PACK: str = Field(
+        default="tanglish", description="Active persona pack: tanglish | english"
+    )
     PERSONA_DEFAULT_TONE: str = Field(default="balanced", description="Default tone setting")
     PERSONA_ADDRESS_TERM: str = Field(default="boss", description="Default address term")
 
     # Storage Backend
     STORAGE_BACKEND: str = Field(default="local", description="Storage backend: local | s3")
-    STORAGE_LOCAL_DIR: str = Field(default="./storage", description="Local file storage root directory")
+    STORAGE_LOCAL_DIR: str = Field(
+        default="./storage", description="Local file storage root directory"
+    )
     S3_ENDPOINT_URL: str | None = Field(default=None, description="S3 / R2 endpoint URL")
     S3_BUCKET_NAME: str | None = Field(default=None, description="S3 bucket name")
     S3_ACCESS_KEY_ID: str | None = Field(default=None, description="S3 access key")

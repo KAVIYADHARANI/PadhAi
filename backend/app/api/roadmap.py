@@ -62,9 +62,7 @@ def get_course_roadmap(
     Strictly scoped to the authenticated user and course ID at the SQL level.
     """
     course = (
-        db.query(Course)
-        .filter(Course.id == course_id, Course.user_id == current_user.id)
-        .first()
+        db.query(Course).filter(Course.id == course_id, Course.user_id == current_user.id).first()
     )
     if not course:
         raise HTTPException(

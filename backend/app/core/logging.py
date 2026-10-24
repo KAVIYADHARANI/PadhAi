@@ -44,7 +44,17 @@ class SafeJsonFormatter(logging.Formatter):
                 else:
                     log_data[k] = v
 
-        for attr in ("user_id", "course_id", "document_id", "agent", "model", "provider", "latency_ms", "tokens", "status"):
+        for attr in (
+            "user_id",
+            "course_id",
+            "document_id",
+            "agent",
+            "model",
+            "provider",
+            "latency_ms",
+            "tokens",
+            "status",
+        ):
             if hasattr(record, attr):
                 log_data[attr] = getattr(record, attr)
 

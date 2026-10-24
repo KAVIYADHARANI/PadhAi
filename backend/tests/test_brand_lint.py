@@ -100,4 +100,7 @@ def test_brand_strings_only_in_allowed_files():
                     f"{rel_path}: Found {len(matches)} prohibited brand occurrence(s): {matches[:3]}"
                 )
 
-    assert not violations, "Brand lint failed! Prohibited brand names found outside allowed files:\n" + "\n".join(violations)
+    assert not violations, (
+        "Brand lint failed! Prohibited brand names found outside allowed files:\n"
+        + "\n".join(violations)
+    )

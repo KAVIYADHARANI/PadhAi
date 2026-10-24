@@ -150,7 +150,9 @@ def test_cross_course_isolation(db_session: Session, retrieval_fixture: dict):
     assert c2_u1.id not in returned_course_ids
 
 
-def test_injection_flag_and_citation_metadata_preserved(db_session: Session, retrieval_fixture: dict):
+def test_injection_flag_and_citation_metadata_preserved(
+    db_session: Session, retrieval_fixture: dict
+):
     """Ensures injection_flag, low_conf, page, and heading_path are preserved on retrieved results."""
     u1 = retrieval_fixture["u1"]
     c1_u1 = retrieval_fixture["c1_u1"]
@@ -181,7 +183,9 @@ def test_rrf_scoring_combines_dense_and_lexical(db_session: Session, retrieval_f
     dense = search_dense(query_vector=vec, course_id=c1_u1.id, user_id=u1.id, db=db_session)
     assert len(dense) >= 1
 
-    lexical = search_lexical(query_text="mitochondria ATP", course_id=c1_u1.id, user_id=u1.id, db=db_session)
+    lexical = search_lexical(
+        query_text="mitochondria ATP", course_id=c1_u1.id, user_id=u1.id, db=db_session
+    )
     assert len(lexical) >= 1
 
     fused = hybrid_search(
