@@ -5,12 +5,12 @@ from pathlib import Path
 from fastapi import APIRouter, BackgroundTasks, Depends, File, HTTPException, UploadFile, status
 from sqlalchemy.orm import Session
 
-from app.api.schemas import CourseCreate, CourseResponse, DocumentResponse
+from app.api.schemas import CourseCreate, CourseResponse, DocumentResponse, TopicResponse
 from app.core.auth import get_current_user
 from app.core.config import settings
 from app.core.logging import get_logger
 from app.core.storage import StorageBackend, get_storage
-from app.db.models import Course, Document, User
+from app.db.models import Course, Document, Topic, User
 from app.db.session import get_db
 
 logger = get_logger(__name__)
@@ -121,6 +121,27 @@ def list_course_documents(
         .all()
     )
     return [DocumentResponse.model_validate(doc) for doc in docs]
+
+
+@router.get("/{course_id}/topics", response_model=list[TopicResponse])
+def list_course_topics(
+    course_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> list[TopicResponse]:
+    """Lists all syllabus topics for a course, strictly scoped to the user."""
+    course = (
+        db.query(Course)
+        .filter(Course.id == course_id, Course.user_id == current_user.id)
+        .first()
+    )
+    if not course:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Course not found",
+        )
+    topics = db.query(Topic).filter(Topic.course_id == course_id).all()
+    return [TopicResponse.model_validate(t) for t in topics]
 
 
 @router.post("/{course_id}/documents", response_model=DocumentResponse, status_code=status.HTTP_201_CREATED)

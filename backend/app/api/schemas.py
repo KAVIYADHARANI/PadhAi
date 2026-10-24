@@ -48,6 +48,15 @@ class DocumentResponse(BaseModel):
     created_at: datetime
 
 
+class TopicResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    course_id: int
+    name: str
+    parent_id: int | None = None
+
+
 class QuizGenerateRequest(BaseModel):
     course_id: int
     topic_id: int

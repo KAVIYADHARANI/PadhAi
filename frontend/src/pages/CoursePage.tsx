@@ -1,15 +1,35 @@
-import React from "react";
-import { ArrowLeft, Calendar, Clock, BookMarked, Sparkles } from "lucide-react";
-import { Course } from "../types";
+import React, { useState } from "react";
+import {
+  ArrowLeft,
+  BarChart3,
+  BookMarked,
+  Calendar,
+  Clock,
+  HelpCircle,
+  Sparkles,
+} from "lucide-react";
 import { DocumentUpload } from "../components/DocumentUpload";
 import { MascotPlaceholder } from "../components/MascotPlaceholder";
+import { ProgressView } from "../components/ProgressView";
+import { QuizView } from "../components/QuizView";
+import { Course } from "../types";
 
 interface CoursePageProps {
   course: Course;
   onBack: () => void;
 }
 
+type CourseTab = "materials" | "quiz" | "progress";
+
 export const CoursePage: React.FC<CoursePageProps> = ({ course, onBack }) => {
+  const [activeTab, setActiveTab] = useState<CourseTab>("materials");
+  const [targetQuizTopicId, setTargetQuizTopicId] = useState<number | null>(null);
+
+  const handleStartPracticeForTopic = (topicId: number) => {
+    setTargetQuizTopicId(topicId);
+    setActiveTab("quiz");
+  };
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 animate-fadeIn">
       {/* Back button */}
@@ -63,36 +83,90 @@ export const CoursePage: React.FC<CoursePageProps> = ({ course, onBack }) => {
         </div>
       </div>
 
-      {/* Main Content Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Left 2 Cols: Document Upload and Processing Status */}
-        <div className="lg:col-span-2 space-y-6">
-          <div className="flex items-center gap-2">
-            <BookMarked className="w-4 h-4 text-brand-400" />
-            <h2 className="text-base font-bold text-white">Course Knowledge Base</h2>
-          </div>
+      {/* Navigation Tabs */}
+      <div className="flex items-center gap-2 border-b border-slate-800 pb-1">
+        <button
+          onClick={() => setActiveTab("materials")}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition border ${
+            activeTab === "materials"
+              ? "bg-brand-500/15 border-brand-500/30 text-white"
+              : "bg-transparent border-transparent text-slate-400 hover:text-slate-200"
+          }`}
+        >
+          <BookMarked className="w-4 h-4" />
+          <span>Knowledge Base</span>
+        </button>
 
-          <DocumentUpload courseId={course.id} />
-        </div>
+        <button
+          onClick={() => setActiveTab("quiz")}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition border ${
+            activeTab === "quiz"
+              ? "bg-brand-500/15 border-brand-500/30 text-white"
+              : "bg-transparent border-transparent text-slate-400 hover:text-slate-200"
+          }`}
+        >
+          <HelpCircle className="w-4 h-4" />
+          <span>Practice Quiz</span>
+        </button>
 
-        {/* Right Col: Study Companion Status */}
-        <div className="space-y-6">
-          <div className="flex items-center gap-2">
-            <Sparkles className="w-4 h-4 text-brand-400" />
-            <h2 className="text-base font-bold text-white">Companion Readiness</h2>
-          </div>
-
-          <MascotPlaceholder status="standby" />
-
-          <div className="glass-card rounded-2xl p-5 border border-slate-800/80 text-xs text-slate-400 space-y-2">
-            <h3 className="font-semibold text-white">Document Ingestion Pipeline</h3>
-            <p>
-              Once PDFs or notes are uploaded, the ingestion worker segments them into semantic chunks
-              and generates BGE-M3 vector embeddings for grounded tutor chat.
-            </p>
-          </div>
-        </div>
+        <button
+          onClick={() => setActiveTab("progress")}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition border ${
+            activeTab === "progress"
+              ? "bg-brand-500/15 border-brand-500/30 text-white"
+              : "bg-transparent border-transparent text-slate-400 hover:text-slate-200"
+          }`}
+        >
+          <BarChart3 className="w-4 h-4" />
+          <span>Mastery & Progress</span>
+        </button>
       </div>
+
+      {/* Tab Content */}
+      {activeTab === "materials" && (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="lg:col-span-2 space-y-6">
+            <div className="flex items-center gap-2">
+              <BookMarked className="w-4 h-4 text-brand-400" />
+              <h2 className="text-base font-bold text-white">Course Knowledge Base</h2>
+            </div>
+
+            <DocumentUpload courseId={course.id} />
+          </div>
+
+          <div className="space-y-6">
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-brand-400" />
+              <h2 className="text-base font-bold text-white">Companion Readiness</h2>
+            </div>
+
+            <MascotPlaceholder status="standby" />
+
+            <div className="glass-card rounded-2xl p-5 border border-slate-800/80 text-xs text-slate-400 space-y-2">
+              <h3 className="font-semibold text-white">Document Ingestion Pipeline</h3>
+              <p>
+                Once PDFs or notes are uploaded, the ingestion worker segments them into semantic chunks
+                and generates BGE-M3 vector embeddings for grounded tutor chat and interactive quizzes.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {activeTab === "quiz" && (
+        <QuizView
+          courseId={course.id}
+          initialTopicId={targetQuizTopicId}
+          onViewProgress={() => setActiveTab("progress")}
+        />
+      )}
+
+      {activeTab === "progress" && (
+        <ProgressView
+          courseId={course.id}
+          onPracticeTopic={handleStartPracticeForTopic}
+        />
+      )}
     </div>
   );
 };

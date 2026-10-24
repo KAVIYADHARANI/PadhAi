@@ -39,3 +39,60 @@ export interface Document {
 export interface ApiError {
   detail: string;
 }
+
+export interface Topic {
+  id: number;
+  course_id: number;
+  name: string;
+  parent_id?: number | null;
+}
+
+export interface QuizQuestion {
+  id: number;
+  course_id: number;
+  topic_id: number;
+  stem: string;
+  question_type: string;
+  options: string[];
+  difficulty: number;
+}
+
+export interface QuizResponse {
+  course_id: number;
+  topic_id: number;
+  questions: QuizQuestion[];
+}
+
+export interface AttemptSubmission {
+  question_id: number;
+  selected_answer: string;
+  time_ms: number;
+}
+
+export interface AttemptResult {
+  id: number;
+  question_id: number;
+  selected_answer: string;
+  correct: boolean;
+  answer: string;
+  explanation: string;
+  source_chunk_ids: number[];
+  new_mastery_score: number;
+  time_ms: number;
+  created_at: string;
+}
+
+export interface TopicMastery {
+  topic_id: number;
+  topic_name: string;
+  score: number;
+  attempts_count: number;
+  updated_at: string | null;
+}
+
+export interface CourseProgress {
+  course_id: number;
+  topics: TopicMastery[];
+  weak_topics: number[];
+}
+

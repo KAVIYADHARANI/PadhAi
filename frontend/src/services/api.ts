@@ -1,4 +1,14 @@
-import { Course, CreateCourseInput, Document, User } from "../types";
+import {
+  AttemptResult,
+  AttemptSubmission,
+  Course,
+  CourseProgress,
+  CreateCourseInput,
+  Document,
+  QuizResponse,
+  Topic,
+  User,
+} from "../types";
 import { getAuthToken } from "./firebase";
 
 const API_BASE_URL =
@@ -117,4 +127,34 @@ export const api = {
   async getDocument(documentId: number): Promise<Document> {
     return request<Document>(`/api/documents/${documentId}`);
   },
+
+  // Topics
+  async getCourseTopics(courseId: number): Promise<Topic[]> {
+    return request<Topic[]>(`/api/courses/${courseId}/topics`);
+  },
+
+  // Quizzes & Attempts
+  async generateQuiz(courseId: number, topicId: number, count = 5): Promise<QuizResponse> {
+    return request<QuizResponse>("/api/quizzes", {
+      method: "POST",
+      body: JSON.stringify({
+        course_id: courseId,
+        topic_id: topicId,
+        count,
+      }),
+    });
+  },
+
+  async submitAttempt(submission: AttemptSubmission): Promise<AttemptResult> {
+    return request<AttemptResult>("/api/attempts", {
+      method: "POST",
+      body: JSON.stringify(submission),
+    });
+  },
+
+  // Progress
+  async getCourseProgress(courseId: number): Promise<CourseProgress> {
+    return request<CourseProgress>(`/api/progress/${courseId}`);
+  },
 };
+
