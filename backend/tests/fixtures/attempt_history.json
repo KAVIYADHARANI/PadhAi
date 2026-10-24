@@ -1,0 +1,24 @@
+{
+  "attempts": [
+    {"topic": "Pipelining & Hazards", "is_correct": false, "difficulty": 2.0, "days_ago": 1.0},
+    {"topic": "Pipelining & Hazards", "is_correct": false, "difficulty": 1.5, "days_ago": 1.2},
+    {"topic": "Pipelining & Hazards", "is_correct": true, "difficulty": 1.0, "days_ago": 2.0},
+    {"topic": "Pipelining & Hazards", "is_correct": false, "difficulty": 2.0, "days_ago": 2.5},
+    {"topic": "Pipelining & Hazards", "is_correct": false, "difficulty": 1.5, "days_ago": 3.0},
+    {"topic": "Pipelining & Hazards", "is_correct": false, "difficulty": 1.0, "days_ago": 4.0},
+    {"topic": "Pipelining & Hazards", "is_correct": false, "difficulty": 2.0, "days_ago": 5.0},
+    {"topic": "Memory Hierarchy", "is_correct": true, "difficulty": 1.0, "days_ago": 0.5},
+    {"topic": "Memory Hierarchy", "is_correct": false, "difficulty": 1.5, "days_ago": 1.0},
+    {"topic": "Memory Hierarchy", "is_correct": true, "difficulty": 1.0, "days_ago": 1.5},
+    {"topic": "Memory Hierarchy", "is_correct": false, "difficulty": 2.0, "days_ago": 2.0},
+    {"topic": "Memory Hierarchy", "is_correct": false, "difficulty": 1.5, "days_ago": 3.0},
+    {"topic": "Memory Hierarchy", "is_correct": true, "difficulty": 1.0, "days_ago": 4.0},
+    {"topic": "Memory Hierarchy", "is_correct": false, "difficulty": 2.0, "days_ago": 5.0},
+    {"topic": "Instruction Set Architecture", "is_correct": true, "difficulty": 1.5, "days_ago": 0.2},
+    {"topic": "Instruction Set Architecture", "is_correct": true, "difficulty": 2.0, "days_ago": 0.5},
+    {"topic": "Instruction Set Architecture", "is_correct": true, "difficulty": 1.0, "days_ago": 1.0},
+    {"topic": "Instruction Set Architecture", "is_correct": true, "difficulty": 1.5, "days_ago": 2.0},
+    {"topic": "Instruction Set Architecture", "is_correct": false, "difficulty": 2.0, "days_ago": 3.0},
+    {"topic": "Instruction Set Architecture", "is_correct": true, "difficulty": 1.0, "days_ago": 4.0}
+  ]
+}
