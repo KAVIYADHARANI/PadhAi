@@ -162,14 +162,33 @@ class LLMGateway:
         return key
 
     def resolve_model_slug(self, provider: str, role: ModelRole | str) -> str:
-        """Resolve the model slug for a given provider and role."""
+        """Resolve the model slug for a given provider and role with canonical fallbacks."""
         role_str = str(role).upper()
+        slug: str | None = None
+
+        default_smart = {
+            "groq": "llama-3.3-70b-versatile",
+            "openrouter": "meta-llama/llama-3.3-70b-instruct",
+            "google": "gemini-1.5-pro",
+            "cerebras": "llama3.3-70b",
+        }
+        default_fast = {
+            "groq": "llama-3.1-8b-instant",
+            "openrouter": "meta-llama/llama-3.1-8b-instruct",
+            "google": "gemini-1.5-flash",
+            "cerebras": "llama3.1-8b",
+        }
+
         if "SMART" in role_str:
             slug = self.smart_slugs.get(provider)
+            if not slug or slug.lower() in ("slug", "default", "none", ""):
+                slug = default_smart.get(provider)
         elif "VISION" in role_str:
             slug = self.vision_slugs.get(provider)
         else:
             slug = self.fast_slugs.get(provider)
+            if not slug or slug.lower() in ("slug", "default", "none", ""):
+                slug = default_fast.get(provider)
 
         return slug or f"{provider}-default-model"
 
