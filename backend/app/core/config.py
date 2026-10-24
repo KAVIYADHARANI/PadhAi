@@ -68,6 +68,9 @@ class Settings(BaseSettings):
     EMBED_PROVIDER: str = Field(default="", description="Hosted provider for BGE-M3")
     EMBED_MODEL: str = Field(default="BAAI/bge-m3", description="Embedding model name")
     EMBED_DIM: int = Field(default=1024, description="Vector dimension")
+    USE_HALFVEC: bool = Field(
+        default=True, description="Use halfvec(1024) instead of vector(1024)"
+    )
 
     # OCR (Indra)
     OCR_BACKEND: str = Field(default="indra", description="OCR backend engine")
