@@ -203,3 +203,14 @@ class FakeEmbedder:
             results.append(vec)
 
         return results
+
+
+def get_embedder() -> Embedder:
+    """Return configured embedder instance based on settings."""
+    if settings.EMBED_PROVIDER == "fake" or not settings.OPENROUTER_API_KEY:
+        return FakeEmbedder(dim=settings.EMBED_DIM)
+    return BGEEmbedder(
+        provider=settings.EMBED_PROVIDER,
+        model=settings.EMBED_MODEL,
+        expected_dim=settings.EMBED_DIM,
+    )

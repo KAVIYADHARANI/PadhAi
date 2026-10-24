@@ -334,3 +334,26 @@ class LLMGateway:
             latency_ms=latency_ms,
             raw_response=data,
         )
+
+    async def chat_completion(
+        self,
+        messages: list[dict[str, str]],
+        role: ModelRole | str = ModelRole.FAST,
+        temperature: float = 0.0,
+        max_tokens: int | None = None,
+        user_id: int | None = None,
+        course_id: int | None = None,
+    ) -> LLMResponse:
+        """Convenience method to execute a chat completion with list of message dicts."""
+        from app.ai.harness.models import ChatMessage
+
+        chat_msgs = [ChatMessage(role=m["role"], content=m["content"]) for m in messages]
+        req = LLMRequest(
+            messages=chat_msgs,
+            role=role,
+            temperature=temperature,
+            max_tokens=max_tokens,
+            user_id=user_id,
+            course_id=course_id,
+        )
+        return await self.complete(req)

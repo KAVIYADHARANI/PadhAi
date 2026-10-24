@@ -22,14 +22,43 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({
   onDocumentUploaded,
 }) => {
   const [documents, setDocuments] = useState<Document[]>(initialDocuments);
+  const [loadingDocs, setLoadingDocs] = useState<boolean>(true);
   const [uploading, setUploading] = useState(false);
   const [dragActive, setDragActive] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Sync initialDocuments if parent updates
+  // Load existing course documents on mount and courseId change
   useEffect(() => {
-    setDocuments(initialDocuments);
+    let isMounted = true;
+    const fetchDocuments = async () => {
+      try {
+        setLoadingDocs(true);
+        const docs = await api.getCourseDocuments(courseId);
+        if (isMounted) {
+          setDocuments(docs);
+        }
+      } catch (err) {
+        console.error("Failed to load documents for course:", err);
+      } finally {
+        if (isMounted) {
+          setLoadingDocs(false);
+        }
+      }
+    };
+
+    fetchDocuments();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [courseId]);
+
+  // Sync initialDocuments if parent passes non-empty list
+  useEffect(() => {
+    if (initialDocuments && initialDocuments.length > 0) {
+      setDocuments(initialDocuments);
+    }
   }, [initialDocuments]);
 
   // Polling for documents in queued or processing status
@@ -59,7 +88,7 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({
       } catch (err) {
         console.error("Polling error:", err);
       }
-    }, 2500);
+    }, 2000);
 
     return () => clearInterval(interval);
   }, [documents]);
@@ -124,10 +153,11 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({
 
   const renderStatusBadge = (status: DocumentStatus) => {
     switch (status) {
+      case "ready":
       case "indexed":
         return (
           <span className="flex items-center gap-1 text-[11px] font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">
-            <CheckCircle2 className="w-3 h-3" /> Indexed
+            <CheckCircle2 className="w-3 h-3" /> Ready
           </span>
         );
       case "processing":
@@ -136,6 +166,7 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({
             <Loader2 className="w-3 h-3 animate-spin" /> Processing
           </span>
         );
+      case "failed":
       case "error":
         return (
           <span className="flex items-center gap-1 text-[11px] font-semibold text-rose-400 bg-rose-500/10 border border-rose-500/20 px-2 py-0.5 rounded-full">
@@ -206,7 +237,12 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({
           </h4>
         </div>
 
-        {documents.length === 0 ? (
+        {loadingDocs ? (
+          <div className="p-6 rounded-xl border border-slate-800/80 bg-slate-950/40 text-center text-xs text-slate-400 flex items-center justify-center gap-2">
+            <Loader2 className="w-4 h-4 animate-spin text-brand-400" />
+            <span>Loading course materials...</span>
+          </div>
+        ) : documents.length === 0 ? (
           <div className="p-6 rounded-xl border border-slate-800/80 bg-slate-950/40 text-center text-xs text-slate-500">
             No documents uploaded yet. Upload a PDF or notes file to get started.
           </div>
@@ -223,11 +259,18 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({
                   </div>
                   <div className="min-w-0">
                     <p className="text-xs font-semibold text-white truncate max-w-xs sm:max-w-md">
-                      {doc.filename}
+                      {doc.filename || `Document #${doc.id}`}
                     </p>
                     <p className="text-[10px] text-slate-400">
-                      {(doc.size_bytes / 1024).toFixed(1)} KB • {new Date(doc.created_at).toLocaleDateString()}
+                      {doc.size_bytes ? `${(doc.size_bytes / 1024).toFixed(1)} KB • ` : ""}
+                      {doc.pages ? `${doc.pages} pages • ` : ""}
+                      {new Date(doc.created_at).toLocaleDateString()}
                     </p>
+                    {doc.error && (
+                      <p className="text-[10px] text-rose-400 mt-0.5 truncate max-w-xs sm:max-w-md">
+                        {doc.error}
+                      </p>
+                    )}
                   </div>
                 </div>
 

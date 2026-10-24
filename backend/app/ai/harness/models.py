@@ -58,6 +58,11 @@ class LLMResponse:
     cached: bool = False
     raw_response: dict[str, Any] | None = None
 
+    @property
+    def text(self) -> str:
+        """Alias for content."""
+        return self.content
+
 
 @dataclass
 class ProviderConfig:

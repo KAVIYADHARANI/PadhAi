@@ -21,19 +21,18 @@ export interface CreateCourseInput {
   level: "beginner" | "intermediate" | "advanced";
 }
 
-export type DocumentStatus = "queued" | "processing" | "indexed" | "error";
+export type DocumentStatus = "queued" | "processing" | "ready" | "failed" | "indexed" | "error";
 
 export interface Document {
   id: number;
   course_id: number;
-  user_id: number;
   filename: string;
-  file_hash: string;
-  mime_type: string;
-  size_bytes: number;
+  size_bytes?: number | null;
   status: DocumentStatus;
-  page_count?: number | null;
-  error_message?: string | null;
+  pages?: number | null;
+  pages_ocr?: number | null;
+  ocr_avg_conf?: number | null;
+  error?: string | null;
   created_at: string;
 }
 

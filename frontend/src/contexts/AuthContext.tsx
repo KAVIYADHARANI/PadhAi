@@ -16,7 +16,7 @@ interface AuthContextType {
   registerWithEmail: (email: string, pass: string) => Promise<FirebaseUser>;
   loginWithGoogle: () => Promise<FirebaseUser>;
   logout: () => Promise<void>;
-  getToken: () => Promise<string | null>;
+  getToken: (forceRefresh?: boolean) => Promise<string | null>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
