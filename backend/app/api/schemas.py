@@ -46,3 +46,65 @@ class DocumentResponse(BaseModel):
     status: str
     error: str | None = None
     created_at: datetime
+
+
+class QuizGenerateRequest(BaseModel):
+    course_id: int
+    topic_id: int
+    count: int = Field(default=5, ge=1, le=20)
+
+
+class QuizQuestionItem(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    course_id: int
+    topic_id: int
+    stem: str
+    question_type: str = "mcq"
+    options: list[str]
+    difficulty: float = 1.0
+
+
+class QuizResponse(BaseModel):
+    course_id: int
+    topic_id: int
+    questions: list[QuizQuestionItem]
+
+
+class AttemptSubmitRequest(BaseModel):
+    question_id: int
+    selected_answer: str
+    time_ms: int = Field(default=0, ge=0)
+
+
+class AttemptResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    question_id: int
+    selected_answer: str
+    correct: bool
+    answer: str
+    explanation: str
+    source_chunk_ids: list[int]
+    new_mastery_score: float
+    time_ms: int
+    created_at: datetime
+
+
+class TopicMasteryItem(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    topic_id: int
+    topic_name: str
+    score: float
+    attempts_count: int
+    updated_at: datetime | None = None
+
+
+class ProgressResponse(BaseModel):
+    course_id: int
+    topics: list[TopicMasteryItem]
+    weak_topics: list[int]
+

@@ -14,6 +14,7 @@ from pathlib import Path
 
 from pgvector.sqlalchemy import HALFVEC, VECTOR
 from sqlalchemy import (
+    JSON,
     Boolean,
     Column,
     Date,
@@ -24,6 +25,7 @@ from sqlalchemy import (
     Integer,
     String,
     Text,
+    UniqueConstraint,
 )
 from sqlalchemy.dialects.postgresql import TSVECTOR
 from sqlalchemy.orm import relationship
@@ -79,6 +81,8 @@ class User(Base):
     chunks = relationship("Chunk", back_populates="user", cascade="all, delete-orphan")
     llm_usage = relationship("LLMUsage", back_populates="user", cascade="all, delete-orphan")
     guardrail_events = relationship("GuardrailEvent", back_populates="user", cascade="all, delete-orphan")
+    attempts = relationship("Attempt", back_populates="user", cascade="all, delete-orphan")
+    masteries = relationship("Mastery", back_populates="user", cascade="all, delete-orphan")
 
 
 class Course(Base):
@@ -103,6 +107,9 @@ class Course(Base):
     documents = relationship("Document", back_populates="course", cascade="all, delete-orphan")
     chunks = relationship("Chunk", back_populates="course", cascade="all, delete-orphan")
     topics = relationship("Topic", back_populates="course", cascade="all, delete-orphan")
+    questions = relationship("Question", back_populates="course", cascade="all, delete-orphan")
+    attempts = relationship("Attempt", back_populates="course", cascade="all, delete-orphan")
+    masteries = relationship("Mastery", back_populates="course", cascade="all, delete-orphan")
 
 
 class Document(Base):
@@ -253,7 +260,101 @@ class Topic(Base):
     # Relationships
     course = relationship("Course", back_populates="topics")
     chunks = relationship("Chunk", secondary="chunk_topics", back_populates="topics")
+    questions = relationship("Question", back_populates="topic", cascade="all, delete-orphan")
+    attempts = relationship("Attempt", back_populates="topic", cascade="all, delete-orphan")
+    masteries = relationship("Mastery", back_populates="topic", cascade="all, delete-orphan")
 
     __table_args__ = (
         Index("ix_topics_course", "course_id"),
+    )
+
+
+class Question(Base):
+    """Quiz questions grounded in source chunks."""
+
+    __tablename__ = "questions"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    course_id = Column(Integer, ForeignKey("courses.id", ondelete="CASCADE"), nullable=False, index=True)
+    topic_id = Column(Integer, ForeignKey("topics.id", ondelete="CASCADE"), nullable=False, index=True)
+    stem = Column(Text, nullable=False)
+    question_type = Column(String(50), default="mcq", nullable=False)
+    options = Column(JSON, nullable=False)
+    answer = Column(String(255), nullable=False)
+    explanation = Column(Text, nullable=False)
+    source_chunk_ids = Column(JSON, nullable=False)
+    difficulty = Column(Float, default=1.0, nullable=False)
+    created_at = Column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(UTC),
+        nullable=False,
+    )
+
+    # Relationships
+    course = relationship("Course", back_populates="questions")
+    topic = relationship("Topic", back_populates="questions")
+    attempts = relationship("Attempt", back_populates="question", cascade="all, delete-orphan")
+
+    __table_args__ = (
+        Index("ix_questions_course_topic", "course_id", "topic_id"),
+    )
+
+
+class Attempt(Base):
+    """Student attempt records for quiz questions."""
+
+    __tablename__ = "attempts"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    question_id = Column(Integer, ForeignKey("questions.id", ondelete="CASCADE"), nullable=False, index=True)
+    course_id = Column(Integer, ForeignKey("courses.id", ondelete="CASCADE"), nullable=False, index=True)
+    topic_id = Column(Integer, ForeignKey("topics.id", ondelete="CASCADE"), nullable=False, index=True)
+    selected_answer = Column(String(255), nullable=False)
+    correct = Column(Boolean, nullable=False)
+    time_ms = Column(Integer, default=0, nullable=False)
+    created_at = Column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(UTC),
+        nullable=False,
+    )
+
+    # Relationships
+    user = relationship("User", back_populates="attempts")
+    question = relationship("Question", back_populates="attempts")
+    course = relationship("Course", back_populates="attempts")
+    topic = relationship("Topic", back_populates="attempts")
+
+    __table_args__ = (
+        Index("ix_attempts_user_topic", "user_id", "topic_id"),
+        Index("ix_attempts_user_course", "user_id", "course_id"),
+    )
+
+
+class Mastery(Base):
+    """Topic mastery score tracking per user."""
+
+    __tablename__ = "mastery"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    course_id = Column(Integer, ForeignKey("courses.id", ondelete="CASCADE"), nullable=False, index=True)
+    topic_id = Column(Integer, ForeignKey("topics.id", ondelete="CASCADE"), nullable=False, index=True)
+    score = Column(Float, default=0.0, nullable=False)
+    attempts_count = Column(Integer, default=0, nullable=False)
+    updated_at = Column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(UTC),
+        onupdate=lambda: datetime.now(UTC),
+        nullable=False,
+    )
+
+    # Relationships
+    user = relationship("User", back_populates="masteries")
+    course = relationship("Course", back_populates="masteries")
+    topic = relationship("Topic", back_populates="masteries")
+
+    __table_args__ = (
+        UniqueConstraint("user_id", "topic_id", name="uq_mastery_user_topic"),
+        Index("ix_mastery_user_course", "user_id", "course_id"),
     )
