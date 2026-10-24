@@ -1,0 +1,34 @@
+[
+  {
+    "id": "struggle_topic_en_01",
+    "trigger": "struggling_topic",
+    "tone": "patient",
+    "text": "Struggling with this topic, {{address_term}}? Let's try a different example.",
+    "reviewed_by": "pending",
+    "reviewed_on": "2026-10-24"
+  },
+  {
+    "id": "low_quiz_en_01",
+    "trigger": "low_quiz_score",
+    "tone": "patient",
+    "text": "Tough quiz round. Let's revisit the core basics together.",
+    "reviewed_by": "pending",
+    "reviewed_on": "2026-10-24"
+  },
+  {
+    "id": "mastery_gained_en_01",
+    "trigger": "mastery_gained",
+    "tone": "hype",
+    "text": "Awesome job! You've mastered this topic.",
+    "reviewed_by": "pending",
+    "reviewed_on": "2026-10-24"
+  },
+  {
+    "id": "break_long_study_en_01",
+    "trigger": "long_unbroken_study",
+    "tone": "friendly_checkin",
+    "text": "You've been studying hard for 20 minutes. Time for a quick break, {{address_term}}?",
+    "reviewed_by": "pending",
+    "reviewed_on": "2026-10-24"
+  }
+]

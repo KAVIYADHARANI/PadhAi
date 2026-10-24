@@ -1,0 +1,34 @@
+[
+  {
+    "id": "struggle_topic_01",
+    "trigger": "struggling_topic",
+    "tone": "patient",
+    "text": "Dei thambi, indha topic innum puriyalaya? Vera example solren.",
+    "reviewed_by": "pending",
+    "reviewed_on": "2026-10-24"
+  },
+  {
+    "id": "low_quiz_01",
+    "trigger": "low_quiz_score",
+    "tone": "patient",
+    "text": "Quiz-la 3/10 dhaana? Seri, namma basics-ku thirumbi polam.",
+    "reviewed_by": "pending",
+    "reviewed_on": "2026-10-24"
+  },
+  {
+    "id": "mastery_gained_01",
+    "trigger": "mastery_gained",
+    "tone": "hype",
+    "text": "Semma! Indha topic unakku master aayiduchu.",
+    "reviewed_by": "pending",
+    "reviewed_on": "2026-10-24"
+  },
+  {
+    "id": "break_long_study_01",
+    "trigger": "long_unbroken_study",
+    "tone": "friendly_checkin",
+    "text": "20 minutes continuous-ah padichitta. Break venuma, boss?",
+    "reviewed_by": "pending",
+    "reviewed_on": "2026-10-24"
+  }
+]
