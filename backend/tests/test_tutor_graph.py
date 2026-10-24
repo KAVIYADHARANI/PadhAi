@@ -247,3 +247,29 @@ def test_chat_endpoint_course_isolation(client: TestClient, db_session, test_use
     )
     assert resp.status_code == 404
     assert "Course not found" in resp.json()["detail"]
+
+
+def test_rag_tutor_sources_section_formatting():
+    """Verify check_output_guardrails appends a separate Sources section at the end."""
+    from app.ai.guardrails.output_guard import check_output_guardrails
+    from app.retrieval.search import SearchResult
+
+    mock_chunks = [
+        SearchResult(chunk_id=1, document_id=1, course_id=1, user_id=1, page=2, text="Pipelining hazard", score=0.9),
+        SearchResult(chunk_id=2, document_id=1, course_id=1, user_id=1, page=4, text="Branch prediction", score=0.85),
+    ]
+
+    raw_tutor_answer = (
+        "Structural hazards happen when resources are busy [doc p.2]. "
+        "Branch predictors mitigate control hazards [doc p.4]."
+    )
+
+    guard_res = check_output_guardrails(raw_tutor_answer, mock_chunks)
+    assert guard_res.is_grounded is True
+    assert "[doc p.2]" in guard_res.citations
+    assert "[doc p.4]" in guard_res.citations
+
+    # Verify dedicated Sources section
+    assert "**Sources:**" in guard_res.clean_reply
+    assert "- [doc p.2]" in guard_res.clean_reply
+    assert "- [doc p.4]" in guard_res.clean_reply

@@ -67,11 +67,14 @@ async def test_hf_embedder_rejects_dimension_mismatch():
 
 def test_get_embedder_huggingface_factory():
     """Verify get_embedder() instantiates HuggingFaceBGEEmbedder when configured."""
+    import sys
+
     original_provider = settings.EMBEDDING_PROVIDER
     try:
         settings.EMBEDDING_PROVIDER = "huggingface"
-        embedder = get_embedder()
-        assert isinstance(embedder, HuggingFaceBGEEmbedder)
-        assert embedder.expected_dim == 1024
+        with patch.dict(sys.modules, {"sentence_transformers": MagicMock()}):
+            embedder = get_embedder()
+            assert isinstance(embedder, HuggingFaceBGEEmbedder)
+            assert embedder.expected_dim == 1024
     finally:
         settings.EMBEDDING_PROVIDER = original_provider

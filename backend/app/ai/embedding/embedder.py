@@ -331,10 +331,18 @@ def get_embedder() -> Embedder:
         return FakeEmbedder(dim=settings.effective_embed_dim)
 
     if provider in ("huggingface", "hf", "sentence-transformers", "local"):
-        return HuggingFaceBGEEmbedder(
-            model_name=settings.effective_embed_model,
-            expected_dim=settings.effective_embed_dim,
-        )
+        try:
+            import sentence_transformers  # noqa: F401
+
+            return HuggingFaceBGEEmbedder(
+                model_name=settings.effective_embed_model,
+                expected_dim=settings.effective_embed_dim,
+            )
+        except (ImportError, Exception) as exc:
+            logger.warning(
+                "sentence_transformers unavailable (%s); falling back to FakeEmbedder", exc
+            )
+            return FakeEmbedder(dim=settings.effective_embed_dim)
 
     has_key = bool(
         settings.OPENROUTER_API_KEY

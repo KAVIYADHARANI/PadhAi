@@ -142,3 +142,21 @@ async def test_structured_call_caching_and_user_isolation(fake_llm):
     )
     assert res3.summary == "User 2 notes"
     assert fake_llm.call_count == 2
+
+
+def test_clean_json_text_with_thinking_tags():
+    """Verify clean_json_text strips thinking tags and extracts valid JSON objects."""
+    from app.ai.harness.structured import clean_json_text
+
+    raw_output = (
+        "<think>Analyzing chunks for topics...</think>\n"
+        "Here is the requested JSON:\n"
+        "```json\n"
+        '{"summary": "Operating Systems", "confidence": 0.9, "tags": ["processes"]}\n'
+        "```\n"
+        "Let me know if you need changes!"
+    )
+    cleaned = clean_json_text(raw_output)
+    assert cleaned.startswith("{")
+    assert cleaned.endswith("}")
+    assert "<think>" not in cleaned

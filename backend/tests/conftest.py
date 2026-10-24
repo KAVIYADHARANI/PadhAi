@@ -20,6 +20,7 @@ os.environ["GROQ_API_KEY"] = ""
 os.environ["GOOGLE_API_KEY"] = ""
 os.environ["CEREBRAS_API_KEY"] = ""
 os.environ["EMBED_PROVIDER"] = "fake"
+os.environ["EMBEDDING_PROVIDER"] = "fake"
 
 from app.core.config import settings
 
@@ -28,6 +29,7 @@ settings.GROQ_API_KEY = ""
 settings.GOOGLE_API_KEY = ""
 settings.CEREBRAS_API_KEY = ""
 settings.EMBED_PROVIDER = "fake"
+settings.EMBEDDING_PROVIDER = "fake"
 
 from app.core.storage import LocalStorageBackend, get_storage  # noqa: E402
 from app.db.session import Base, get_db  # noqa: E402

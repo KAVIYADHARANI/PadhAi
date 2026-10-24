@@ -108,17 +108,9 @@ class LLMGateway:
         self._max_backoff_s = max_backoff_s
 
         # Parse provider chains and roles
-        parsed_chain = [
+        self.chain: list[str] = [
             p.strip().lower() for p in settings.LLM_CHAIN.split(",") if p.strip()
         ]
-        # Prioritize LLM_PROVIDER if explicitly set
-        if settings.LLM_PROVIDER:
-            prov = settings.LLM_PROVIDER.strip().lower()
-            if prov in parsed_chain:
-                parsed_chain.remove(prov)
-            parsed_chain.insert(0, prov)
-
-        self.chain: list[str] = parsed_chain
         self.smart_slugs = parse_model_slugs(settings.MODEL_SMART)
         self.fast_slugs = parse_model_slugs(settings.MODEL_FAST)
         self.vision_slugs = parse_model_slugs(settings.MODEL_VISION)
@@ -129,7 +121,6 @@ class LLMGateway:
             "groq": "https://api.groq.com/openai/v1",
             "cerebras": "https://api.cerebras.ai/v1",
             "google": "https://generativelanguage.googleapis.com/v1beta/openai",
-            "huggingface": "https://router.huggingface.co/hf-inference/v1",
         }
 
         # Circuit breakers & rate limiters per provider
@@ -155,8 +146,6 @@ class LLMGateway:
                 raw_key = settings.CEREBRAS_API_KEY
             elif p == "google":
                 raw_key = settings.GOOGLE_API_KEY
-            elif p == "huggingface":
-                raw_key = settings.HF_TOKEN
 
             key_list = [k.strip() for k in raw_key.split(",") if k.strip()]
             keys[p] = key_list
@@ -177,20 +166,17 @@ class LLMGateway:
         role_str = str(role).upper()
         slug: str | None = None
 
-        hf_default = settings.LLM_MODEL or "meta-llama/Llama-3.2-3B-Instruct"
         default_smart = {
             "groq": "llama-3.3-70b-versatile",
             "openrouter": "meta-llama/llama-3.3-70b-instruct",
             "google": "gemini-1.5-pro",
             "cerebras": "llama3.3-70b",
-            "huggingface": hf_default,
         }
         default_fast = {
             "groq": "llama-3.1-8b-instant",
             "openrouter": "meta-llama/llama-3.1-8b-instruct",
             "google": "gemini-1.5-flash",
             "cerebras": "llama3.1-8b",
-            "huggingface": hf_default,
         }
 
         if "SMART" in role_str:
@@ -219,7 +205,7 @@ class LLMGateway:
 
         if not eligible_providers:
             raise AuthenticationError(
-                "No LLM provider API key configured. Please set HF_TOKEN, GROQ_API_KEY, "
+                "No LLM provider API key configured. Please set GROQ_API_KEY, "
                 "OPENROUTER_API_KEY, GOOGLE_API_KEY, or CEREBRAS_API_KEY in your .env file."
             )
 
