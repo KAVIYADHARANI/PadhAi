@@ -50,13 +50,127 @@ if (-not (Test-Path (Join-Path $frontendDir "node_modules"))) {
     }
 }
 
-# 1c. Docker PostgreSQL Check
+# 1c. Docker Desktop & PostgreSQL (pgvector) Setup
+Write-Host "`n============================================================" -ForegroundColor DarkCyan
+Write-Host "            Checking Docker & PostgreSQL (pgvector)         " -ForegroundColor DarkCyan
+Write-Host "============================================================" -ForegroundColor DarkCyan
+
 if (Get-Command docker -ErrorAction SilentlyContinue) {
-    Write-Host "`nEnsuring PostgreSQL (pgvector) container is running..." -ForegroundColor Cyan
-    docker compose up -d postgres
+    # Check if Docker daemon is running
+    $dockerRunning = $false
+    try {
+        $null = docker info 2>&1
+        if ($LASTEXITCODE -eq 0) { $dockerRunning = $true }
+    } catch {
+        $dockerRunning = $false
+    }
+
+    if (-not $dockerRunning) {
+        Write-Host "Docker daemon is not running. Looking for Docker Desktop..." -ForegroundColor Yellow
+        $dockerDesktopCandidates = @(
+            (Join-Path $env:LOCALAPPDATA "Programs\DockerDesktop\Docker Desktop.exe"),
+            (Join-Path $env:ProgramFiles "Docker\Docker\Docker Desktop.exe"),
+            (Join-Path ${env:ProgramFiles(x86)} "Docker\Docker\Docker Desktop.exe")
+        )
+
+        $dockerExe = $null
+        foreach ($candidate in $dockerDesktopCandidates) {
+            if ($candidate -and (Test-Path $candidate)) {
+                $dockerExe = $candidate
+                break
+            }
+        }
+
+        if ($dockerExe) {
+            Write-Host "Launching Docker Desktop ($dockerExe)..." -ForegroundColor Cyan
+            Start-Process $dockerExe
+
+            Write-Host "Waiting for Docker daemon to initialize" -NoNewline -ForegroundColor Yellow
+            $maxWaitSeconds = 60
+            $waited = 0
+            while ($waited -lt $maxWaitSeconds) {
+                Start-Sleep -Seconds 3
+                $waited += 3
+                Write-Host "." -NoNewline -ForegroundColor Yellow
+                try {
+                    $null = docker info 2>&1
+                    if ($LASTEXITCODE -eq 0) {
+                        $dockerRunning = $true
+                        break
+                    }
+                } catch {}
+            }
+            Write-Host ""
+        } else {
+            Write-Warning "Docker Desktop executable not found. Please start Docker Desktop manually."
+        }
+    }
+
+    if ($dockerRunning) {
+        Write-Host "[OK] Docker daemon is ready." -ForegroundColor Green
+
+        # Check for port 5432 conflict with native Windows PostgreSQL service
+        $nativePgServices = Get-Service -Name *postgres* -ErrorAction SilentlyContinue | Where-Object { $_.Status -eq 'Running' }
+        if ($nativePgServices) {
+            foreach ($svc in $nativePgServices) {
+                Write-Host "Stopping conflicting native Windows PostgreSQL service ($($svc.Name)) so Docker can bind port 5432..." -ForegroundColor Yellow
+                try {
+                    Stop-Service $svc -Force -ErrorAction Stop
+                    Write-Host "[OK] Stopped native service: $($svc.Name)" -ForegroundColor Green
+                } catch {
+                    Write-Warning "Could not stop native service $($svc.Name): $($_.Exception.Message)"
+                    Write-Warning "If Docker cannot bind port 5432, stop the PostgreSQL service in Services (services.msc) or run PowerShell as Administrator."
+                }
+            }
+        }
+
+        # Start PostgreSQL + pgvector container
+        Write-Host "Starting PostgreSQL (pgvector) container..." -ForegroundColor Cyan
+        docker compose up -d postgres
+
+        # Wait for database container readiness
+        Write-Host "Waiting for PostgreSQL container to become ready" -NoNewline -ForegroundColor Cyan
+        $dbReady = $false
+        for ($i = 0; $i -lt 30; $i++) {
+            Start-Sleep -Seconds 1
+            Write-Host "." -NoNewline -ForegroundColor Cyan
+            try {
+                $null = docker exec padhai-postgres pg_isready -U padhai -d padhai 2>&1
+                if ($LASTEXITCODE -eq 0) {
+                    $dbReady = $true
+                    break
+                }
+            } catch {}
+        }
+        Write-Host ""
+
+        if ($dbReady) {
+            Write-Host "[OK] PostgreSQL + pgvector is healthy and accepting connections." -ForegroundColor Green
+
+            # Automatically apply database migrations
+            if (Test-Path $backendVenvPy) {
+                Write-Host "Applying database migrations (Alembic upgrade head)..." -ForegroundColor Cyan
+                try {
+                    & $backendVenvPy -m alembic upgrade head
+                    if ($LASTEXITCODE -eq 0) {
+                        Write-Host "[OK] Database schema is up to date." -ForegroundColor Green
+                    } else {
+                        Write-Warning "Alembic upgrade exited with code $LASTEXITCODE."
+                    }
+                } catch {
+                    Write-Warning "Failed to run Alembic migration: $($_.Exception.Message)"
+                }
+            }
+        } else {
+            Write-Warning "PostgreSQL container was not ready within timeout. Check 'docker logs padhai-postgres'."
+        }
+    } else {
+        Write-Warning "Docker daemon is not reachable. Ensure Docker Desktop is running."
+    }
 } else {
     Write-Warning "Docker is not found in PATH. Ensure PostgreSQL with pgvector is accessible on localhost:5432."
 }
+
 
 # 2. Execution Mode
 if ($Background) {
