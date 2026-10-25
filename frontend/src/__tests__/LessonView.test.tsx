@@ -311,5 +311,36 @@ describe("LessonView Component", () => {
     expect(api.generateLesson).toHaveBeenCalledTimes(1);
     expect(api.generateLesson).toHaveBeenCalledWith(1, 1, "d1_t1", false);
   });
+
+  it("displays error state with retry button when lesson generation fails and terminates loading spinner", async () => {
+    vi.mocked(api.getLesson).mockRejectedValue(new ApiError(404, "Lesson not found"));
+    vi.mocked(api.generateLesson).mockRejectedValue(new ApiError(500, "Server generation error"));
+
+    render(
+      <LessonView
+        course={mockCourse}
+        roadmapItem={mockRoadmapItem}
+        taskId="d1_t1"
+        onBackToRoadmap={vi.fn()}
+      />
+    );
+
+    // Spinner disappears and error message with Retry appears
+    await waitFor(() => {
+      expect(screen.getByText("Server generation error")).toBeInTheDocument();
+      expect(screen.getByText("Retry")).toBeInTheDocument();
+      expect(screen.queryByText("Generating Grounded Study Lesson...")).not.toBeInTheDocument();
+      expect(screen.queryByText("Loading Lesson...")).not.toBeInTheDocument();
+    });
+
+    // Clicking Retry attempts generation again
+    vi.mocked(api.generateLesson).mockResolvedValue(mockLesson);
+    fireEvent.click(screen.getByText("Retry"));
+
+    await waitFor(() => {
+      expect(screen.getByText("Mastering Vector Spaces and Subspaces")).toBeInTheDocument();
+    });
+  });
 });
+
 

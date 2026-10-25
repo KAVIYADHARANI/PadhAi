@@ -87,12 +87,20 @@ async def generate_lesson_endpoint(
                 Lesson.roadmap_item_id == item_id,
                 Lesson.task_id == task_id,
                 Lesson.user_id == current_user.id,
-                Lesson.status == "ready",
             )
             .first()
         )
         if existing:
-            return LessonResponse.model_validate(existing)
+            if existing.status == "ready":
+                return LessonResponse.model_validate(existing)
+            elif existing.status == "generating":
+                now = datetime.now(UTC)
+                updated_at = existing.updated_at
+                if updated_at and updated_at.tzinfo is None:
+                    updated_at = updated_at.replace(tzinfo=UTC)
+                age = (now - updated_at).total_seconds() if updated_at else 999.0
+                if age < 60.0:
+                    return LessonResponse.model_validate(existing)
 
     try:
         lesson = await generate_lesson_for_task(

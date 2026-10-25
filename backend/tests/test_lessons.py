@@ -604,3 +604,116 @@ async def test_youtube_provider_uses_header_not_query_param():
             assert "key" not in req["params"]
             assert "AIzaSyTestSecret123" not in str(req["params"])
 
+
+def test_exact_duplicate_key_scenario_from_logs(client: TestClient, db_session: Session, auth_headers_user1):
+    """Reproduces the exact sequence from the logs: course_id=3, roadmap_item_id=29, task_id='d1_t4'.
+
+    Sequence:
+    1. GET /api/courses/3/roadmap/29/tasks/d1_t4/lesson returns 404 Not Found.
+    2. The first POST /api/courses/3/roadmap/29/tasks/d1_t4/lesson generates and returns 200 OK.
+    3. A subsequent POST to the same endpoint returns 200 OK with the existing lesson rather than
+       failing with 500 UniqueViolation on 'uq_lessons_course_item_task'.
+    4. Database contains exactly one lesson record for (course_id=3, roadmap_item_id=29, task_id='d1_t4').
+    5. Lesson progress is preserved and not reset.
+    """
+    user = db_session.query(User).filter(User.firebase_uid == "firebase_uid_1").first()
+    if not user:
+        user = User(firebase_uid="firebase_uid_1", email="user1@example.com", display_name="User One")
+        db_session.add(user)
+        db_session.commit()
+        db_session.refresh(user)
+
+    course = Course(
+        id=3,
+        user_id=user.id,
+        name="Operating Systems",
+        goal_days=10,
+        hours_per_day=1.5,
+        level="intermediate",
+    )
+    db_session.add(course)
+    db_session.commit()
+    db_session.refresh(course)
+
+    topic = Topic(course_id=course.id, name="Virtual Memory", module_name="Memory Management")
+    db_session.add(topic)
+    db_session.commit()
+    db_session.refresh(topic)
+
+    roadmap_item = RoadmapItem(
+        id=29,
+        course_id=course.id,
+        user_id=user.id,
+        day=1,
+        topic_id=topic.id,
+        topic_name="Virtual Memory",
+        title="Day 1: Paging and Page Tables",
+        learning_objectives=["Understand virtual addresses", "Implement page table lookup"],
+        tasks=[
+            {"id": "d1_t4", "task": "Study multi-level page tables and TLB misses", "estimated_minutes": 30, "completed": False},
+        ],
+        estimated_minutes=30,
+        completed=False,
+    )
+    db_session.add(roadmap_item)
+    db_session.commit()
+    db_session.refresh(roadmap_item)
+
+    # 1. GET returns 404
+    res_get = client.get(
+        "/api/courses/3/roadmap/29/tasks/d1_t4/lesson",
+        headers=auth_headers_user1,
+    )
+    assert res_get.status_code == 404
+
+    # 2. First POST generates and returns 200
+    mock_content = _make_mock_lesson_content()
+    mock_call = AsyncMock(return_value=mock_content)
+    with patch("app.ai.lesson.lesson_gen.StructuredCall.execute", new=mock_call):
+        res_post1 = client.post(
+            "/api/courses/3/roadmap/29/tasks/d1_t4/lesson",
+            headers=auth_headers_user1,
+        )
+        assert res_post1.status_code == 200
+        lesson_1 = res_post1.json()
+        assert lesson_1["course_id"] == 3
+        assert lesson_1["roadmap_item_id"] == 29
+        assert lesson_1["task_id"] == "d1_t4"
+        assert mock_call.call_count == 1
+
+        # Simulate user progressing on the lesson
+        client.patch(
+            "/api/courses/3/roadmap/29/tasks/d1_t4/lesson/progress",
+            headers=auth_headers_user1,
+            json={"section_id": "sec_1", "section_completed": True, "add_time_seconds": 120},
+        )
+
+        # 3. Subsequent POST to same endpoint returns 200 OK without re-generating (idempotent!)
+        res_post2 = client.post(
+            "/api/courses/3/roadmap/29/tasks/d1_t4/lesson",
+            headers=auth_headers_user1,
+        )
+        assert res_post2.status_code == 200
+        lesson_2 = res_post2.json()
+        assert lesson_2["id"] == lesson_1["id"]
+        assert mock_call.call_count == 1  # Generator was NOT called again
+
+    # 4. Verify progress was preserved
+    res_prog = client.get(
+        "/api/courses/3/roadmap/29/tasks/d1_t4/lesson/progress",
+        headers=auth_headers_user1,
+    )
+    assert res_prog.status_code == 200
+    assert "sec_1" in res_prog.json()["sections_completed"]
+    assert res_prog.json()["time_spent_seconds"] >= 120
+
+    # 5. Database contains exactly 1 lesson record for (3, 29, 'd1_t4')
+    db_session.expire_all()
+    count = (
+        db_session.query(Lesson)
+        .filter(Lesson.course_id == 3, Lesson.roadmap_item_id == 29, Lesson.task_id == "d1_t4")
+        .count()
+    )
+    assert count == 1
+
+

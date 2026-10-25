@@ -12,6 +12,7 @@ Generates complete, structured, interactive lessons for roadmap tasks:
 from __future__ import annotations
 
 import logging
+from datetime import UTC, datetime
 from typing import Any
 
 from fastapi import HTTPException, status
@@ -182,13 +183,27 @@ async def generate_lesson_for_task(
         .first()
     )
     if existing_lesson and not overwrite:
-        logger.info(
-            "Returning existing lesson %d for course %d task %s",
-            existing_lesson.id,
-            course_id,
-            task_id,
-        )
-        return existing_lesson
+        if existing_lesson.status == "ready":
+            logger.info(
+                "Returning existing ready lesson %d for course %d task %s",
+                existing_lesson.id,
+                course_id,
+                task_id,
+            )
+            return existing_lesson
+        elif existing_lesson.status == "generating":
+            now = datetime.now(UTC)
+            updated_at = existing_lesson.updated_at
+            if updated_at and updated_at.tzinfo is None:
+                updated_at = updated_at.replace(tzinfo=UTC)
+            age = (now - updated_at).total_seconds() if updated_at else 999.0
+            if age < 60.0:
+                logger.info(
+                    "Lesson %d is currently generating (age %.1fs); returning in-progress record",
+                    existing_lesson.id,
+                    age,
+                )
+                return existing_lesson
 
     # 4. Retrieve course material chunks
     topic_id = roadmap_item.topic_id
@@ -307,6 +322,7 @@ async def generate_lesson_for_task(
 
     # 7. Check if another concurrent request created the lesson while LLM call was running
     if not existing_lesson and not overwrite:
+        db.expire_all()
         concurrent_lesson = (
             db.query(Lesson)
             .filter(
@@ -318,11 +334,13 @@ async def generate_lesson_for_task(
             .first()
         )
         if concurrent_lesson:
-            logger.info(
-                "Lesson was committed concurrently by another request; returning existing lesson %d",
-                concurrent_lesson.id,
-            )
-            return concurrent_lesson
+            if concurrent_lesson.status == "ready":
+                logger.info(
+                    "Lesson was committed concurrently by another request; returning existing lesson %d",
+                    concurrent_lesson.id,
+                )
+                return concurrent_lesson
+            existing_lesson = concurrent_lesson
 
     # 8. Persist Lesson in database (idempotent and concurrency-safe)
     if existing_lesson:
