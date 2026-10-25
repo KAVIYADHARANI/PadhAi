@@ -101,6 +101,14 @@ class Settings(BaseSettings):
     CEREBRAS_API_KEY: str = Field(default="", description="Cerebras API Key")
     GOOGLE_API_KEY: str = Field(default="", description="Google AI Studio API Key")
 
+    # Web Research & YouTube Discovery
+    YOUTUBE_API_KEY: str = Field(default="", description="YouTube Data API v3 Key")
+    WEB_SEARCH_PROVIDER: str = Field(
+        default="duckduckgo", description="Web search provider: duckduckgo | tavily | mock"
+    )
+    TAVILY_API_KEY: str = Field(default="", description="Tavily Search API Key")
+    BRAVE_API_KEY: str = Field(default="", description="Brave Search API Key")
+
     MODEL_SMART: str = Field(
         default="groq:llama-3.3-70b-versatile|openrouter:meta-llama/llama-3.3-70b-instruct|google:gemini-1.5-pro|cerebras:llama3.3-70b",
         description="Smart model slug mappings per provider",

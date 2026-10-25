@@ -172,4 +172,141 @@ export interface ChatReplyResponse {
   grounding_status?: string;
 }
 
+export interface WebResource {
+  title: string;
+  url: string;
+  domain: string;
+  snippet: string;
+  relevance_reason: string;
+  learning_objective: string;
+  level: "beginner" | "intermediate" | "advanced" | string;
+  retrieval_date?: string;
+  verified?: boolean;
+}
+
+export interface YouTubeResource {
+  video_id: string;
+  title: string;
+  channel_name: string;
+  thumbnail_url: string;
+  duration: string;
+  video_url: string;
+  embed_url: string;
+  relevance_reason: string;
+}
+
+export interface LessonSection {
+  id: string;
+  title: string;
+  content: string;
+  key_concepts: string[];
+  code_snippet?: string | null;
+  source_citations?: string[];
+}
+
+export interface TermDefinition {
+  term: string;
+  definition: string;
+}
+
+export interface WorkedExample {
+  problem: string;
+  step_by_step_solution: string[];
+  explanation: string;
+}
+
+export interface Misconception {
+  misconception: string;
+  correction: string;
+  explanation: string;
+}
+
+export interface LessonExercise {
+  id: string;
+  prompt: string;
+  exercise_type: "conceptual" | "code" | "numerical" | "scenario" | string;
+  difficulty: "easy" | "medium" | "hard" | string;
+  hints: string[];
+  solution: string;
+  explanation: string;
+}
+
+export interface SelfCheckQuestion {
+  id: string;
+  question: string;
+  options: string[];
+  answer: string;
+  explanation: string;
+}
+
+export interface LessonContent {
+  title: string;
+  introduction: string;
+  prerequisites: string[];
+  sections: LessonSection[];
+  key_terms: TermDefinition[];
+  worked_examples: WorkedExample[];
+  misconceptions: Misconception[];
+  summary: string;
+  takeaways: string[];
+  exercises: LessonExercise[];
+  self_check_questions: SelfCheckQuestion[];
+  deeper_learning: string[];
+}
+
+export interface Lesson {
+  id: number;
+  course_id: number;
+  roadmap_item_id: number;
+  task_id: string;
+  topic_id?: number | null;
+  user_id: number;
+  title: string;
+  estimated_minutes: number;
+  content: LessonContent;
+  web_resources: WebResource[];
+  youtube_resources: YouTubeResource[];
+  exercises: LessonExercise[];
+  sources: SourceReference[];
+  status: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface LessonProgress {
+  id: number;
+  lesson_id: number;
+  user_id: number;
+  course_id: number;
+  sections_completed: string[];
+  exercises_completed: Record<string, { solved: boolean; answer: string; timestamp?: string }>;
+  quiz_score?: number | null;
+  quiz_completed: boolean;
+  completed: boolean;
+  time_spent_seconds: number;
+  reflection?: string | null;
+  updated_at: string;
+}
+
+export interface LessonProgressUpdateRequest {
+  section_id?: string;
+  section_completed?: boolean;
+  exercise_id?: string;
+  exercise_attempt?: { solved: boolean; answer: string };
+  quiz_score?: number;
+  quiz_completed?: boolean;
+  completed?: boolean;
+  add_time_seconds?: number;
+  reflection?: string;
+}
+
+export interface LessonChatResponse {
+  reply: string;
+  clean_answer?: string;
+  sources: SourceReference[];
+  citations: string[];
+  tone: string;
+}
+
+
 

@@ -97,6 +97,10 @@ class User(Base):
     buddy_state = relationship(
         "BuddyState", back_populates="user", uselist=False, cascade="all, delete-orphan"
     )
+    lessons = relationship("Lesson", back_populates="user", cascade="all, delete-orphan")
+    lesson_progress = relationship(
+        "LessonProgress", back_populates="user", cascade="all, delete-orphan"
+    )
 
 
 class Course(Base):
@@ -135,6 +139,10 @@ class Course(Base):
     )
     study_sessions = relationship(
         "StudySession", back_populates="course", cascade="all, delete-orphan"
+    )
+    lessons = relationship("Lesson", back_populates="course", cascade="all, delete-orphan")
+    lesson_progress = relationship(
+        "LessonProgress", back_populates="course", cascade="all, delete-orphan"
     )
 
 
@@ -311,6 +319,7 @@ class Topic(Base):
     attempts = relationship("Attempt", back_populates="topic", cascade="all, delete-orphan")
     masteries = relationship("Mastery", back_populates="topic", cascade="all, delete-orphan")
     roadmap_items = relationship("RoadmapItem", back_populates="topic")
+    lessons = relationship("Lesson", back_populates="topic")
 
     __table_args__ = (Index("ix_topics_course", "course_id"),)
 
@@ -460,6 +469,7 @@ class RoadmapItem(Base):
     course = relationship("Course", back_populates="roadmap_items")
     user = relationship("User", back_populates="roadmap_items")
     topic = relationship("Topic", back_populates="roadmap_items")
+    lessons = relationship("Lesson", back_populates="roadmap_item", cascade="all, delete-orphan")
 
     __table_args__ = (
         Index("ix_roadmap_items_user_course", "user_id", "course_id"),
@@ -626,3 +636,98 @@ class BuddyState(Base):
     user = relationship("User", back_populates="buddy_state")
 
     __table_args__ = (Index("ix_buddy_state_user", "user_id"),)
+
+
+class Lesson(Base):
+    """Structured interactive lesson generated for a specific roadmap task."""
+
+    __tablename__ = "lessons"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    course_id = Column(
+        Integer, ForeignKey("courses.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    roadmap_item_id = Column(
+        Integer, ForeignKey("roadmap_items.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    task_id = Column(String(64), nullable=False, index=True)
+    topic_id = Column(
+        Integer, ForeignKey("topics.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    user_id = Column(
+        Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    title = Column(String(255), nullable=False)
+    estimated_minutes = Column(Integer, default=30, nullable=False)
+    content = Column(JSON, nullable=False, default=dict)
+    web_resources = Column(JSON, nullable=False, default=list)
+    youtube_resources = Column(JSON, nullable=False, default=list)
+    exercises = Column(JSON, nullable=False, default=list)
+    sources = Column(JSON, nullable=False, default=list)
+    status = Column(String(50), default="ready", nullable=False)
+    created_at = Column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(UTC),
+        nullable=False,
+    )
+    updated_at = Column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(UTC),
+        onupdate=lambda: datetime.now(UTC),
+        nullable=False,
+    )
+
+    # Relationships
+    course = relationship("Course", back_populates="lessons")
+    roadmap_item = relationship("RoadmapItem", back_populates="lessons")
+    topic = relationship("Topic", back_populates="lessons")
+    user = relationship("User", back_populates="lessons")
+    progress = relationship("LessonProgress", back_populates="lesson", cascade="all, delete-orphan")
+
+    __table_args__ = (
+        UniqueConstraint(
+            "course_id", "roadmap_item_id", "task_id", name="uq_lessons_course_item_task"
+        ),
+        Index("ix_lessons_user_course", "user_id", "course_id"),
+        Index("ix_lessons_roadmap_task", "roadmap_item_id", "task_id"),
+    )
+
+
+class LessonProgress(Base):
+    """Student progress, exercise results, and completion state for a lesson."""
+
+    __tablename__ = "lesson_progress"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    lesson_id = Column(
+        Integer, ForeignKey("lessons.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    user_id = Column(
+        Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    course_id = Column(
+        Integer, ForeignKey("courses.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    sections_completed = Column(JSON, nullable=False, default=list)
+    exercises_completed = Column(JSON, nullable=False, default=dict)
+    quiz_score = Column(Float, nullable=True)
+    quiz_completed = Column(Boolean, default=False, nullable=False)
+    completed = Column(Boolean, default=False, nullable=False)
+    time_spent_seconds = Column(Integer, default=0, nullable=False)
+    reflection = Column(Text, nullable=True)
+    updated_at = Column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(UTC),
+        onupdate=lambda: datetime.now(UTC),
+        nullable=False,
+    )
+
+    # Relationships
+    lesson = relationship("Lesson", back_populates="progress")
+    user = relationship("User", back_populates="lesson_progress")
+    course = relationship("Course", back_populates="lesson_progress")
+
+    __table_args__ = (
+        UniqueConstraint("user_id", "lesson_id", name="uq_lesson_progress_user_lesson"),
+        Index("ix_lesson_progress_user_course", "user_id", "course_id"),
+    )

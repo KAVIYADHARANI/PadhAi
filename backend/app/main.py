@@ -7,6 +7,7 @@ from app.api import buddy as api_buddy
 from app.api import chat as api_chat
 from app.api import courses as api_courses
 from app.api import documents as api_documents
+from app.api import lessons as api_lessons
 from app.api import me as api_me
 from app.api import progress as api_progress
 from app.api import quizzes as api_quizzes
@@ -52,5 +53,6 @@ app.include_router(api_chat.router)
 app.include_router(api_quizzes.router)
 app.include_router(api_progress.router)
 app.include_router(api_roadmap.router)
+app.include_router(api_lessons.router)
 app.include_router(api_sessions.router)
 app.include_router(api_buddy.router)

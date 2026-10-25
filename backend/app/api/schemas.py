@@ -1,6 +1,7 @@
 """Pydantic v2 schemas for API requests and responses."""
 
 from datetime import datetime
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -256,3 +257,70 @@ class BuddySettingsUpdateRequest(BaseModel):
     address_term: str | None = None
     sensitivity: str | None = None
     camera_enabled: bool | None = None
+
+
+class LessonResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    course_id: int
+    roadmap_item_id: int
+    task_id: str
+    topic_id: int | None = None
+    user_id: int
+    title: str
+    estimated_minutes: int
+    content: dict[str, Any]
+    web_resources: list[dict[str, Any]]
+    youtube_resources: list[dict[str, Any]]
+    exercises: list[dict[str, Any]]
+    sources: list[dict[str, Any]]
+    status: str
+    created_at: datetime
+    updated_at: datetime
+
+
+class LessonProgressResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    lesson_id: int
+    user_id: int
+    course_id: int
+    sections_completed: list[str]
+    exercises_completed: dict[str, Any]
+    quiz_score: float | None = None
+    quiz_completed: bool = False
+    completed: bool = False
+    time_spent_seconds: int = 0
+    reflection: str | None = None
+    updated_at: datetime
+
+
+class LessonProgressUpdateRequest(BaseModel):
+    section_id: str | None = None
+    section_completed: bool | None = None
+    exercise_id: str | None = None
+    exercise_attempt: dict[str, Any] | None = None
+    quiz_score: float | None = None
+    quiz_completed: bool | None = None
+    completed: bool | None = None
+    add_time_seconds: int | None = None
+    reflection: str | None = None
+
+
+class LessonChatRequest(BaseModel):
+    message: str = Field(..., min_length=1, max_length=4000)
+    current_section_title: str | None = None
+    current_exercise_id: str | None = None
+    difficulty_mode: str | None = None
+    user_tone_setting: Literal["full", "balanced", "serious", "english_only"] = "balanced"
+
+
+class LessonChatResponse(BaseModel):
+    reply: str
+    clean_answer: str | None = None
+    sources: list[SourceReference] = Field(default_factory=list)
+    citations: list[str] = Field(default_factory=list)
+    tone: str = "patient"
+

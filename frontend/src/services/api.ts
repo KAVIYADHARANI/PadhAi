@@ -7,6 +7,10 @@ import {
   CourseProgress,
   CreateCourseInput,
   Document,
+  Lesson,
+  LessonChatResponse,
+  LessonProgress,
+  LessonProgressUpdateRequest,
   QuizResponse,
   RoadmapItem,
   RoadmapProgress,
@@ -260,6 +264,75 @@ export const api = {
       method: "POST",
       body: JSON.stringify(payload),
     });
+  },
+
+  // Interactive Lessons & Learning Companion
+  async getLesson(
+    courseId: number,
+    itemId: number,
+    taskId: string
+  ): Promise<Lesson> {
+    return request<Lesson>(
+      `/api/courses/${courseId}/roadmap/${itemId}/tasks/${taskId}/lesson`
+    );
+  },
+
+  async generateLesson(
+    courseId: number,
+    itemId: number,
+    taskId: string,
+    overwrite = false
+  ): Promise<Lesson> {
+    const query = overwrite ? "?overwrite=true" : "";
+    return request<Lesson>(
+      `/api/courses/${courseId}/roadmap/${itemId}/tasks/${taskId}/lesson${query}`,
+      { method: "POST" }
+    );
+  },
+
+  async getLessonProgress(
+    courseId: number,
+    itemId: number,
+    taskId: string
+  ): Promise<LessonProgress> {
+    return request<LessonProgress>(
+      `/api/courses/${courseId}/roadmap/${itemId}/tasks/${taskId}/lesson/progress`
+    );
+  },
+
+  async updateLessonProgress(
+    courseId: number,
+    itemId: number,
+    taskId: string,
+    payload: LessonProgressUpdateRequest
+  ): Promise<LessonProgress> {
+    return request<LessonProgress>(
+      `/api/courses/${courseId}/roadmap/${itemId}/tasks/${taskId}/lesson/progress`,
+      {
+        method: "PATCH",
+        body: JSON.stringify(payload),
+      }
+    );
+  },
+
+  async sendLessonChatMessage(
+    courseId: number,
+    itemId: number,
+    taskId: string,
+    payload: {
+      message: string;
+      current_section_title?: string;
+      current_exercise_id?: string;
+      user_tone_setting?: "full" | "balanced" | "serious" | "english_only";
+    }
+  ): Promise<LessonChatResponse> {
+    return request<LessonChatResponse>(
+      `/api/courses/${courseId}/roadmap/${itemId}/tasks/${taskId}/lesson/chat`,
+      {
+        method: "POST",
+        body: JSON.stringify(payload),
+      }
+    );
   },
 };
 

@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from "react";
 import {
   AlertCircle,
+  BookOpen,
   Calendar,
   CheckCircle2,
   ChevronRight,
@@ -18,11 +19,13 @@ import { Course, Document, RoadmapItem, RoadmapProgress } from "../types";
 interface RoadmapViewProps {
   course: Course;
   onGoToMaterials: () => void;
+  onOpenLesson?: (item: RoadmapItem, taskId: string) => void;
 }
 
 export const RoadmapView: React.FC<RoadmapViewProps> = ({
   course,
   onGoToMaterials,
+  onOpenLesson,
 }) => {
   const [loading, setLoading] = useState<boolean>(true);
   const [generating, setGenerating] = useState<boolean>(false);
@@ -493,15 +496,15 @@ export const RoadmapView: React.FC<RoadmapViewProps> = ({
                         const isTaskUpdating = updatingTaskId === task.id;
 
                         return (
-                          <label
+                          <div
                             key={task.id}
-                            className={`flex items-start justify-between gap-3 p-3 rounded-xl border transition cursor-pointer ${
+                            className={`flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-xl border transition ${
                               task.completed
-                                ? "bg-emerald-500/10 border-emerald-500/20 text-slate-400 line-through"
+                                ? "bg-emerald-500/10 border-emerald-500/20 text-slate-400"
                                 : "bg-slate-900/50 border-slate-800 hover:border-slate-700 text-slate-200"
                             }`}
                           >
-                            <div className="flex items-start gap-3">
+                            <label className="flex items-start gap-3 cursor-pointer flex-1">
                               <input
                                 type="checkbox"
                                 checked={task.completed}
@@ -511,15 +514,37 @@ export const RoadmapView: React.FC<RoadmapViewProps> = ({
                                 }
                                 className="mt-0.5 rounded border-slate-700 text-brand-500 focus:ring-brand-400 focus:ring-offset-slate-900"
                               />
-                              <span className="text-xs font-medium leading-relaxed">
+                              <span
+                                className={`text-xs font-medium leading-relaxed ${
+                                  task.completed ? "line-through text-slate-400" : ""
+                                }`}
+                              >
                                 {task.task}
                               </span>
-                            </div>
+                            </label>
 
-                            <span className="text-[10px] font-semibold text-slate-400 px-2 py-0.5 rounded-md bg-slate-800/80 shrink-0">
-                              {task.estimated_minutes}m
-                            </span>
-                          </label>
+                            <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
+                              <span className="text-[10px] font-semibold text-slate-400 px-2 py-0.5 rounded-md bg-slate-800/80">
+                                {task.estimated_minutes}m
+                              </span>
+
+                              {onOpenLesson && (
+                                <button
+                                  type="button"
+                                  onClick={() => onOpenLesson(item, task.id)}
+                                  className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold transition border ${
+                                    task.completed
+                                      ? "bg-slate-800 text-slate-300 border-slate-700 hover:text-white"
+                                      : "bg-brand-500/15 text-brand-300 border-brand-500/30 hover:bg-brand-500/25"
+                                  }`}
+                                >
+                                  <BookOpen className="w-3.5 h-3.5" />
+                                  <span>{task.completed ? "Review Lesson" : "Start Learning"}</span>
+                                  <ChevronRight className="w-3.5 h-3.5" />
+                                </button>
+                              )}
+                            </div>
+                          </div>
                         );
                       })}
                     </div>

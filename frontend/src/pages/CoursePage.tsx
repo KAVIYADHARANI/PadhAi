@@ -13,10 +13,11 @@ import { MASCOT_NAME } from "../brand";
 import { Buddy } from "../components/buddy/Buddy";
 import { ChatView } from "../components/ChatView";
 import { DocumentUpload } from "../components/DocumentUpload";
+import { LessonView } from "../components/LessonView";
 import { ProgressView } from "../components/ProgressView";
 import { QuizView } from "../components/QuizView";
 import { RoadmapView } from "../components/RoadmapView";
-import { Course } from "../types";
+import { Course, RoadmapItem } from "../types";
 
 interface CoursePageProps {
   course: Course;
@@ -28,10 +29,20 @@ type CourseTab = "materials" | "roadmap" | "chat" | "quiz" | "progress";
 export const CoursePage: React.FC<CoursePageProps> = ({ course, onBack }) => {
   const [activeTab, setActiveTab] = useState<CourseTab>("materials");
   const [targetQuizTopicId, setTargetQuizTopicId] = useState<number | null>(null);
+  const [activeLesson, setActiveLesson] = useState<{
+    item: RoadmapItem;
+    taskId: string;
+  } | null>(null);
 
   const handleStartPracticeForTopic = (topicId: number) => {
+    setActiveLesson(null);
     setTargetQuizTopicId(topicId);
     setActiveTab("quiz");
+  };
+
+  const handleTabChange = (tab: CourseTab) => {
+    setActiveLesson(null);
+    setActiveTab(tab);
   };
 
   return (
@@ -90,7 +101,7 @@ export const CoursePage: React.FC<CoursePageProps> = ({ course, onBack }) => {
       {/* Navigation Tabs */}
       <div className="flex items-center gap-2 border-b border-slate-800 pb-1 overflow-x-auto">
         <button
-          onClick={() => setActiveTab("materials")}
+          onClick={() => handleTabChange("materials")}
           className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition border shrink-0 ${
             activeTab === "materials"
               ? "bg-brand-500/15 border-brand-500/30 text-white"
@@ -102,7 +113,7 @@ export const CoursePage: React.FC<CoursePageProps> = ({ course, onBack }) => {
         </button>
 
         <button
-          onClick={() => setActiveTab("roadmap")}
+          onClick={() => handleTabChange("roadmap")}
           className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition border shrink-0 ${
             activeTab === "roadmap"
               ? "bg-brand-500/15 border-brand-500/30 text-white"
@@ -114,7 +125,7 @@ export const CoursePage: React.FC<CoursePageProps> = ({ course, onBack }) => {
         </button>
 
         <button
-          onClick={() => setActiveTab("chat")}
+          onClick={() => handleTabChange("chat")}
           className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition border shrink-0 ${
             activeTab === "chat"
               ? "bg-brand-500/15 border-brand-500/30 text-white"
@@ -126,7 +137,7 @@ export const CoursePage: React.FC<CoursePageProps> = ({ course, onBack }) => {
         </button>
 
         <button
-          onClick={() => setActiveTab("quiz")}
+          onClick={() => handleTabChange("quiz")}
           className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition border shrink-0 ${
             activeTab === "quiz"
               ? "bg-brand-500/15 border-brand-500/30 text-white"
@@ -138,7 +149,7 @@ export const CoursePage: React.FC<CoursePageProps> = ({ course, onBack }) => {
         </button>
 
         <button
-          onClick={() => setActiveTab("progress")}
+          onClick={() => handleTabChange("progress")}
           className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition border shrink-0 ${
             activeTab === "progress"
               ? "bg-brand-500/15 border-brand-500/30 text-white"
@@ -188,12 +199,21 @@ export const CoursePage: React.FC<CoursePageProps> = ({ course, onBack }) => {
         </div>
       )}
 
-      {activeTab === "roadmap" && (
-        <RoadmapView
-          course={course}
-          onGoToMaterials={() => setActiveTab("materials")}
-        />
-      )}
+      {activeTab === "roadmap" &&
+        (activeLesson ? (
+          <LessonView
+            course={course}
+            roadmapItem={activeLesson.item}
+            taskId={activeLesson.taskId}
+            onBackToRoadmap={() => setActiveLesson(null)}
+          />
+        ) : (
+          <RoadmapView
+            course={course}
+            onGoToMaterials={() => handleTabChange("materials")}
+            onOpenLesson={(item, taskId) => setActiveLesson({ item, taskId })}
+          />
+        ))}
 
       {activeTab === "chat" && (
         <ChatView
