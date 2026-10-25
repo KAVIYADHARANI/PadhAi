@@ -13,7 +13,7 @@ import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision: str = "007_lessons_and_learning_companion"
+revision: str = "007_learning_companion"
 down_revision: str | None = "006_topic_metadata"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None

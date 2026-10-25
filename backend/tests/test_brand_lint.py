@@ -32,6 +32,8 @@ ALLOWED_EXACT_FILES = {
     "build_playbook.md",
     ".env.example",
     "docker-compose.yml",
+    "start_dev.ps1",
+    "start.ps1",
     "backend/readme.md",
     "backend/pyproject.toml",
 }

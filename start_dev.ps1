@@ -109,20 +109,6 @@ if (Get-Command docker -ErrorAction SilentlyContinue) {
     if ($dockerRunning) {
         Write-Host "[OK] Docker daemon is ready." -ForegroundColor Green
 
-        # Check for port 5432 conflict with native Windows PostgreSQL service
-        $nativePgServices = Get-Service -Name *postgres* -ErrorAction SilentlyContinue | Where-Object { $_.Status -eq 'Running' }
-        if ($nativePgServices) {
-            foreach ($svc in $nativePgServices) {
-                Write-Host "Stopping conflicting native Windows PostgreSQL service ($($svc.Name)) so Docker can bind port 5432..." -ForegroundColor Yellow
-                try {
-                    Stop-Service $svc -Force -ErrorAction Stop
-                    Write-Host "[OK] Stopped native service: $($svc.Name)" -ForegroundColor Green
-                } catch {
-                    Write-Warning "Could not stop native service $($svc.Name): $($_.Exception.Message)"
-                    Write-Warning "If Docker cannot bind port 5432, stop the PostgreSQL service in Services (services.msc) or run PowerShell as Administrator."
-                }
-            }
-        }
 
         # Start PostgreSQL + pgvector container
         Write-Host "Starting PostgreSQL (pgvector) container..." -ForegroundColor Cyan

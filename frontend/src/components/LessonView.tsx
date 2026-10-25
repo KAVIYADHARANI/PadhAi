@@ -1086,7 +1086,7 @@ export const LessonView: React.FC<LessonViewProps> = ({
         </div>
       )}
 
-      {/* Tab 7: Ask Parama-AI Tutor (Lesson Aware) */}
+      {/* Tab 7: Ask Companion Tutor (Lesson Aware) */}
       {!loading && !generating && lesson && activeTab === "tutor" && (
         <div className="glass-panel rounded-3xl p-6 border border-slate-800 space-y-4">
           <div className="flex items-center gap-2 pb-3 border-b border-slate-800">
