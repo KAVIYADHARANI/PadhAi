@@ -13,6 +13,7 @@ import logging
 from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from sqlalchemy.orm.attributes import flag_modified
 
@@ -77,15 +78,47 @@ async def generate_lesson_endpoint(
     db: Session = Depends(get_db),
 ) -> LessonResponse:
     """Generate or retrieve complete structured lesson notes, resources, videos, and exercises."""
-    lesson = await generate_lesson_for_task(
-        course_id=course_id,
-        roadmap_item_id=item_id,
-        task_id=task_id,
-        user_id=current_user.id,
-        db=db,
-        overwrite=overwrite,
-    )
-    return LessonResponse.model_validate(lesson)
+    # Fast path: Return existing ready lesson immediately if not explicitly overwriting
+    if not overwrite:
+        existing = (
+            db.query(Lesson)
+            .filter(
+                Lesson.course_id == course_id,
+                Lesson.roadmap_item_id == item_id,
+                Lesson.task_id == task_id,
+                Lesson.user_id == current_user.id,
+                Lesson.status == "ready",
+            )
+            .first()
+        )
+        if existing:
+            return LessonResponse.model_validate(existing)
+
+    try:
+        lesson = await generate_lesson_for_task(
+            course_id=course_id,
+            roadmap_item_id=item_id,
+            task_id=task_id,
+            user_id=current_user.id,
+            db=db,
+            overwrite=overwrite,
+        )
+        return LessonResponse.model_validate(lesson)
+    except IntegrityError:
+        db.rollback()
+        existing = (
+            db.query(Lesson)
+            .filter(
+                Lesson.course_id == course_id,
+                Lesson.roadmap_item_id == item_id,
+                Lesson.task_id == task_id,
+                Lesson.user_id == current_user.id,
+            )
+            .first()
+        )
+        if existing:
+            return LessonResponse.model_validate(existing)
+        raise
 
 
 @router.get("/progress", response_model=LessonProgressResponse)

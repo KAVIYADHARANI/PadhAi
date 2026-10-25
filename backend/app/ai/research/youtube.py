@@ -117,12 +117,13 @@ class OfficialYouTubeAPIProvider(YouTubeDiscoveryProvider):
         obj = learning_objectives[0] if learning_objectives else topic
 
         try:
+            headers = {"X-Goog-Api-Key": self.api_key}
             async with httpx.AsyncClient(timeout=8.0) as client:
-                # 1. Search videos
+                # 1. Search videos (API key passed securely in header, not in query string URL)
                 res = await client.get(
                     "https://www.googleapis.com/youtube/v3/search",
+                    headers=headers,
                     params={
-                        "key": self.api_key,
                         "q": search_query,
                         "part": "snippet",
                         "type": "video",
@@ -152,8 +153,8 @@ class OfficialYouTubeAPIProvider(YouTubeDiscoveryProvider):
                 # 2. Get video details (duration)
                 details_res = await client.get(
                     "https://www.googleapis.com/youtube/v3/videos",
+                    headers=headers,
                     params={
-                        "key": self.api_key,
                         "id": ",".join(video_ids),
                         "part": "snippet,contentDetails",
                     },

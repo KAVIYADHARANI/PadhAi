@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { LessonView } from "../components/LessonView";
-import { api } from "../services/api";
+import { api, ApiError } from "../services/api";
 import { Course, Lesson, LessonProgress, RoadmapItem } from "../types";
 
 vi.mock("../services/api", () => ({
@@ -279,4 +279,37 @@ describe("LessonView Component", () => {
       expect(onCompletedMock).toHaveBeenCalled();
     });
   });
+
+  it("auto-generates lesson on 404 and does not trigger duplicate generation calls on repeated renders", async () => {
+    vi.mocked(api.getLesson).mockRejectedValue(new ApiError(404, "Lesson not found"));
+    vi.mocked(api.generateLesson).mockResolvedValue(mockLesson);
+
+    const { rerender } = render(
+      <LessonView
+        course={mockCourse}
+        roadmapItem={mockRoadmapItem}
+        taskId="d1_t1"
+        onBackToRoadmap={vi.fn()}
+      />
+    );
+
+    // Re-render immediately (as in React 18 strict mode double-invoking effects)
+    rerender(
+      <LessonView
+        course={mockCourse}
+        roadmapItem={mockRoadmapItem}
+        taskId="d1_t1"
+        onBackToRoadmap={vi.fn()}
+      />
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText("Mastering Vector Spaces and Subspaces")).toBeInTheDocument();
+    });
+
+    // Exactly one generateLesson call was made despite 404 and re-render
+    expect(api.generateLesson).toHaveBeenCalledTimes(1);
+    expect(api.generateLesson).toHaveBeenCalledWith(1, 1, "d1_t1", false);
+  });
 });
+

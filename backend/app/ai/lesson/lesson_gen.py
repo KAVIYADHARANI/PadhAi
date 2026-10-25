@@ -16,8 +16,10 @@ from typing import Any
 
 from fastapi import HTTPException, status
 from pydantic import BaseModel, Field
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from app.ai.harness.exceptions import StructuredOutputError
 from app.ai.harness.gateway import LLMGateway
 from app.ai.harness.models import ChatMessage
 from app.ai.harness.structured import StructuredCall
@@ -259,7 +261,12 @@ async def generate_lesson_for_task(
         "and practical exercises with progressive hints.\n"
         "4. Tailor depth to the learner level: "
         f"{course.level} (target duration: ~{task_est_mins} minutes).\n"
-        "5. Return strictly the validated JSON adhering to StructuredLessonContent."
+        "5. Output Constraints:\n"
+        "   - 'self_check_questions': You MUST generate between 2 and 4 multiple-choice questions (minimum 2 questions).\n"
+        "   - 'sections': Minimum 2 sections.\n"
+        "   - 'key_terms': Minimum 2 terminology definitions.\n"
+        "   - 'takeaways': Minimum 2 key takeaways.\n"
+        "6. Return strictly the validated JSON adhering to StructuredLessonContent."
     )
 
     user_prompt = (
@@ -270,28 +277,54 @@ async def generate_lesson_for_task(
         f"Study Task: {task_desc}\n"
         f"Target Duration: {task_est_mins} minutes\n"
         f"Learning Objectives:\n" + "\n".join(f"- {o}" for o in objectives) + "\n\n"
-        "Produce the full structured study lesson now."
+        "Produce the full structured study lesson now with at least 2 self-check questions."
     )
 
     structured_call = StructuredCall(gateway=llm)
-    generated_content: StructuredLessonContent = await structured_call.execute(
-        schema=StructuredLessonContent,
-        messages=[
-            ChatMessage(role="system", content=system_prompt),
-            ChatMessage(role="user", content=user_prompt),
-        ],
-        role="smart",
-        temperature=0.3,
-        user_id=user_id,
-        course_id=course_id,
-    )
+    try:
+        generated_content: StructuredLessonContent = await structured_call.execute(
+            schema=StructuredLessonContent,
+            messages=[
+                ChatMessage(role="system", content=system_prompt),
+                ChatMessage(role="user", content=user_prompt),
+            ],
+            role="smart",
+            temperature=0.3,
+            user_id=user_id,
+            course_id=course_id,
+        )
+    except StructuredOutputError as exc:
+        logger.error("Structured output error during lesson generation: %s", exc)
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=f"Lesson generation failed schema validation: {exc}",
+        )
 
     content_dict = generated_content.model_dump()
     web_dict = [r.model_dump() for r in web_resources]
     yt_dict = [y.model_dump() for y in youtube_resources]
     exercises_dict = [ex.model_dump() for ex in generated_content.exercises]
 
-    # 7. Persist Lesson in database
+    # 7. Check if another concurrent request created the lesson while LLM call was running
+    if not existing_lesson and not overwrite:
+        concurrent_lesson = (
+            db.query(Lesson)
+            .filter(
+                Lesson.course_id == course_id,
+                Lesson.roadmap_item_id == roadmap_item_id,
+                Lesson.task_id == task_id,
+                Lesson.user_id == user_id,
+            )
+            .first()
+        )
+        if concurrent_lesson:
+            logger.info(
+                "Lesson was committed concurrently by another request; returning existing lesson %d",
+                concurrent_lesson.id,
+            )
+            return concurrent_lesson
+
+    # 8. Persist Lesson in database (idempotent and concurrency-safe)
     if existing_lesson:
         existing_lesson.title = generated_content.title
         existing_lesson.estimated_minutes = task_est_mins
@@ -321,10 +354,34 @@ async def generate_lesson_for_task(
             status="ready",
         )
         db.add(lesson_record)
-        db.commit()
-        db.refresh(lesson_record)
+        try:
+            db.commit()
+            db.refresh(lesson_record)
+        except IntegrityError as exc:
+            db.rollback()
+            logger.warning(
+                "IntegrityError inserting lesson (%d, %d, %s): %s. Fetching committed record.",
+                course_id,
+                roadmap_item_id,
+                task_id,
+                exc,
+            )
+            existing = (
+                db.query(Lesson)
+                .filter(
+                    Lesson.course_id == course_id,
+                    Lesson.roadmap_item_id == roadmap_item_id,
+                    Lesson.task_id == task_id,
+                    Lesson.user_id == user_id,
+                )
+                .first()
+            )
+            if existing:
+                lesson_record = existing
+            else:
+                raise
 
-    # 8. Ensure initial LessonProgress exists
+    # 9. Ensure initial LessonProgress exists (concurrency-safe)
     progress_record = (
         db.query(LessonProgress)
         .filter(LessonProgress.lesson_id == lesson_record.id, LessonProgress.user_id == user_id)
@@ -341,6 +398,15 @@ async def generate_lesson_for_task(
             time_spent_seconds=0,
         )
         db.add(progress_record)
-        db.commit()
+        try:
+            db.commit()
+            db.refresh(progress_record)
+        except IntegrityError:
+            db.rollback()
+            progress_record = (
+                db.query(LessonProgress)
+                .filter(LessonProgress.lesson_id == lesson_record.id, LessonProgress.user_id == user_id)
+                .first()
+            )
 
     return lesson_record

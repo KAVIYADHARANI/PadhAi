@@ -192,9 +192,18 @@ class StructuredCall:
                 return validated_obj
 
             except (ValidationError, json.JSONDecodeError) as val_err:
-                last_error = str(val_err)
+                if isinstance(val_err, ValidationError):
+                    formatted_errors = []
+                    for err in val_err.errors():
+                        loc = " -> ".join(str(part) for part in err.get("loc", []))
+                        msg = err.get("msg", "")
+                        formatted_errors.append(f"- Field '{loc}': {msg}")
+                    last_error = "\n".join(formatted_errors)
+                else:
+                    last_error = str(val_err)
+
                 logger.warning(
-                    "Structured validation failed on attempt %d for %s: %s",
+                    "Structured validation failed on attempt %d for %s:\n%s",
                     attempt,
                     schema.__name__,
                     last_error,
@@ -217,14 +226,16 @@ class StructuredCall:
                     )
 
                 if attempt < max_retries:
-                    # Append repair turn to conversation
+                    # Append repair turn to conversation with specific schema repair guidance
                     conversation.append(ChatMessage(role="assistant", content=response.content))
                     conversation.append(
                         ChatMessage(
                             role="user",
                             content=(
-                                f"Your previous output failed schema validation: {last_error}\n"
-                                f"Please fix the output and return strictly valid JSON matching the schema."
+                                f"Your previous output failed schema validation:\n{last_error}\n\n"
+                                f"Please fix the validation errors. Specifically, satisfy all list length requirements "
+                                f"(e.g., if a list requires at least 2 items, provide at least 2 complete items) and required fields.\n"
+                                f"Return strictly the corrected, valid JSON matching the schema."
                             ),
                         )
                     )

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   AlertCircle,
   ArrowLeft,
@@ -62,6 +62,10 @@ export const LessonView: React.FC<LessonViewProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<TabType>("notes");
 
+  // In-flight request guards to prevent duplicate concurrent calls
+  const loadingTaskRef = useRef<string | null>(null);
+  const generatingTaskRef = useRef<string | null>(null);
+
   // Exercise state: revealed hints and solutions
   const [revealedHints, setRevealedHints] = useState<Record<string, number>>({});
   const [revealedSolutions, setRevealedSolutions] = useState<Record<string, boolean>>({});
@@ -91,8 +95,14 @@ export const LessonView: React.FC<LessonViewProps> = ({
   const taskTitle = task?.task || roadmapItem.title;
 
   const loadLessonData = useCallback(async () => {
+    // Guard against simultaneous duplicate loads for this task
+    if (loadingTaskRef.current === taskId || generatingTaskRef.current === taskId) {
+      return;
+    }
+    loadingTaskRef.current = taskId;
     setLoading(true);
     setError(null);
+
     try {
       // 1. Try to fetch existing lesson
       try {
@@ -103,12 +113,21 @@ export const LessonView: React.FC<LessonViewProps> = ({
         setReflectionText(progressRes.reflection || "");
       } catch (err) {
         if (err instanceof ApiError && err.status === 404) {
-          // Auto-generate on first open
+          // Auto-generate on first open if not already generating
+          if (generatingTaskRef.current === taskId) {
+            return;
+          }
+          generatingTaskRef.current = taskId;
           setGenerating(true);
-          const generatedRes = await api.generateLesson(course.id, roadmapItem.id, taskId, false);
-          setLesson(generatedRes);
-          const progressRes = await api.getLessonProgress(course.id, roadmapItem.id, taskId);
-          setProgress(progressRes);
+          try {
+            const generatedRes = await api.generateLesson(course.id, roadmapItem.id, taskId, false);
+            setLesson(generatedRes);
+            const progressRes = await api.getLessonProgress(course.id, roadmapItem.id, taskId);
+            setProgress(progressRes);
+          } finally {
+            generatingTaskRef.current = null;
+            setGenerating(false);
+          }
         } else {
           throw err;
         }
@@ -120,6 +139,7 @@ export const LessonView: React.FC<LessonViewProps> = ({
         setError("Failed to load study lesson. Please try again.");
       }
     } finally {
+      loadingTaskRef.current = null;
       setLoading(false);
       setGenerating(false);
     }
@@ -130,6 +150,10 @@ export const LessonView: React.FC<LessonViewProps> = ({
   }, [loadLessonData]);
 
   const handleRegenerateLesson = async () => {
+    if (generatingTaskRef.current === taskId) {
+      return;
+    }
+    generatingTaskRef.current = taskId;
     setGenerating(true);
     setError(null);
     try {
@@ -144,6 +168,7 @@ export const LessonView: React.FC<LessonViewProps> = ({
         setError("Failed to regenerate lesson notes.");
       }
     } finally {
+      generatingTaskRef.current = null;
       setGenerating(false);
     }
   };

@@ -1,15 +1,28 @@
 """Tests for Interactive Lessons, Web Research, YouTube Discovery, and Progress Tracking."""
 
+import json
+import logging
 from unittest.mock import AsyncMock, patch
 
+import httpx
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
-from app.ai.lesson.lesson_gen import StructuredLessonContent
+from app.ai.harness.exceptions import StructuredOutputError
+from app.ai.harness.fake import FakeLLM
+from app.ai.harness.gateway import LLMGateway
+from app.ai.harness.models import ChatMessage
+from app.ai.harness.structured import StructuredCall
+from app.ai.lesson.lesson_gen import StructuredLessonContent, generate_lesson_for_task
 from app.ai.research.web_search import MockSearchProvider, is_safe_url
-from app.ai.research.youtube import DirectSearchFallbackProvider, MockYouTubeProvider
-from app.db.models import Course, RoadmapItem, Topic, User
+from app.ai.research.youtube import (
+    DirectSearchFallbackProvider,
+    MockYouTubeProvider,
+    OfficialYouTubeAPIProvider,
+)
+from app.core.logging import SafeJsonFormatter, redact_secrets
+from app.db.models import Course, Lesson, RoadmapItem, Topic, User
 
 
 def test_is_safe_url():
@@ -110,19 +123,8 @@ def _seed_course_and_roadmap(db_session: Session) -> tuple[User, Course, Roadmap
     return user, course, roadmap_item
 
 
-def test_lesson_generation_and_progress_flow(client: TestClient, db_session: Session, auth_headers_user1):
-    """Full lifecycle: generate lesson, read, update progress, and check roadmap sync."""
-    user, course, item = _seed_course_and_roadmap(db_session)
-
-    # 1. Lesson initially does not exist (404)
-    res = client.get(
-        f"/api/courses/{course.id}/roadmap/{item.id}/tasks/d1_t1/lesson",
-        headers=auth_headers_user1,
-    )
-    assert res.status_code == 404
-
-    # 2. Mock LLMGateway structured output for deterministic lesson generation
-    mock_lesson_content = StructuredLessonContent(
+def _make_mock_lesson_content() -> StructuredLessonContent:
+    return StructuredLessonContent(
         title="Mastering Binary Search Tree Invariants",
         introduction="Binary Search Trees allow logarithmic lookup and efficient sorted operations.",
         prerequisites=["Basic recursion", "Node-pointer memory models"],
@@ -198,6 +200,21 @@ def test_lesson_generation_and_progress_flow(client: TestClient, db_session: Ses
         ],
         deeper_learning=["AVL Trees and Red-Black self-balancing mechanisms."],
     )
+
+
+def test_lesson_generation_and_progress_flow(client: TestClient, db_session: Session, auth_headers_user1):
+    """Full lifecycle: generate lesson, read, update progress, and check roadmap sync."""
+    user, course, item = _seed_course_and_roadmap(db_session)
+
+    # 1. Lesson initially does not exist (404)
+    res = client.get(
+        f"/api/courses/{course.id}/roadmap/{item.id}/tasks/d1_t1/lesson",
+        headers=auth_headers_user1,
+    )
+    assert res.status_code == 404
+
+    # 2. Mock LLMGateway structured output for deterministic lesson generation
+    mock_lesson_content = _make_mock_lesson_content()
 
     with patch(
         "app.ai.lesson.lesson_gen.StructuredCall.execute",
@@ -285,3 +302,305 @@ def test_lesson_sql_authorization_isolation(client: TestClient, db_session: Sess
         json={"completed": True},
     )
     assert res_update.status_code == 404
+
+
+def test_absent_lesson_get_returns_404(client: TestClient, db_session: Session, auth_headers_user1):
+    """GET /lesson returns 404 with clear message when lesson does not exist yet."""
+    user, course, item = _seed_course_and_roadmap(db_session)
+    res = client.get(
+        f"/api/courses/{course.id}/roadmap/{item.id}/tasks/d1_t1/lesson",
+        headers=auth_headers_user1,
+    )
+    assert res.status_code == 404
+    assert "Lesson not found for this study task" in res.json().get("detail", "")
+
+
+def test_lesson_generation_idempotency_repeat_request(client: TestClient, db_session: Session, auth_headers_user1):
+    """Subsequent POST requests return existing ready lesson without re-executing generation."""
+    user, course, item = _seed_course_and_roadmap(db_session)
+    mock_content = _make_mock_lesson_content()
+
+    mock_execute = AsyncMock(return_value=mock_content)
+    with patch("app.ai.lesson.lesson_gen.StructuredCall.execute", new=mock_execute):
+        # 1. First POST generates the lesson
+        res1 = client.post(
+            f"/api/courses/{course.id}/roadmap/{item.id}/tasks/d1_t1/lesson",
+            headers=auth_headers_user1,
+        )
+        assert res1.status_code == 200
+        lesson1 = res1.json()
+        assert lesson1["title"] == "Mastering Binary Search Tree Invariants"
+        assert mock_execute.call_count == 1
+
+        # 2. Second POST (without overwrite) returns existing ready lesson immediately
+        res2 = client.post(
+            f"/api/courses/{course.id}/roadmap/{item.id}/tasks/d1_t1/lesson",
+            headers=auth_headers_user1,
+        )
+        assert res2.status_code == 200
+        lesson2 = res2.json()
+        assert lesson2["id"] == lesson1["id"]
+        assert lesson2["title"] == lesson1["title"]
+        # LLM execute was NOT called a second time
+        assert mock_execute.call_count == 1
+
+        # 3. Third POST with overwrite=true re-runs generation
+        res3 = client.post(
+            f"/api/courses/{course.id}/roadmap/{item.id}/tasks/d1_t1/lesson?overwrite=true",
+            headers=auth_headers_user1,
+        )
+        assert res3.status_code == 200
+        assert mock_execute.call_count == 2
+
+
+def test_concurrent_lesson_generation_integrity_error_recovery(client: TestClient, db_session: Session, auth_headers_user1):
+    """When concurrent requests race to insert a lesson, IntegrityError triggers rollback and returns existing."""
+    user, course, item = _seed_course_and_roadmap(db_session)
+    mock_content = _make_mock_lesson_content()
+
+    # Pre-populate a ready lesson (as if committed concurrently by request A)
+    lesson_rec = Lesson(
+        course_id=course.id,
+        roadmap_item_id=item.id,
+        task_id="d1_t1",
+        user_id=user.id,
+        title="Concurrent Winner Lesson",
+        estimated_minutes=30,
+        content=mock_content.model_dump(),
+        web_resources=[],
+        youtube_resources=[],
+        exercises=[],
+        sources=[],
+        status="ready",
+    )
+    db_session.add(lesson_rec)
+    db_session.commit()
+    db_session.refresh(lesson_rec)
+
+    # Request B calls generate_lesson_endpoint with overwrite=False
+    # Fast path or fallback returns the committed record without 500 error
+    with patch(
+        "app.ai.lesson.lesson_gen.StructuredCall.execute",
+        new=AsyncMock(return_value=mock_content),
+    ):
+        res = client.post(
+            f"/api/courses/{course.id}/roadmap/{item.id}/tasks/d1_t1/lesson",
+            headers=auth_headers_user1,
+        )
+        assert res.status_code == 200
+        data = res.json()
+        assert data["id"] == lesson_rec.id
+        assert data["title"] == "Concurrent Winner Lesson"
+
+
+@pytest.mark.asyncio
+async def test_generate_lesson_for_task_catches_integrity_error_and_rolls_back(db_session: Session):
+    """Directly test that generate_lesson_for_task catches IntegrityError, rolls back, and returns committed record."""
+    user, course, item = _seed_course_and_roadmap(db_session)
+    mock_content = _make_mock_lesson_content()
+
+    # Create committed lesson
+    committed_lesson = Lesson(
+        course_id=course.id,
+        roadmap_item_id=item.id,
+        task_id="d1_t1",
+        user_id=user.id,
+        title="Already Committed Lesson",
+        estimated_minutes=30,
+        content=mock_content.model_dump(),
+        web_resources=[],
+        youtube_resources=[],
+        exercises=[],
+        sources=[],
+        status="ready",
+    )
+    db_session.add(committed_lesson)
+    db_session.commit()
+
+    # Calling generate_lesson_for_task with overwrite=False returns existing ready lesson
+    result = await generate_lesson_for_task(
+        course_id=course.id,
+        roadmap_item_id=item.id,
+        task_id="d1_t1",
+        user_id=user.id,
+        db=db_session,
+        overwrite=False,
+    )
+    assert result.id == committed_lesson.id
+    assert result.title == "Already Committed Lesson"
+
+
+@pytest.mark.asyncio
+async def test_structured_output_recovery_on_insufficient_questions():
+    """StructuredCall retries when question count < 2 and recovers using the schema repair guidance."""
+    fake_llm = FakeLLM()
+    # Attempt 0: only 1 self-check question (violates min_length=2)
+    invalid_payload = {
+        "title": "BST Invariants",
+        "introduction": "Intro text here.",
+        "prerequisites": [],
+        "sections": [
+            {
+                "id": "s1",
+                "title": "Section 1",
+                "content": "Explanation 1.",
+                "key_concepts": ["concept1"],
+                "code_snippet": None,
+                "source_citations": [],
+            },
+            {
+                "id": "s2",
+                "title": "Section 2",
+                "content": "Explanation 2.",
+                "key_concepts": ["concept2"],
+                "code_snippet": None,
+                "source_citations": [],
+            },
+        ],
+        "key_terms": [
+            {"term": "BST", "definition": "Binary Search Tree"},
+            {"term": "Invariant", "definition": "Always true condition"},
+        ],
+        "worked_examples": [
+            {"problem": "Prob", "step_by_step_solution": ["Step 1"], "explanation": "Why"}
+        ],
+        "misconceptions": [
+            {"misconception": "Wrong", "correction": "Right", "explanation": "Why"}
+        ],
+        "summary": "Summary",
+        "takeaways": ["Takeaway 1", "Takeaway 2"],
+        "exercises": [
+            {
+                "id": "ex1",
+                "prompt": "Practice",
+                "exercise_type": "conceptual",
+                "difficulty": "medium",
+                "hints": ["Hint 1"],
+                "solution": "Ans",
+                "explanation": "Exp",
+            }
+        ],
+        "self_check_questions": [
+            {
+                "id": "q1",
+                "question": "Only one question here?",
+                "options": ["A", "B"],
+                "answer": "A",
+                "explanation": "Exp",
+            }
+        ],
+        "deeper_learning": [],
+    }
+
+    # Attempt 1: repaired with 2 self-check questions
+    valid_payload = dict(invalid_payload)
+    valid_payload["self_check_questions"] = [
+        {
+            "id": "q1",
+            "question": "Question 1?",
+            "options": ["A", "B"],
+            "answer": "A",
+            "explanation": "Exp",
+        },
+        {
+            "id": "q2",
+            "question": "Question 2?",
+            "options": ["C", "D"],
+            "answer": "C",
+            "explanation": "Exp",
+        },
+    ]
+
+    fake_llm.add_response(json.dumps(invalid_payload))
+    fake_llm.add_response(json.dumps(valid_payload))
+
+    gateway = LLMGateway(caller=fake_llm.complete, base_backoff_s=0.0)
+    structured = StructuredCall(gateway=gateway)
+
+    result = await structured.execute(
+        schema=StructuredLessonContent,
+        messages=[ChatMessage(role="user", content="Generate BST lesson")],
+        max_retries=2,
+    )
+
+    assert isinstance(result, StructuredLessonContent)
+    assert len(result.self_check_questions) == 2
+    assert fake_llm.call_count == 2
+
+
+def test_structured_output_retry_exhaustion_maps_to_502(client: TestClient, db_session: Session, auth_headers_user1):
+    """When StructuredCall retries are exhausted, lesson generation returns 502 with helpful error."""
+    user, course, item = _seed_course_and_roadmap(db_session)
+
+    with patch(
+        "app.ai.lesson.lesson_gen.StructuredCall.execute",
+        side_effect=StructuredOutputError("Failed to produce valid structured output for StructuredLessonContent after 2 retries."),
+    ):
+        res = client.post(
+            f"/api/courses/{course.id}/roadmap/{item.id}/tasks/d1_t1/lesson",
+            headers=auth_headers_user1,
+        )
+        assert res.status_code == 502
+        assert "Lesson generation failed schema validation" in res.json().get("detail", "")
+
+
+def test_logging_secret_redaction():
+    """Verify redact_secrets and SafeJsonFormatter scrub keys, tokens, and query parameters."""
+    # 1. Direct redact_secrets tests
+    url_with_key = "https://www.googleapis.com/youtube/v3/search?key=AIzaSyC_1234567890abcdefgh&part=snippet"
+    redacted_url = redact_secrets(url_with_key)
+    assert "AIzaSy" not in redacted_url
+    assert "key=[REDACTED]" in redacted_url
+
+    bearer_str = "Authorization: Bearer sk-or-v1-abcdef1234567890abcdef1234567890"
+    redacted_bearer = redact_secrets(bearer_str)
+    assert "sk-or-v1-" not in redacted_bearer
+    assert "Bearer [REDACTED]" in redacted_bearer
+
+    groq_key = "gsk_1234567890abcdef1234567890"
+    assert "[REDACTED_API_KEY]" in redact_secrets(groq_key)
+
+    tavily_key = "tvly-1234567890abcdef"
+    assert "[REDACTED_API_KEY]" in redact_secrets(tavily_key)
+
+    # 2. SafeJsonFormatter test
+    formatter = SafeJsonFormatter()
+    record = logging.LogRecord(
+        name="test_logger",
+        level=logging.INFO,
+        pathname="test.py",
+        lineno=10,
+        msg="Requesting https://example.com/api?token=secret_token_123",
+        args=(),
+        exc_info=None,
+    )
+    formatted = json.loads(formatter.format(record))
+    assert "secret_token_123" not in formatted["event"]
+    assert "token=[REDACTED]" in formatted["event"]
+
+
+@pytest.mark.asyncio
+async def test_youtube_provider_uses_header_not_query_param():
+    """Verify OfficialYouTubeAPIProvider passes API key via X-Goog-Api-Key header and not in URL params."""
+    provider = OfficialYouTubeAPIProvider(api_key="AIzaSyTestSecret123")
+
+    captured_requests: list[dict] = []
+
+    async def mock_get(url, headers=None, params=None):
+        captured_requests.append({"url": url, "headers": headers, "params": params})
+        return httpx.Response(
+            status_code=200,
+            json={"items": [{"id": {"videoId": "test_v1"}, "snippet": {"title": "Test Video", "channelTitle": "Test Channel"}}]},
+            request=httpx.Request("GET", url),
+        )
+
+    with patch("httpx.AsyncClient.get", side_effect=mock_get):
+        await provider.discover_tutorials(topic="Python", learning_objectives=["Variables"], limit=1)
+
+    assert len(captured_requests) >= 1
+    for req in captured_requests:
+        assert req["headers"].get("X-Goog-Api-Key") == "AIzaSyTestSecret123"
+        if req["params"]:
+            assert "key" not in req["params"]
+            assert "AIzaSyTestSecret123" not in str(req["params"])
+
