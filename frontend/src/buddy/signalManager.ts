@@ -11,6 +11,8 @@
  */
 
 import { signalRecorder } from "./recorder";
+import { focusEvaluator } from "./focusEvaluator";
+import { reminderManager } from "./reminderManager";
 import {
   CameraState,
   CameraStudyMode,
@@ -94,6 +96,14 @@ export class SignalManager {
       this.notifyState();
     }
 
+    // Evaluate focus and gaze state
+    focusEvaluator.process(payload, {
+      cameraEnabled: this.state.isEnabled && this.state.isStreaming,
+      tabVisible: this.isTabVisible,
+      studyMode: this.state.mode,
+      nowMs: payload.timestamp || Date.now(),
+    });
+
     this.signalsListeners.forEach((l) => l(payload));
   }
 
@@ -173,6 +183,9 @@ export class SignalManager {
     this.state.isStreaming = false;
     this.state.error = null;
     this.notifyState();
+
+    focusEvaluator.reset();
+    reminderManager.dismiss();
   }
 
   private initWorker(): void {
@@ -207,7 +220,13 @@ export class SignalManager {
     this.isTabVisible = document.visibilityState === "visible";
 
     if (!this.isTabVisible) {
-      // Pause frame capture when hidden
+      // Pause frame capture and focus evaluation when hidden
+      focusEvaluator.process(null, {
+        cameraEnabled: this.state.isEnabled,
+        tabVisible: false,
+        studyMode: this.state.mode,
+      });
+      reminderManager.dismiss();
       this.stopFrameLoop();
     } else if (this.state.isStreaming && !this.animationFrameId) {
       // Resume frame capture when visible

@@ -6,8 +6,10 @@
 import React, { useEffect, useState } from "react";
 import { MASCOT_NAME } from "../../brand";
 import { getBuddyLine } from "../../buddy/lines";
+import { ActiveReminder, reminderManager } from "../../buddy/reminderManager";
 import { BreakChoice, QuizEvent } from "../../buddy/types";
 import { useBuddyEngine } from "../../hooks/useBuddyEngine";
+import { speechService } from "../../services/voice";
 import { api } from "../../services/api";
 import { PlaceholderMascot } from "./PlaceholderMascot";
 import { CameraMonitor } from "./CameraMonitor";
@@ -16,12 +18,15 @@ import {
   Coffee,
   HelpCircle,
   Layers,
+  Maximize2,
   MessageSquare,
+  Minimize2,
   Play,
   RotateCcw,
   Settings,
   Sparkles,
   Volume2,
+  VolumeX,
   X,
 } from "lucide-react";
 
@@ -32,6 +37,8 @@ export interface BuddyProps {
   onNavigateToFlashcards?: () => void;
   lastQuizEvent?: QuizEvent | null;
   className?: string;
+  isFloating?: boolean;
+  defaultCollapsed?: boolean;
 }
 
 export const Buddy: React.FC<BuddyProps> = ({
@@ -41,6 +48,8 @@ export const Buddy: React.FC<BuddyProps> = ({
   onNavigateToFlashcards,
   lastQuizEvent,
   className = "",
+  isFloating = false,
+  defaultCollapsed = false,
 }) => {
   const {
     snapshot,
@@ -58,6 +67,21 @@ export const Buddy: React.FC<BuddyProps> = ({
   const [dialogueLine, setDialogueLine] = useState<string>("");
   const [isTalking, setIsTalking] = useState(false);
   const [currentSessionId, setCurrentSessionId] = useState<number | null>(null);
+  const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed);
+  const [activeReminder, setActiveReminder] = useState<ActiveReminder | null>(null);
+  const [isMuted, setIsMuted] = useState(speechService.getMuted());
+
+  // Subscribe to proactive reminders
+  useEffect(() => {
+    const unsub = reminderManager.subscribe((reminder) => {
+      setActiveReminder(reminder);
+      if (reminder) {
+        setDialogueLine(reminder.message);
+        setIsTalking(true);
+      }
+    });
+    return () => unsub();
+  }, []);
 
   // Load user settings and start session on mount
   useEffect(() => {
@@ -167,52 +191,135 @@ export const Buddy: React.FC<BuddyProps> = ({
 
   return (
     <div className={`relative flex flex-col items-center select-none ${className}`}>
-      {/* Speech / Dialogue Bubble */}
-      {(dialogueLine || isTalking) && (
-        <div className="absolute -top-16 z-20 max-w-xs animate-in fade-in slide-in-from-bottom-2 duration-300">
-          <div className="relative bg-slate-900 border border-brand-500/30 text-slate-100 text-xs px-3.5 py-2.5 rounded-2xl shadow-xl shadow-brand-950/40 backdrop-blur-md">
-            <p className="font-medium leading-relaxed">{dialogueLine}</p>
-            {/* Bubble arrow pointer */}
-            <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-slate-900 border-b border-r border-brand-500/30 rotate-45" />
-          </div>
-        </div>
-      )}
-
-      {/* Main Interactive Mascot Visual */}
-      <PlaceholderMascot
-        state={snapshot.state}
-        isTalking={isTalking}
-        onTap={handleMascotTap}
-        className="w-28 h-28 sm:w-32 sm:h-32"
-      />
-
-      {/* Companion Control Badge */}
-      <div className="mt-1 flex items-center gap-1.5 bg-slate-900/90 border border-slate-800 px-3 py-1 rounded-full shadow-md text-xs backdrop-blur-sm">
-        <span
-          className={`w-2 h-2 rounded-full ${
-            snapshot.pomodoro_phase === "break"
-              ? "bg-amber-400 animate-pulse"
-              : snapshot.state === "celebrate"
-              ? "bg-emerald-400"
-              : "bg-brand-400"
-          }`}
-        />
-        <span className="font-semibold text-slate-200">
-          {snapshot.pomodoro_phase === "break" ? "Break" : "Study"}: {formatTime(snapshot.pomodoro_time_remaining_s)}
-        </span>
-        <button
-          onClick={() => setShowQuickMenu(!showQuickMenu)}
-          className="ml-1 p-0.5 text-slate-400 hover:text-white transition-colors"
-          title="Companion menu"
+      {/* Collapsed Pill View when floating */}
+      {isFloating && isCollapsed ? (
+        <div
+          onClick={() => setIsCollapsed(false)}
+          className="flex items-center gap-2.5 px-3.5 py-2 rounded-2xl bg-slate-900/95 border border-slate-750 shadow-2xl backdrop-blur-xl cursor-pointer hover:border-brand-500/50 transition group"
+          title={`Expand ${MASCOT_NAME} companion`}
         >
-          <Sparkles className="w-3.5 h-3.5 text-brand-400" />
-        </button>
-      </div>
+          <div className="w-7 h-7 rounded-lg bg-brand-500/20 text-brand-400 flex items-center justify-center relative shrink-0">
+            <Sparkles className="w-3.5 h-3.5" />
+            <span
+              className={`absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full ${
+                snapshot.pomodoro_phase === "break"
+                  ? "bg-amber-400 animate-pulse"
+                  : snapshot.state === "celebrate"
+                  ? "bg-emerald-400"
+                  : "bg-brand-400"
+              }`}
+            />
+          </div>
+          <div className="text-left leading-tight pr-1">
+            <p className="font-bold text-white text-[11px] truncate">{MASCOT_NAME}</p>
+            <p className="text-[10px] text-slate-400 truncate">
+              {snapshot.pomodoro_phase === "break" ? "Break" : "Study"}: {formatTime(snapshot.pomodoro_time_remaining_s)}
+            </p>
+          </div>
+          <button
+            type="button"
+            className="p-1 text-slate-400 group-hover:text-white transition shrink-0"
+            aria-label="Expand companion"
+          >
+            <Maximize2 className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      ) : (
+        <>
+          {/* Floating Minimize Button */}
+          {isFloating && (
+            <button
+              type="button"
+              onClick={() => setIsCollapsed(true)}
+              className="absolute -top-2.5 -right-2.5 p-1 rounded-full bg-slate-800 border border-slate-750 text-slate-400 hover:text-white shadow-md z-10 transition"
+              title="Minimize companion"
+              aria-label="Minimize companion"
+            >
+              <Minimize2 className="w-3 h-3" />
+            </button>
+          )}
 
-      {/* Focus & Drowsiness Sensor Monitor */}
-      <div className="mt-2">
-        <CameraMonitor />
-      </div>
+          {/* Speech / Dialogue Bubble (Dismissible) */}
+          {(dialogueLine || isTalking || activeReminder) && (
+            <div className="absolute -top-16 z-20 max-w-xs animate-in fade-in slide-in-from-bottom-2 duration-300">
+              <div className="relative bg-slate-900 border border-brand-500/30 text-slate-100 text-xs px-3.5 py-2.5 rounded-2xl shadow-xl shadow-brand-950/40 backdrop-blur-md flex items-start gap-2">
+                <p className="font-medium leading-relaxed flex-1">
+                  {activeReminder ? activeReminder.message : dialogueLine}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDialogueLine("");
+                    setIsTalking(false);
+                    if (activeReminder) {
+                      reminderManager.dismiss();
+                    }
+                  }}
+                  className="p-0.5 text-slate-400 hover:text-white shrink-0 mt-0.5"
+                  title="Dismiss message"
+                  aria-label="Dismiss message"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+                {/* Bubble arrow pointer */}
+                <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-slate-900 border-b border-r border-brand-500/30 rotate-45" />
+              </div>
+            </div>
+          )}
+
+          {/* Main Interactive Mascot Visual */}
+          <PlaceholderMascot
+            state={snapshot.state}
+            isTalking={isTalking}
+            onTap={handleMascotTap}
+            className="w-28 h-28 sm:w-32 sm:h-32"
+          />
+
+          {/* Companion Control Badge */}
+          <div className="mt-1 flex items-center gap-1.5 bg-slate-900/90 border border-slate-800 px-3 py-1 rounded-full shadow-md text-xs backdrop-blur-sm">
+            <span
+              className={`w-2 h-2 rounded-full ${
+                snapshot.pomodoro_phase === "break"
+                  ? "bg-amber-400 animate-pulse"
+                  : snapshot.state === "celebrate"
+                  ? "bg-emerald-400"
+                  : "bg-brand-400"
+              }`}
+            />
+            <span className="font-semibold text-slate-200">
+              {snapshot.pomodoro_phase === "break" ? "Break" : "Study"}: {formatTime(snapshot.pomodoro_time_remaining_s)}
+            </span>
+            <button
+              type="button"
+              onClick={() => {
+                const nextMuted = !isMuted;
+                setIsMuted(nextMuted);
+                speechService.setMuted(nextMuted);
+              }}
+              className="ml-1 p-0.5 text-slate-400 hover:text-white transition-colors"
+              title={isMuted ? "Unmute spoken reminders" : "Mute spoken reminders"}
+            >
+              {isMuted ? (
+                <VolumeX className="w-3.5 h-3.5 text-amber-400" />
+              ) : (
+                <Volume2 className="w-3.5 h-3.5 text-slate-400" />
+              )}
+            </button>
+            <button
+              onClick={() => setShowQuickMenu(!showQuickMenu)}
+              className="p-0.5 text-slate-400 hover:text-white transition-colors"
+              title="Companion menu"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-brand-400" />
+            </button>
+          </div>
+
+          {/* Focus & Drowsiness Sensor Monitor */}
+          <div className="mt-2">
+            <CameraMonitor />
+          </div>
+        </>
+      )}
 
       {/* Quick-Action Popup Menu */}
       {showQuickMenu && (

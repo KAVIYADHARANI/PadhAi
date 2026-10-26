@@ -5,16 +5,23 @@ import {
   Bot,
   CornerDownLeft,
   Info,
+  Mic,
+  MicOff,
+  Pause,
   RefreshCw,
   Send,
   ShieldCheck,
   Sparkles,
+  Square,
   Trash2,
   User as UserIcon,
+  Volume2,
+  VolumeX,
   X,
 } from "lucide-react";
 import { MASCOT_NAME } from "../brand";
 import { PlaceholderMascot } from "./buddy/PlaceholderMascot";
+import { speechService, useSpeechRecognition } from "../services/voice";
 import { api, ApiError } from "../services/api";
 import { ChatMessage, Course, SourceReference } from "../types";
 
@@ -49,6 +56,91 @@ export const ChatView: React.FC<ChatViewProps> = ({ course }) => {
 
   // Citation modal popover
   const [selectedCitation, setSelectedCitation] = useState<CitationModalState | null>(null);
+
+  // Voice input recognition hook
+  const {
+    isSupported: isSpeechRecSupported,
+    isListening,
+    transcript,
+    error: speechRecError,
+    startListening,
+    stopListening,
+    resetTranscript,
+  } = useSpeechRecognition();
+
+  // Voice output speech synthesis state
+  const [speakingIdx, setSpeakingIdx] = useState<number | null>(null);
+  const [isSpeechPaused, setIsSpeechPaused] = useState<boolean>(false);
+  const [autoReadReplies, setAutoReadReplies] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem("padhai_chat_autoread") === "true";
+    } catch {
+      return false;
+    }
+  });
+
+  // Sync speech recognition transcript into input
+  useEffect(() => {
+    if (transcript) {
+      setInputMessage(transcript);
+    }
+  }, [transcript]);
+
+  // Clean up speech synthesis on unmount
+  useEffect(() => {
+    return () => {
+      speechService.cancel();
+    };
+  }, []);
+
+  const handleToggleAutoRead = () => {
+    const nextVal = !autoReadReplies;
+    setAutoReadReplies(nextVal);
+    try {
+      localStorage.setItem("padhai_chat_autoread", String(nextVal));
+    } catch {}
+    if (!nextVal) {
+      speechService.cancel();
+      setSpeakingIdx(null);
+    }
+  };
+
+  const handleToggleMessageSpeech = (idx: number, text: string) => {
+    if (speakingIdx === idx) {
+      if (speechService.isSpeaking()) {
+        if (speechService.isPaused()) {
+          speechService.resume();
+          setIsSpeechPaused(false);
+        } else {
+          speechService.pause();
+          setIsSpeechPaused(true);
+        }
+      } else {
+        setSpeakingIdx(null);
+        setIsSpeechPaused(false);
+      }
+    } else {
+      speechService.cancel();
+      setSpeakingIdx(idx);
+      setIsSpeechPaused(false);
+      speechService.speak(text, {
+        onEnd: () => {
+          setSpeakingIdx(null);
+          setIsSpeechPaused(false);
+        },
+        onError: () => {
+          setSpeakingIdx(null);
+          setIsSpeechPaused(false);
+        },
+      });
+    }
+  };
+
+  const handleStopSpeech = () => {
+    speechService.cancel();
+    setSpeakingIdx(null);
+    setIsSpeechPaused(false);
+  };
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -86,6 +178,10 @@ export const ChatView: React.FC<ChatViewProps> = ({ course }) => {
   const handleSendMessage = async (customPrompt?: string, explicitIntent?: string) => {
     const textToSend = (customPrompt || inputMessage).trim();
     if (!textToSend || sending) return;
+
+    if (isListening) {
+      stopListening();
+    }
 
     setError(null);
     setInputMessage("");
@@ -170,6 +266,10 @@ export const ChatView: React.FC<ChatViewProps> = ({ course }) => {
         setMessages((prev) => [...prev, assistantMsg]);
         setStreamingContent("");
         setStreamingMeta({});
+
+        if (autoReadReplies) {
+          speechService.speak(assistantMsg.clean_answer || assistantMsg.content);
+        }
       } catch (err) {
         // Fallback to sendChatMessage if streamChatMessage fails or is mocked to fail
         if (typeof api.sendChatMessage === "function") {
@@ -192,6 +292,10 @@ export const ChatView: React.FC<ChatViewProps> = ({ course }) => {
             };
             setMessages((prev) => [...prev, assistantMsg]);
             setStreamingContent("");
+
+            if (autoReadReplies) {
+              speechService.speak(assistantMsg.clean_answer || assistantMsg.content);
+            }
             return;
           } catch {
             // let outer catch handle it
@@ -225,6 +329,9 @@ export const ChatView: React.FC<ChatViewProps> = ({ course }) => {
           created_at: new Date().toISOString(),
         };
         setMessages((prev) => [...prev, assistantMsg]);
+        if (autoReadReplies) {
+          speechService.speak(assistantMsg.clean_answer || assistantMsg.content);
+        }
       } catch (err) {
         if (err instanceof ApiError) {
           setError(err.message);
@@ -314,6 +421,25 @@ export const ChatView: React.FC<ChatViewProps> = ({ course }) => {
           >
             <ShieldCheck className={`w-3.5 h-3.5 ${academicIntegrity ? "text-emerald-400" : "text-slate-400"}`} />
             <span className="hidden md:inline">Integrity Mode</span>
+          </button>
+
+          {/* Voice Auto-Read Toggle */}
+          <button
+            type="button"
+            onClick={handleToggleAutoRead}
+            className={`hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-medium border transition ${
+              autoReadReplies
+                ? "bg-brand-500/15 border-brand-500/30 text-brand-300"
+                : "bg-slate-800 text-slate-400 border-slate-700 hover:bg-slate-700"
+            }`}
+            title="Automatically read aloud new tutor responses"
+          >
+            {autoReadReplies ? (
+              <Volume2 className="w-3.5 h-3.5 text-brand-400" />
+            ) : (
+              <VolumeX className="w-3.5 h-3.5 text-slate-400" />
+            )}
+            <span className="hidden md:inline">Auto-Read</span>
           </button>
 
           {/* Tone Setting selector */}
@@ -519,10 +645,52 @@ export const ChatView: React.FC<ChatViewProps> = ({ course }) => {
                   </div>
                 )}
 
-                {/* Assistant tone tag */}
-                {!isUser && msg.tone && (
-                  <div className="text-[10px] text-slate-500 text-right">
-                    Tone: <span className="capitalize text-slate-400">{msg.tone}</span>
+                {/* Assistant message footer: speaker controls & tone tag */}
+                {!isUser && (
+                  <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between text-[10px]">
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => handleToggleMessageSpeech(idx, msg.clean_answer || msg.content)}
+                        className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg transition font-medium cursor-pointer ${
+                          speakingIdx === idx
+                            ? "bg-brand-500/20 text-brand-300 border border-brand-500/40"
+                            : "text-slate-400 hover:text-slate-200 hover:bg-slate-800"
+                        }`}
+                        title={speakingIdx === idx ? (isSpeechPaused ? "Resume speech" : "Pause speech") : "Listen to answer"}
+                        aria-label="Listen to answer"
+                      >
+                        {speakingIdx === idx && !isSpeechPaused ? (
+                          <>
+                            <Pause className="w-3.5 h-3.5 text-brand-400 animate-pulse" />
+                            <span>Pause</span>
+                          </>
+                        ) : (
+                          <>
+                            <Volume2 className="w-3.5 h-3.5 text-brand-400" />
+                            <span>{speakingIdx === idx ? "Resume" : "Listen"}</span>
+                          </>
+                        )}
+                      </button>
+
+                      {speakingIdx === idx && (
+                        <button
+                          type="button"
+                          onClick={handleStopSpeech}
+                          className="p-1 rounded-md text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition"
+                          title="Stop speaking"
+                          aria-label="Stop speaking"
+                        >
+                          <Square className="w-3 h-3 text-rose-400" />
+                        </button>
+                      )}
+                    </div>
+
+                    {msg.tone && (
+                      <div className="text-[10px] text-slate-500 text-right">
+                        Tone: <span className="capitalize text-slate-400">{msg.tone}</span>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -637,15 +805,82 @@ export const ChatView: React.FC<ChatViewProps> = ({ course }) => {
         </div>
       )}
 
+      {/* Speech Recognition Error Banner */}
+      {speechRecError && (
+        <div className="px-6 py-2.5 bg-amber-500/10 border-t border-amber-500/20 text-amber-300 text-xs flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 text-amber-400 shrink-0" />
+            <span className="leading-tight">{speechRecError}</span>
+          </div>
+          <button
+            type="button"
+            onClick={resetTranscript}
+            className="text-[11px] underline hover:text-white font-medium ml-2"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
+
+      {/* Live Speech Recognition Listening Bar */}
+      {isListening && (
+        <div className="px-6 py-2.5 bg-rose-500/10 border-t border-rose-500/20 text-rose-300 text-xs flex items-center justify-between animate-pulse">
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-ping" />
+            <span className="font-semibold truncate">
+              Listening... Speak your question for {MASCOT_NAME}
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={stopListening}
+            className="px-2.5 py-1 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 text-rose-200 text-[11px] font-bold transition shrink-0 ml-2"
+          >
+            Stop Listening
+          </button>
+        </div>
+      )}
+
       {/* Input Box Footer */}
-      <div className="p-4 border-t border-slate-800 bg-slate-900/60">
+      <div className="p-4 border-t border-slate-800 bg-slate-900/60 space-y-2">
         <form
           onSubmit={(e) => {
             e.preventDefault();
             handleSendMessage();
           }}
-          className="flex items-end gap-3"
+          className="flex items-end gap-2.5"
         >
+          {/* Microphone Voice Button */}
+          <button
+            type="button"
+            onClick={isListening ? stopListening : startListening}
+            className={`h-11 px-3.5 rounded-2xl border transition flex items-center gap-1.5 shrink-0 select-none ${
+              isListening
+                ? "bg-rose-500/20 border-rose-500/50 text-rose-300 animate-pulse"
+                : "bg-slate-950/80 border-slate-800 text-slate-400 hover:text-white hover:border-slate-700"
+            }`}
+            title={
+              !isSpeechRecSupported
+                ? "Speech recognition is not supported in this browser"
+                : isListening
+                ? "Click to stop dictating"
+                : "Click to ask question with your voice"
+            }
+            aria-label={isListening ? "Stop microphone" : "Start microphone"}
+          >
+            {isListening ? (
+              <>
+                <MicOff className="w-4 h-4 text-rose-400" />
+                <span className="text-xs font-semibold hidden sm:inline">Listening</span>
+              </>
+            ) : (
+              <>
+                <Mic className="w-4 h-4" />
+                <span className="text-xs font-semibold hidden sm:inline">Voice</span>
+              </>
+            )}
+          </button>
+
           <div className="flex-1 relative">
             <textarea
               value={inputMessage}
@@ -667,6 +902,10 @@ export const ChatView: React.FC<ChatViewProps> = ({ course }) => {
             <Send className="w-3.5 h-3.5" />
           </button>
         </form>
+
+        <p className="text-[10px] text-slate-400 px-1 leading-normal">
+          Dictate or type questions. Voice recognition uses browser speech services; questions are strictly grounded in your course documents.
+        </p>
       </div>
     </div>
   );

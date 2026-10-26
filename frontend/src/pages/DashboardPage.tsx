@@ -136,8 +136,8 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
             </p>
           </div>
 
-          <div className="mt-8 grid grid-cols-4 gap-4 pt-6 border-t border-slate-800">
-            <div>
+          <div className="mt-8 grid grid-cols-2 sm:grid-cols-4 gap-4 pt-6 border-t border-slate-800 min-w-0">
+            <div className="min-w-0">
               <div className="flex items-center gap-1.5 text-xs text-slate-400 mb-1">
                 <BookOpen className="w-3.5 h-3.5 text-brand-400" />
                 <span>Courses</span>
@@ -182,7 +182,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
       </div>
 
       {/* Analytics & Trends Section (Recharts) */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 min-w-0">
         {/* Trend 1: Focus & Fatigue Trends */}
         <div className="glass-panel rounded-3xl p-6 border border-slate-800/80 space-y-4">
           <div className="flex items-center justify-between">

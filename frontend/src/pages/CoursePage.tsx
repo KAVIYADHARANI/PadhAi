@@ -177,8 +177,8 @@ export const CoursePage: React.FC<CoursePageProps> = ({ course, onBack }) => {
 
       {/* Tab Content */}
       {activeTab === "materials" && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2 space-y-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 min-w-0">
+          <div className="lg:col-span-2 space-y-6 min-w-0">
             <div className="flex items-center gap-2">
               <BookMarked className="w-4 h-4 text-brand-400" />
               <h2 className="text-base font-bold text-white">Course Knowledge Base</h2>
@@ -187,13 +187,13 @@ export const CoursePage: React.FC<CoursePageProps> = ({ course, onBack }) => {
             <DocumentUpload courseId={course.id} />
           </div>
 
-          <div className="space-y-6">
+          <div className="space-y-6 min-w-0">
             <div className="flex items-center gap-2">
               <Sparkles className="w-4 h-4 text-brand-400" />
               <h2 className="text-base font-bold text-white">Companion Readiness</h2>
             </div>
 
-            <div className="glass-card rounded-2xl p-5 border border-slate-800/80 flex flex-col items-center">
+            <div className="glass-card rounded-2xl p-5 border border-slate-800/80 flex flex-col items-center min-w-0">
               <Buddy
                 courseId={course.id}
                 onNavigateToQuiz={() => setActiveTab("quiz")}
@@ -202,9 +202,9 @@ export const CoursePage: React.FC<CoursePageProps> = ({ course, onBack }) => {
               />
             </div>
 
-            <div className="glass-card rounded-2xl p-5 border border-slate-800/80 text-xs text-slate-400 space-y-2">
+            <div className="glass-card rounded-2xl p-5 border border-slate-800/80 text-xs text-slate-400 space-y-2 min-w-0">
               <h3 className="font-semibold text-white">Document Ingestion Pipeline</h3>
-              <p>
+              <p className="break-words leading-relaxed">
                 Once PDFs or notes are uploaded, the ingestion worker segments them into semantic chunks
                 and generates BGE-M3 vector embeddings for grounded tutor chat, personalized study roadmaps,
                 and interactive quizzes.
@@ -260,10 +260,12 @@ export const CoursePage: React.FC<CoursePageProps> = ({ course, onBack }) => {
 
       {/* Floating Study Companion when navigating other tabs */}
       {activeTab !== "materials" && (
-        <div className="fixed bottom-6 right-6 z-40 hidden sm:block animate-in fade-in slide-in-from-bottom-4">
-          <div className="glass-card p-3 rounded-3xl border border-slate-800/90 shadow-2xl backdrop-blur-xl">
+        <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-40 block animate-in fade-in slide-in-from-bottom-4 max-w-[calc(100vw-2rem)]">
+          <div className="glass-card p-2.5 sm:p-3 rounded-3xl border border-slate-800/90 shadow-2xl backdrop-blur-xl">
             <Buddy
               courseId={course.id}
+              isFloating={true}
+              defaultCollapsed={false}
               onNavigateToQuiz={() => setActiveTab("quiz")}
               onNavigateToChat={() => setActiveTab("chat")}
               onNavigateToFlashcards={() => setActiveTab("flashcards")}
