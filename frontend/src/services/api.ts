@@ -495,7 +495,20 @@ export const api = {
       method: "DELETE",
     });
   },
+
+  // Weekly Recap
+  async getWeeklyRecap(courseId: number): Promise<WeeklyRecapResponse> {
+    return request<WeeklyRecapResponse>(`/api/courses/${courseId}/recap`);
+  },
 };
+
+export interface WeeklyRecapResponse {
+  headline: string;
+  summary: string;
+  focus_highlight: string;
+  next_week_goal: string;
+  is_fallback: boolean;
+}
 
 export interface StudySessionResponse {
   id: number;

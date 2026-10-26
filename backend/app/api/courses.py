@@ -354,3 +354,30 @@ async def upload_document(
     background_tasks.add_task(_run_ingestion_background, doc.id)
 
     return DocumentResponse.model_validate(doc)
+
+
+@router.get("/{course_id}/recap")
+async def get_course_weekly_recap(
+    course_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Generates weekly recap over strictly numeric aggregates for this course."""
+    course = (
+        db.query(Course).filter(Course.id == course_id, Course.user_id == current_user.id).first()
+    )
+    if not course:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Course not found",
+        )
+
+    from app.ai.recap.recap_gen import generate_weekly_recap
+
+    recap = await generate_weekly_recap(
+        course_id=course.id,
+        user_id=current_user.id,
+        db=db,
+        gateway=None,
+    )
+    return recap.model_dump()
