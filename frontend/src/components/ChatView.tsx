@@ -7,19 +7,28 @@ import {
   Info,
   RefreshCw,
   Send,
+  ShieldCheck,
   Sparkles,
   Trash2,
   User as UserIcon,
+  X,
 } from "lucide-react";
 import { MASCOT_NAME } from "../brand";
+import { PlaceholderMascot } from "./buddy/PlaceholderMascot";
 import { api, ApiError } from "../services/api";
-import { ChatMessage, Course } from "../types";
+import { ChatMessage, Course, SourceReference } from "../types";
 
 interface ChatViewProps {
   course: Course;
 }
 
 type ToneSetting = "balanced" | "serious" | "full" | "english_only";
+
+interface CitationModalState {
+  document_name: string;
+  page: number;
+  excerpt?: string | null;
+}
 
 export const ChatView: React.FC<ChatViewProps> = ({ course }) => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -28,6 +37,18 @@ export const ChatView: React.FC<ChatViewProps> = ({ course }) => {
   const [sending, setSending] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [toneSetting, setToneSetting] = useState<ToneSetting>("balanced");
+  const [academicIntegrity, setAcademicIntegrity] = useState<boolean>(true);
+
+  // Streaming state
+  const [streamingContent, setStreamingContent] = useState<string>("");
+  const [streamingMeta, setStreamingMeta] = useState<{
+    agent?: string;
+    route_source?: string;
+    chip?: { confirmation_chip?: string | null; follow_up_chip?: string | null };
+  }>({});
+
+  // Citation modal popover
+  const [selectedCitation, setSelectedCitation] = useState<CitationModalState | null>(null);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -60,9 +81,9 @@ export const ChatView: React.FC<ChatViewProps> = ({ course }) => {
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages, sending]);
+  }, [messages, sending, streamingContent]);
 
-  const handleSendMessage = async (customPrompt?: string) => {
+  const handleSendMessage = async (customPrompt?: string, explicitIntent?: string) => {
     const textToSend = (customPrompt || inputMessage).trim();
     if (!textToSend || sending) return;
 
@@ -78,28 +99,141 @@ export const ChatView: React.FC<ChatViewProps> = ({ course }) => {
     setMessages((prev) => [...prev, userMsg]);
     setSending(true);
 
-    try {
-      const reply = await api.sendChatMessage(course.id, textToSend, toneSetting);
-      const assistantMsg: ChatMessage = {
-        role: "assistant",
-        content: reply.reply,
-        clean_answer: reply.clean_answer || reply.reply,
-        sources: reply.sources,
-        citations: reply.citations,
-        tone: reply.tone,
-        is_sufficient: reply.is_sufficient,
-        grounding_status: reply.grounding_status,
-        created_at: new Date().toISOString(),
-      };
-      setMessages((prev) => [...prev, assistantMsg]);
-    } catch (err) {
-      if (err instanceof ApiError) {
-        setError(err.message);
-      } else {
-        setError("Could not reach tutor service. Please check your connection or provider settings.");
+    if (typeof api.streamChatMessage === "function") {
+      let accumulatedReply = "";
+      let currentAgent: string | undefined = undefined;
+      let currentRouteSource: string | undefined = undefined;
+      let currentChip: { confirmation_chip?: string | null; follow_up_chip?: string | null } | null = null;
+      let citations: string[] = [];
+      let sources: SourceReference[] | undefined = undefined;
+
+      setStreamingContent("");
+      setStreamingMeta({});
+
+      try {
+        await api.streamChatMessage(
+          course.id,
+          {
+            message: textToSend,
+            user_tone_setting: toneSetting,
+            intent: explicitIntent,
+            academic_integrity: academicIntegrity,
+          },
+          {
+            onAgent: (agent) => {
+              currentAgent = agent;
+              setStreamingMeta((prev) => ({ ...prev, agent }));
+            },
+            onRouteSource: (source) => {
+              currentRouteSource = source;
+              setStreamingMeta((prev) => ({ ...prev, route_source: source }));
+            },
+            onChip: (chipData) => {
+              currentChip = chipData;
+              setStreamingMeta((prev) => ({ ...prev, chip: chipData }));
+            },
+            onToken: (tok) => {
+              accumulatedReply += tok;
+              setStreamingContent(accumulatedReply);
+            },
+            onReplace: (replacementText) => {
+              accumulatedReply = replacementText;
+              setStreamingContent(accumulatedReply);
+            },
+            onCitations: (cites, srcs) => {
+              citations = cites;
+              sources = srcs;
+            },
+            onDone: () => {},
+            onError: (err) => {
+              throw err;
+            },
+          }
+        );
+
+        const assistantMsg: ChatMessage = {
+          role: "assistant",
+          content: accumulatedReply,
+          clean_answer: accumulatedReply,
+          sources: sources,
+          citations: citations,
+          tone: toneSetting,
+          is_sufficient:
+            !accumulatedReply.includes("do not contain sufficient evidence") &&
+            !accumulatedReply.includes("could not verify"),
+          agent: currentAgent,
+          route_source: currentRouteSource,
+          confirmation_chip: currentChip ? (currentChip as any).confirmation_chip : undefined,
+          follow_up_chip: currentChip ? (currentChip as any).follow_up_chip : undefined,
+          created_at: new Date().toISOString(),
+        };
+        setMessages((prev) => [...prev, assistantMsg]);
+        setStreamingContent("");
+        setStreamingMeta({});
+      } catch (err) {
+        // Fallback to sendChatMessage if streamChatMessage fails or is mocked to fail
+        if (typeof api.sendChatMessage === "function") {
+          try {
+            const reply = await api.sendChatMessage(course.id, textToSend, toneSetting, explicitIntent);
+            const assistantMsg: ChatMessage = {
+              role: "assistant",
+              content: reply.reply,
+              clean_answer: reply.clean_answer || reply.reply,
+              sources: reply.sources,
+              citations: reply.citations,
+              tone: reply.tone,
+              is_sufficient: reply.is_sufficient,
+              grounding_status: reply.grounding_status,
+              agent: reply.agent,
+              route_source: reply.route_source,
+              confirmation_chip: reply.confirmation_chip,
+              follow_up_chip: reply.follow_up_chip,
+              created_at: new Date().toISOString(),
+            };
+            setMessages((prev) => [...prev, assistantMsg]);
+            setStreamingContent("");
+            return;
+          } catch {
+            // let outer catch handle it
+          }
+        }
+        if (err instanceof ApiError) {
+          setError(err.message);
+        } else {
+          setError("Could not reach tutor service. Please check your connection or provider settings.");
+        }
+      } finally {
+        setSending(false);
       }
-    } finally {
-      setSending(false);
+    } else {
+      // Fallback path when streamChatMessage is not present
+      try {
+        const reply = await api.sendChatMessage(course.id, textToSend, toneSetting, explicitIntent);
+        const assistantMsg: ChatMessage = {
+          role: "assistant",
+          content: reply.reply,
+          clean_answer: reply.clean_answer || reply.reply,
+          sources: reply.sources,
+          citations: reply.citations,
+          tone: reply.tone,
+          is_sufficient: reply.is_sufficient,
+          grounding_status: reply.grounding_status,
+          agent: reply.agent,
+          route_source: reply.route_source,
+          confirmation_chip: reply.confirmation_chip,
+          follow_up_chip: reply.follow_up_chip,
+          created_at: new Date().toISOString(),
+        };
+        setMessages((prev) => [...prev, assistantMsg]);
+      } catch (err) {
+        if (err instanceof ApiError) {
+          setError(err.message);
+        } else {
+          setError("Could not reach tutor service. Please check your connection or provider settings.");
+        }
+      } finally {
+        setSending(false);
+      }
     }
   };
 
@@ -122,6 +256,19 @@ export const ChatView: React.FC<ChatViewProps> = ({ course }) => {
     }
   };
 
+  const handleCitationClick = (citationStr: string, sources?: SourceReference[]) => {
+    // Match page number from "[doc p.12]" or "Page 12"
+    const match = citationStr.match(/\d+/);
+    const pageNum = match ? parseInt(match[0], 10) : 1;
+    const matchingSource = sources?.find((s) => s.page === pageNum);
+
+    setSelectedCitation({
+      document_name: matchingSource?.document_name || "Course Document",
+      page: pageNum,
+      excerpt: matchingSource?.excerpt,
+    });
+  };
+
   const quickPrompts = [
     "Summarize the key learning concepts in these materials.",
     "What are the most challenging formulas or principles here?",
@@ -129,12 +276,12 @@ export const ChatView: React.FC<ChatViewProps> = ({ course }) => {
   ];
 
   return (
-    <div className="flex flex-col h-[700px] glass-panel rounded-3xl border border-slate-800 overflow-hidden">
+    <div className="flex flex-col h-[700px] glass-panel rounded-3xl border border-slate-800 overflow-hidden relative">
       {/* Header Bar */}
       <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800 bg-slate-900/40">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-brand-500 to-indigo-600 flex items-center justify-center text-white shadow-lg shadow-brand-500/20">
-            <Sparkles className="w-5 h-5" />
+          <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-brand-500/20 to-indigo-600/20 border border-brand-500/30 flex items-center justify-center p-0.5 shadow-lg shadow-brand-500/20">
+            <PlaceholderMascot state={sending ? "studying" : "idle"} isTalking={sending} className="w-9 h-9" />
           </div>
           <div>
             <div className="flex items-center gap-2">
@@ -150,6 +297,25 @@ export const ChatView: React.FC<ChatViewProps> = ({ course }) => {
         </div>
 
         <div className="flex items-center gap-3">
+          {/* Academic Integrity Toggle */}
+          <button
+            type="button"
+            onClick={() => setAcademicIntegrity(!academicIntegrity)}
+            title={
+              academicIntegrity
+                ? "Academic Integrity ON: Guides you through homework and exams with first principles rather than raw answers"
+                : "Academic Integrity OFF"
+            }
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-medium border transition ${
+              academicIntegrity
+                ? "bg-emerald-500/10 text-emerald-300 border-emerald-500/30 hover:bg-emerald-500/20"
+                : "bg-slate-800 text-slate-400 border-slate-700 hover:bg-slate-700"
+            }`}
+          >
+            <ShieldCheck className={`w-3.5 h-3.5 ${academicIntegrity ? "text-emerald-400" : "text-slate-400"}`} />
+            <span className="hidden md:inline">Integrity Mode</span>
+          </button>
+
           {/* Tone Setting selector */}
           <div className="hidden sm:flex items-center gap-1.5 text-xs">
             <span className="text-slate-400 text-[11px] font-semibold">Persona Tone:</span>
@@ -186,7 +352,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ course }) => {
           </div>
         )}
 
-        {!loadingHistory && messages.length === 0 && (
+        {!loadingHistory && messages.length === 0 && !streamingContent && (
           <div className="h-full flex flex-col items-center justify-center text-center max-w-md mx-auto space-y-4 py-8">
             <div className="w-14 h-14 rounded-2xl bg-brand-500/10 border border-brand-500/20 flex items-center justify-center text-brand-400">
               <Bot className="w-7 h-7" />
@@ -244,6 +410,20 @@ export const ChatView: React.FC<ChatViewProps> = ({ course }) => {
                     : "glass-card bg-slate-900/90 text-slate-200 border border-slate-800 rounded-tl-sm"
                 }`}
               >
+                {/* Router Badge if multi-agent */}
+                {!isUser && msg.agent && (
+                  <div className="flex items-center gap-2 pb-1 border-b border-slate-800/60 text-[10px] text-slate-400">
+                    <span className="font-bold uppercase tracking-wider text-brand-400">
+                      {msg.agent}
+                    </span>
+                    {msg.route_source && (
+                      <span className="px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 text-[9px]">
+                        via {msg.route_source}
+                      </span>
+                    )}
+                  </div>
+                )}
+
                 {/* Clean Answer Body */}
                 <div className="whitespace-pre-wrap font-sans leading-relaxed">
                   {isUser
@@ -255,6 +435,31 @@ export const ChatView: React.FC<ChatViewProps> = ({ course }) => {
                          .trim())}
                 </div>
 
+                {/* Interactive Confirmation Chip */}
+                {!isUser && msg.confirmation_chip && (
+                  <div className="pt-2">
+                    <button
+                      onClick={() => handleSendMessage(msg.confirmation_chip!, "confirm")}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-brand-600 to-indigo-600 hover:from-brand-500 hover:to-indigo-500 text-white font-semibold text-xs shadow-md shadow-brand-500/20 transition cursor-pointer"
+                    >
+                      <Sparkles className="w-3.5 h-3.5" />
+                      <span>{msg.confirmation_chip}</span>
+                    </button>
+                  </div>
+                )}
+
+                {/* Follow-up Suggestion Chip */}
+                {!isUser && msg.follow_up_chip && !msg.confirmation_chip && (
+                  <div className="pt-1">
+                    <button
+                      onClick={() => handleSendMessage(msg.follow_up_chip!)}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 hover:text-white text-xs font-medium transition cursor-pointer"
+                    >
+                      <span>💡 {msg.follow_up_chip}</span>
+                    </button>
+                  </div>
+                )}
+
                 {/* Refusal notification if context insufficient */}
                 {msg.is_sufficient === false && (
                   <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-300 text-[11px] flex items-start gap-2">
@@ -265,22 +470,30 @@ export const ChatView: React.FC<ChatViewProps> = ({ course }) => {
                   </div>
                 )}
 
-                {/* Structured Sources Section */}
+                {/* Structured Sources Section with Clickable Excerpt Preview */}
                 {!isUser && msg.sources && msg.sources.length > 0 && (
                   <div className="pt-3 border-t border-slate-800/80 space-y-2">
                     <span className="text-[10px] uppercase font-bold text-slate-400 flex items-center gap-1.5 tracking-wider">
                       <BookOpen className="w-3 h-3 text-brand-400" />
                       Sources:
                     </span>
-                    <div className="space-y-1">
+                    <div className="flex flex-wrap gap-2">
                       {msg.sources.map((src, sIdx) => (
-                        <div
+                        <button
                           key={sIdx}
-                          className="flex items-center justify-between px-3 py-1.5 rounded-lg bg-slate-950/70 border border-slate-800/90 text-[11px] font-mono text-slate-300"
+                          type="button"
+                          onClick={() =>
+                            setSelectedCitation({
+                              document_name: src.document_name,
+                              page: src.page,
+                              excerpt: src.excerpt,
+                            })
+                          }
+                          className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-950/70 hover:bg-slate-900 border border-slate-800/90 hover:border-brand-500/40 text-[11px] font-mono text-slate-300 transition cursor-pointer"
                         >
                           <span className="text-brand-300 font-semibold">{src.document_name}</span>
                           <span className="text-slate-400">Page {src.page}</span>
-                        </div>
+                        </button>
                       ))}
                     </div>
                   </div>
@@ -294,12 +507,14 @@ export const ChatView: React.FC<ChatViewProps> = ({ course }) => {
                       Sources:
                     </span>
                     {msg.citations.map((cite, cIdx) => (
-                      <span
+                      <button
                         key={cIdx}
-                        className="px-2 py-0.5 rounded-md bg-slate-800 border border-slate-700/80 text-[10px] font-mono text-brand-300"
+                        type="button"
+                        onClick={() => handleCitationClick(cite, msg.sources)}
+                        className="px-2 py-0.5 rounded-md bg-slate-800 hover:bg-slate-700 border border-slate-700/80 hover:border-brand-400/50 text-[10px] font-mono text-brand-300 transition cursor-pointer"
                       >
                         {cite}
-                      </span>
+                      </button>
                     ))}
                   </div>
                 )}
@@ -315,23 +530,97 @@ export const ChatView: React.FC<ChatViewProps> = ({ course }) => {
           );
         })}
 
-        {/* Sending / streaming indicator */}
+        {/* Live Streaming Message Bubble */}
         {sending && (
           <div className="flex items-start gap-3.5">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-brand-500 to-indigo-600 flex items-center justify-center text-white shrink-0">
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-brand-500 to-indigo-600 flex items-center justify-center text-white shrink-0 shadow-md shadow-brand-500/20">
               <Bot className="w-4 h-4" />
             </div>
-            <div className="glass-card bg-slate-900/90 p-4 rounded-2xl rounded-tl-sm border border-slate-800 flex items-center gap-2">
-              <RefreshCw className="w-4 h-4 text-brand-400 animate-spin" />
-              <span className="text-xs text-slate-400">
-                Searching course chunks and generating answer...
-              </span>
+            <div className="max-w-[85%] glass-card bg-slate-900/90 text-slate-200 border border-slate-800 rounded-2xl rounded-tl-sm p-4 space-y-3 text-xs leading-relaxed">
+              {streamingMeta.agent && (
+                <div className="flex items-center gap-2 pb-1 border-b border-slate-800/60 text-[10px] text-slate-400">
+                  <span className="font-bold uppercase tracking-wider text-brand-400">
+                    {streamingMeta.agent}
+                  </span>
+                  {streamingMeta.route_source && (
+                    <span className="px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 text-[9px]">
+                      via {streamingMeta.route_source}
+                    </span>
+                  )}
+                </div>
+              )}
+
+              {streamingContent ? (
+                <div className="whitespace-pre-wrap font-sans leading-relaxed">
+                  {streamingContent}
+                  <span className="inline-block w-1.5 h-3.5 bg-brand-400 animate-pulse ml-0.5 align-middle" />
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 text-slate-400">
+                  <RefreshCw className="w-4 h-4 text-brand-400 animate-spin" />
+                  <span className="text-xs">
+                    Searching course chunks and routing request...
+                  </span>
+                </div>
+              )}
+
+              {/* Streaming Confirmation Chip */}
+              {streamingMeta.chip?.confirmation_chip && (
+                <div className="pt-2">
+                  <button
+                    onClick={() => handleSendMessage(streamingMeta.chip!.confirmation_chip!, "confirm")}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-brand-600 to-indigo-600 text-white font-semibold text-xs shadow-md shadow-brand-500/20"
+                  >
+                    <Sparkles className="w-3.5 h-3.5" />
+                    <span>{streamingMeta.chip.confirmation_chip}</span>
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         )}
 
         <div ref={messagesEndRef} />
       </div>
+
+      {/* Citation Excerpt Modal Popover */}
+      {selectedCitation && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
+          <div className="glass-panel max-w-lg w-full rounded-2xl border border-slate-700 bg-slate-900/95 p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div className="flex items-center gap-2 text-brand-300 font-semibold text-sm">
+                <BookOpen className="w-4 h-4 text-brand-400" />
+                <span>
+                  {selectedCitation.document_name} &bull; Page {selectedCitation.page}
+                </span>
+              </div>
+              <button
+                onClick={() => setSelectedCitation(null)}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="p-4 rounded-xl bg-slate-950/80 border border-slate-800 text-xs text-slate-300 leading-relaxed font-mono">
+              {selectedCitation.excerpt ? (
+                <p className="italic">"{selectedCitation.excerpt}"</p>
+              ) : (
+                <p className="text-slate-400 italic">
+                  Citation grounded in page {selectedCitation.page} of uploaded document.
+                </p>
+              )}
+            </div>
+            <div className="flex justify-end">
+              <button
+                onClick={() => setSelectedCitation(null)}
+                className="px-4 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold transition"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Error Banner */}
       {error && (

@@ -12,6 +12,7 @@ from pathlib import Path
 import pytest
 
 from app.ai.guardrails.input_guard import check_input_guardrails
+from app.ai.guardrails.integrity_guard import check_academic_integrity
 from app.ai.guardrails.output_guard import check_output_guardrails
 from app.retrieval.search import SearchResult
 
@@ -25,7 +26,7 @@ def redteam_cases() -> list[dict]:
 
 
 def test_redteam_adversarial_suite(redteam_cases: list[dict]):
-    """Execute all 15 red-team test cases and print summary table."""
+    """Execute all red-team adversarial test cases and print summary table."""
     results_summary: list[dict] = []
 
     for case in redteam_cases:
@@ -43,6 +44,12 @@ def test_redteam_adversarial_suite(redteam_cases: list[dict]):
 
         if category in ("prompt_injection", "jailbreak", "wellbeing", "input_limits"):
             res = check_input_guardrails(raw_input)
+            if res.audit_records:
+                actual_action = res.audit_records[0].action
+            passed = actual_action == expected_action
+
+        elif category == "academic_integrity":
+            res = check_academic_integrity(raw_input, integrity_enabled=True)
             if res.audit_records:
                 actual_action = res.audit_records[0].action
             passed = actual_action == expected_action

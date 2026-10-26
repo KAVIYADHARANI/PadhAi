@@ -1,11 +1,17 @@
 """Chat endpoint providing grounded tutor interactions via the LangGraph pipeline."""
 
-from datetime import UTC, datetime
-from typing import Literal
+from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException, status
+import asyncio
+import json
+from collections.abc import AsyncGenerator
+from datetime import UTC, datetime
+from typing import Any, Literal
+
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
+from starlette.responses import StreamingResponse
 
 from app.ai.harness.exceptions import AuthenticationError
 from app.ai.tutor.graph import tutor_app
@@ -18,11 +24,18 @@ from app.db.session import get_db
 router = APIRouter(prefix="/api/courses/{course_id}/chat", tags=["chat"])
 
 
+def format_sse(event: str, data: dict[str, Any]) -> str:
+    """Formats a message payload as a Server-Sent Events (SSE) block."""
+    return f"event: {event}\ndata: {json.dumps(data)}\n\n"
+
+
 class ChatRequest(BaseModel):
     """Payload for asking the tutor a question."""
 
     message: str = Field(..., min_length=1, max_length=4000)
     intent: str | None = Field(default=None, description="Explicit UI intent, e.g. quiz, cards, plan, progress")
+    stream: bool = Field(default=False, description="Enable SSE token streaming response")
+    academic_integrity: bool = Field(default=True, description="Enforce academic integrity scaffolding for graded work")
     minutes_since_last_session: float | None = None
     recent_miss_count: int = Field(default=0, ge=0)
     quiz_active: bool = False
@@ -119,17 +132,19 @@ def clear_chat_history(
         db.commit()
 
 
-@router.post("", response_model=ChatResponse, status_code=status.HTTP_200_OK)
+@router.post("", response_model=ChatResponse | None, status_code=status.HTTP_200_OK)
 async def chat_with_tutor(
     course_id: int,
     payload: ChatRequest,
+    request: Request,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
-) -> ChatResponse:
+) -> Any:
     """Send a question to the tutor for a specific course.
 
     Ensures the course belongs to the authenticated user.
     Executes the LangGraph pipeline with layered guardrails and deterministic persona.
+    Supports standard JSON responses and SSE streaming (when stream=True or Accept: text/event-stream).
     Persists user questions and grounded assistant replies to the chat history.
     """
     # 1. Enforce course ownership at the SQL level
@@ -200,6 +215,7 @@ async def chat_with_tutor(
         "intent": payload.intent,
         "history": recent_history,
         "tone_context": tone_ctx,
+        "academic_integrity": payload.academic_integrity,
     }
 
     try:
@@ -247,6 +263,74 @@ async def chat_with_tutor(
     db.add(assistant_msg_record)
     thread.updated_at = datetime.now(UTC)
     db.commit()
+
+    # 8. Check if client requested SSE streaming
+    is_stream = payload.stream or ("text/event-stream" in request.headers.get("accept", ""))
+    if is_stream:
+        async def event_generator() -> AsyncGenerator[str, None]:
+            # Emit agent and route source
+            yield format_sse(
+                "agent",
+                {
+                    "agent": result.get("route_agent", "tutor"),
+                    "confidence": result.get("route_confidence", 1.0),
+                },
+            )
+            yield format_sse("route_source", {"source": result.get("route_source", "rule")})
+
+            # Emit confirmation or follow-up chip if present
+            conf_chip = result.get("confirmation_chip")
+            follow_chip = result.get("follow_up_chip")
+            if conf_chip or follow_chip:
+                yield format_sse(
+                    "chip",
+                    {
+                        "confirmation_chip": conf_chip,
+                        "follow_up_chip": follow_chip,
+                    },
+                )
+
+            # Stream words / token chunks
+            words = reply_text.split(" ")
+            for i, word in enumerate(words):
+                token = word + (" " if i < len(words) - 1 else "")
+                yield format_sse("token", {"token": token})
+                await asyncio.sleep(0.002)
+
+            # Emit replace event if post-generation grounding failed
+            if grounding_status in ("unverified", "failed"):
+                safe_fallback = "I could not verify this from your uploaded course documents."
+                yield format_sse("replace", {"reply": safe_fallback, "reason": "unverified_grounding"})
+
+            # Emit citations and sources
+            yield format_sse(
+                "citations",
+                {
+                    "citations": citations_list,
+                    "sources": [s.model_dump() if hasattr(s, "model_dump") else s for s in sources_list],
+                },
+            )
+
+            # Emit done event
+            yield format_sse(
+                "done",
+                {
+                    "status": "completed",
+                    "tone": tone_str,
+                    "is_sufficient": is_sufficient_bool,
+                    "grounding_status": grounding_status,
+                },
+            )
+
+        return StreamingResponse(
+            event_generator(),
+            media_type="text/event-stream",
+            headers={
+                "Cache-Control": "no-cache",
+                "Connection": "keep-alive",
+                "X-Accel-Buffering": "no",
+            },
+        )
 
     return ChatResponse(
         reply=reply_text,

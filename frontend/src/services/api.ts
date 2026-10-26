@@ -3,6 +3,8 @@ import {
   AttemptSubmission,
   ChatHistoryResponse,
   ChatReplyResponse,
+  ChatStreamCallbacks,
+  ChatStreamRequest,
   Course,
   CourseProgress,
   CreateCourseInput,
@@ -228,6 +230,108 @@ export const api = {
         intent,
       }),
     });
+  },
+
+  async streamChatMessage(
+    courseId: number,
+    payload: ChatStreamRequest,
+    callbacks: ChatStreamCallbacks
+  ): Promise<void> {
+    const token = await getAuthToken();
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+    };
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
+    }
+
+    const response = await fetch(`${API_BASE_URL}/api/courses/${courseId}/chat`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        ...payload,
+        stream: true,
+      }),
+    });
+
+    if (!response.ok) {
+      const errText = await response.text();
+      let errorData;
+      try {
+        errorData = JSON.parse(errText);
+      } catch {
+        errorData = errText;
+      }
+      const err = new ApiError(response.status, `HTTP error ${response.status}`, errorData);
+      callbacks.onError?.(err);
+      throw err;
+    }
+
+    if (!response.body) {
+      callbacks.onDone?.();
+      return;
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+
+    try {
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() || "";
+
+        let currentEvent = "message";
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (!trimmed) {
+            currentEvent = "message";
+            continue;
+          }
+          if (trimmed.startsWith("event:")) {
+            currentEvent = trimmed.replace("event:", "").trim();
+          } else if (trimmed.startsWith("data:")) {
+            const rawData = trimmed.replace("data:", "").trim();
+            try {
+              const data = JSON.parse(rawData);
+              switch (currentEvent) {
+                case "agent":
+                  callbacks.onAgent?.(data.agent);
+                  break;
+                case "route_source":
+                  callbacks.onRouteSource?.(data.route_source);
+                  break;
+                case "chip":
+                  callbacks.onChip?.(data);
+                  break;
+                case "token":
+                  callbacks.onToken?.(data.token);
+                  break;
+                case "replace":
+                  callbacks.onReplace?.(data.text);
+                  break;
+                case "citations":
+                  callbacks.onCitations?.(data.citations || [], data.sources);
+                  break;
+                case "done":
+                  callbacks.onDone?.();
+                  break;
+              }
+            } catch {
+              // Ignore invalid JSON on data line
+            }
+          }
+        }
+      }
+      callbacks.onDone?.();
+    } catch (err: any) {
+      callbacks.onError?.(err);
+      throw err;
+    }
   },
 
   async clearChatHistory(courseId: number): Promise<void> {

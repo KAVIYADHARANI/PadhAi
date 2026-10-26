@@ -26,6 +26,7 @@ Security & Grounding Guarantees:
 from __future__ import annotations
 
 import logging
+from dataclasses import replace
 from typing import Any, TypedDict
 
 from langgraph.graph import END, START, StateGraph
@@ -36,6 +37,7 @@ from app.ai.guardrails.input_guard import (
     GuardrailAuditRecord,
     check_input_guardrails,
 )
+from app.ai.guardrails.integrity_guard import check_academic_integrity
 from app.ai.guardrails.output_guard import check_output_guardrails
 from app.ai.harness.gateway import LLMGateway
 from app.ai.insights.insights_gen import generate_insights_summary
@@ -91,7 +93,7 @@ class TutorState(TypedDict, total=False):
 
 
 def guard_in_node(state: TutorState) -> dict[str, Any]:
-    """Execute input guardrails: length check, wellbeing distress, injection scan."""
+    """Execute input guardrails: length check, wellbeing distress, injection scan, academic integrity."""
     message = state.get("message", "")
     guard_result = check_input_guardrails(message)
 
@@ -99,19 +101,34 @@ def guard_in_node(state: TutorState) -> dict[str, Any]:
     records.extend(guard_result.audit_records)
 
     if guard_result.is_blocked:
+        tone_ctx = state.get("tone_context")
+        new_tone_ctx = tone_ctx
+        if tone_ctx and guard_result.turn_persona_off:
+            new_tone_ctx = replace(tone_ctx, distress_flag=True)
         return {
             "is_blocked": True,
+            "tone_context": new_tone_ctx,
             "final_reply": guard_result.response_override or "",
             "clean_answer": guard_result.response_override or "",
             "citations": [],
             "sources": [],
             "is_sufficient": False,
             "grounding_status": "blocked",
+            "tone": "off" if guard_result.is_distress else "neutral",
             "audit_records": records,
         }
 
+    # Check academic integrity option
+    integrity_enabled = state.get("academic_integrity", True)
+    integrity_res = check_academic_integrity(message, integrity_enabled=integrity_enabled)
+    integrity_directive: str | None = None
+    if integrity_res.is_triggered:
+        records.extend(integrity_res.audit_records)
+        integrity_directive = integrity_res.system_directive
+
     return {
         "is_blocked": False,
+        "academic_integrity_directive": integrity_directive,
         "audit_records": records,
     }
 
@@ -353,8 +370,11 @@ async def tutor_node(state: TutorState) -> dict[str, Any]:
         english_only=(tone_ctx.user_tone_setting == "english_only"),
     )
 
+    integrity_directive = state.get("academic_integrity_directive")
+    integrity_block = f"{integrity_directive}\n\n" if integrity_directive else ""
+
     user_prompt = (
-        f"{context_block}\n\n"
+        f"{integrity_block}{context_block}\n\n"
         f"Student question: {message}\n\n"
         f"Answer the question thoroughly, clearly, and concisely using the study materials above. "
         f"Do not invent facts or extrapolate beyond what is supported. "
