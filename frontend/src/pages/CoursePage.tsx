@@ -36,6 +36,16 @@ export const CoursePage: React.FC<CoursePageProps> = ({ course, onBack }) => {
     taskId: string;
   } | null>(null);
 
+  const currentLessonData = activeLesson
+    ? {
+        item: activeLesson.item,
+        taskId: activeLesson.taskId,
+        lessonTitle:
+          activeLesson.item.tasks.find((t) => t.id === activeLesson.taskId)?.task ||
+          activeLesson.item.title,
+      }
+    : null;
+
   const handleStartPracticeForTopic = (topicId: number) => {
     setActiveLesson(null);
     setTargetQuizTopicId(topicId);
@@ -196,6 +206,7 @@ export const CoursePage: React.FC<CoursePageProps> = ({ course, onBack }) => {
             <div className="glass-card rounded-2xl p-5 border border-slate-800/80 flex flex-col items-center min-w-0">
               <Buddy
                 courseId={course.id}
+                currentLesson={currentLessonData}
                 onNavigateToQuiz={() => setActiveTab("quiz")}
                 onNavigateToChat={() => setActiveTab("chat")}
                 onNavigateToFlashcards={() => setActiveTab("flashcards")}
@@ -264,6 +275,7 @@ export const CoursePage: React.FC<CoursePageProps> = ({ course, onBack }) => {
           <div className="glass-card p-2.5 sm:p-3 rounded-3xl border border-slate-800/90 shadow-2xl backdrop-blur-xl">
             <Buddy
               courseId={course.id}
+              currentLesson={currentLessonData}
               isFloating={true}
               defaultCollapsed={false}
               onNavigateToQuiz={() => setActiveTab("quiz")}

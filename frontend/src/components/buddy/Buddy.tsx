@@ -11,8 +11,10 @@ import { BreakChoice, QuizEvent } from "../../buddy/types";
 import { useBuddyEngine } from "../../hooks/useBuddyEngine";
 import { speechService } from "../../services/voice";
 import { api } from "../../services/api";
+import { RoadmapItem } from "../../types";
 import { PlaceholderMascot } from "./PlaceholderMascot";
 import { CameraMonitor } from "./CameraMonitor";
+import { CompanionChat } from "./CompanionChat";
 
 import {
   Coffee,
@@ -32,6 +34,7 @@ import {
 
 export interface BuddyProps {
   courseId: number;
+  currentLesson?: { item: RoadmapItem; taskId: string; lessonTitle?: string } | null;
   onNavigateToQuiz?: () => void;
   onNavigateToChat?: () => void;
   onNavigateToFlashcards?: () => void;
@@ -43,6 +46,7 @@ export interface BuddyProps {
 
 export const Buddy: React.FC<BuddyProps> = ({
   courseId,
+  currentLesson,
   onNavigateToQuiz,
   onNavigateToChat,
   onNavigateToFlashcards,
@@ -59,7 +63,7 @@ export const Buddy: React.FC<BuddyProps> = ({
     sendQuizEvent,
   } = useBuddyEngine();
 
-  // Settings State
+  // Settings & Interactive Companion State
   const [addressTerm, setAddressTerm] = useState("boss");
   const [personaMode, setPersonaMode] = useState<"full" | "balanced" | "serious" | "english_only">("balanced");
   const [showSettings, setShowSettings] = useState(false);
@@ -70,6 +74,7 @@ export const Buddy: React.FC<BuddyProps> = ({
   const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed);
   const [activeReminder, setActiveReminder] = useState<ActiveReminder | null>(null);
   const [isMuted, setIsMuted] = useState(speechService.getMuted());
+  const [isCompanionChatOpen, setIsCompanionChatOpen] = useState(false);
 
   // Subscribe to proactive reminders
   useEffect(() => {
@@ -145,8 +150,9 @@ export const Buddy: React.FC<BuddyProps> = ({
     }
   }, [snapshot.state, snapshot.active_suggestion, addressTerm]);
 
-  // Handle Mascot Tap / Poke
+  // Handle Mascot Tap / Poke -> Opens companion chat & plays reaction
   const handleMascotTap = () => {
+    setIsCompanionChatOpen(true);
     const randomTriggers = ["long_unbroken_study", "struggling_topic", "quiz_streak", "break_prompt"];
     const trigger = randomTriggers[Math.floor(Math.random() * randomTriggers.length)];
     const tone = personaMode === "serious" ? "patient" : "friendly_checkin";
@@ -239,30 +245,46 @@ export const Buddy: React.FC<BuddyProps> = ({
             </button>
           )}
 
-          {/* Speech / Dialogue Bubble (Dismissible) */}
+          {/* Speech / Dialogue Bubble (Dismissible & Clickable to chat) */}
           {(dialogueLine || isTalking || activeReminder) && (
-            <div className="absolute -top-16 z-20 max-w-xs animate-in fade-in slide-in-from-bottom-2 duration-300">
-              <div className="relative bg-slate-900 border border-brand-500/30 text-slate-100 text-xs px-3.5 py-2.5 rounded-2xl shadow-xl shadow-brand-950/40 backdrop-blur-md flex items-start gap-2">
-                <p className="font-medium leading-relaxed flex-1">
-                  {activeReminder ? activeReminder.message : dialogueLine}
-                </p>
+            <div
+              onClick={() => setIsCompanionChatOpen(true)}
+              className="absolute -top-20 z-20 max-w-xs animate-in fade-in slide-in-from-bottom-2 duration-300 cursor-pointer group"
+              title={`Chat with ${MASCOT_NAME}`}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") setIsCompanionChatOpen(true);
+              }}
+            >
+              <div className="relative bg-slate-900 border border-brand-500/40 hover:border-brand-500/70 text-slate-100 text-xs px-3.5 py-2.5 rounded-2xl shadow-xl shadow-brand-950/40 backdrop-blur-md flex items-start gap-2 transition">
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium leading-relaxed">
+                    {activeReminder ? activeReminder.message : dialogueLine}
+                  </p>
+                  <p className="text-[10px] text-brand-400 font-semibold mt-1 flex items-center gap-1 group-hover:underline">
+                    <MessageSquare className="w-2.5 h-2.5" />
+                    <span>Click to reply</span>
+                  </p>
+                </div>
                 <button
                   type="button"
-                  onClick={() => {
+                  onClick={(e) => {
+                    e.stopPropagation();
                     setDialogueLine("");
                     setIsTalking(false);
                     if (activeReminder) {
                       reminderManager.dismiss();
                     }
                   }}
-                  className="p-0.5 text-slate-400 hover:text-white shrink-0 mt-0.5"
+                  className="p-1 text-slate-400 hover:text-white shrink-0 -mr-1 -mt-1"
                   title="Dismiss message"
                   aria-label="Dismiss message"
                 >
                   <X className="w-3.5 h-3.5" />
                 </button>
                 {/* Bubble arrow pointer */}
-                <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-slate-900 border-b border-r border-brand-500/30 rotate-45" />
+                <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-slate-900 border-b border-r border-brand-500/40 rotate-45" />
               </div>
             </div>
           )}
@@ -272,6 +294,8 @@ export const Buddy: React.FC<BuddyProps> = ({
             state={snapshot.state}
             isTalking={isTalking}
             onTap={handleMascotTap}
+            title={`Chat with ${MASCOT_NAME}`}
+            ariaLabel={`Chat with ${MASCOT_NAME}`}
             className="w-28 h-28 sm:w-32 sm:h-32"
           />
 
@@ -327,6 +351,16 @@ export const Buddy: React.FC<BuddyProps> = ({
           <div className="px-2.5 py-1.5 text-[10px] font-semibold text-slate-400 uppercase tracking-wider border-b border-slate-800">
             {MASCOT_NAME} Actions
           </div>
+          <button
+            onClick={() => {
+              setShowQuickMenu(false);
+              setIsCompanionChatOpen(true);
+            }}
+            className="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-slate-800 flex items-center gap-2 transition-colors font-semibold text-brand-300"
+          >
+            <MessageSquare className="w-3.5 h-3.5 text-brand-400" />
+            <span>Chat with {MASCOT_NAME}</span>
+          </button>
           <button
             onClick={() => {
               setShowQuickMenu(false);
@@ -517,6 +551,24 @@ export const Buddy: React.FC<BuddyProps> = ({
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Interactive Companion Conversation Panel */}
+      {isCompanionChatOpen && (
+        <div className="fixed inset-0 sm:inset-auto sm:bottom-4 sm:right-4 md:bottom-6 md:right-6 z-50 flex items-end sm:items-center justify-end p-2 sm:p-0 bg-slate-950/60 sm:bg-transparent backdrop-blur-sm sm:backdrop-blur-none animate-in fade-in">
+          <CompanionChat
+            courseId={courseId}
+            currentLesson={currentLesson}
+            activeReminder={activeReminder}
+            onClose={() => setIsCompanionChatOpen(false)}
+            onMinimize={() => setIsCompanionChatOpen(false)}
+            onRequestBreak={() => {
+              requestBreak();
+            }}
+            onNavigateToQuiz={onNavigateToQuiz}
+            onNavigateToFlashcards={onNavigateToFlashcards}
+          />
         </div>
       )}
     </div>

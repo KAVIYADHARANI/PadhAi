@@ -163,6 +163,25 @@ export class ReminderManager {
     }
   }
 
+  public triggerReminder(
+    type: "look_away" | "drowsiness",
+    message: string,
+    spokenText?: string
+  ): void {
+    const reminder: ActiveReminder = {
+      id: `${type}_${Date.now()}`,
+      type,
+      message,
+      spokenText: spokenText || message,
+      timestamp: Date.now(),
+    };
+    this.activeReminder = reminder;
+    this.notify();
+    if (this.proactiveVoiceEnabled && !this.quietMode && !speechService.isSpeaking()) {
+      speechService.speak(reminder.spokenText);
+    }
+  }
+
   public destroy(): void {
     if (this.unsubFocus) {
       this.unsubFocus();
