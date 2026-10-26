@@ -64,7 +64,26 @@ def delete_course(
     db: Session = Depends(get_db),
     storage: StorageBackend = Depends(get_storage),
 ) -> None:
-    """Deletes a course and its associated documents, strictly scoped to user_id."""
+    """Deletes a course and completely cascades removal of documents, chunks, topics, questions,
+    attempts, flashcards, roadmap items, lessons, chat threads, and object storage files.
+    Strictly scoped to current_user.id.
+    """
+    from app.db.models import (
+        Attempt,
+        BreakEvent,
+        ChatMessageRecord,
+        ChatThread,
+        Chunk,
+        ChunkTopic,
+        Flashcard,
+        Lesson,
+        LessonProgress,
+        Mastery,
+        Question,
+        RoadmapItem,
+        StudySession,
+    )
+
     course = (
         db.query(Course).filter(Course.id == course_id, Course.user_id == current_user.id).first()
     )
@@ -74,16 +93,103 @@ def delete_course(
             detail="Course not found",
         )
 
-    # Delete physical storage for course documents
+    # 1. Delete physical storage files for course documents
     docs = (
         db.query(Document)
         .filter(Document.course_id == course.id, Document.user_id == current_user.id)
         .all()
     )
     for doc in docs:
-        storage.delete(doc.file_uri)
+        try:
+            storage.delete(doc.file_uri)
+        except Exception:
+            logger.warning("Could not delete physical file: %s", doc.file_uri)
 
+    # 2. Delete chunk-topic mappings
+    chunk_ids = [c.id for c in db.query(Chunk.id).filter(Chunk.course_id == course.id).all()]
+    if chunk_ids:
+        db.query(ChunkTopic).filter(ChunkTopic.chunk_id.in_(chunk_ids)).delete(synchronize_session=False)
+
+    # 3. Delete chunks
+    db.query(Chunk).filter(Chunk.course_id == course.id).delete(synchronize_session=False)
+
+    # 4. Delete chat messages and threads
+    db.query(ChatMessageRecord).filter(ChatMessageRecord.course_id == course.id).delete(synchronize_session=False)
+    db.query(ChatThread).filter(ChatThread.course_id == course.id).delete(synchronize_session=False)
+
+    # 5. Delete lessons and progress
+    db.query(LessonProgress).filter(LessonProgress.course_id == course.id).delete(synchronize_session=False)
+    db.query(Lesson).filter(Lesson.course_id == course.id).delete(synchronize_session=False)
+
+    # 6. Delete flashcards
+    db.query(Flashcard).filter(Flashcard.course_id == course.id).delete(synchronize_session=False)
+
+    # 7. Delete roadmap items
+    db.query(RoadmapItem).filter(RoadmapItem.course_id == course.id).delete(synchronize_session=False)
+
+    # 8. Delete attempts and questions
+    db.query(Attempt).filter(Attempt.course_id == course.id).delete(synchronize_session=False)
+    db.query(Question).filter(Question.course_id == course.id).delete(synchronize_session=False)
+
+    # 9. Delete mastery
+    db.query(Mastery).filter(Mastery.course_id == course.id).delete(synchronize_session=False)
+
+    # 10. Delete topics
+    db.query(Topic).filter(Topic.course_id == course.id).delete(synchronize_session=False)
+
+    # 11. Delete study sessions and break events
+    session_ids = [s.id for s in db.query(StudySession.id).filter(StudySession.course_id == course.id).all()]
+    if session_ids:
+        db.query(BreakEvent).filter(BreakEvent.session_id.in_(session_ids)).delete(synchronize_session=False)
+    db.query(StudySession).filter(StudySession.course_id == course.id).delete(synchronize_session=False)
+
+    # 12. Delete documents
+    db.query(Document).filter(Document.course_id == course.id).delete(synchronize_session=False)
+
+    # 13. Delete course
     db.delete(course)
+    db.commit()
+
+
+@router.delete("/{course_id}/documents/{document_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_document(
+    course_id: int,
+    document_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+    storage: StorageBackend = Depends(get_storage),
+) -> None:
+    """Deletes an individual document, its physical file, and all associated chunks (no orphans)."""
+    from app.db.models import Chunk, ChunkTopic
+
+    doc = (
+        db.query(Document)
+        .filter(
+            Document.id == document_id,
+            Document.course_id == course_id,
+            Document.user_id == current_user.id,
+        )
+        .first()
+    )
+    if not doc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Document not found",
+        )
+
+    # Delete physical file
+    try:
+        storage.delete(doc.file_uri)
+    except Exception:
+        logger.warning("Could not delete physical file: %s", doc.file_uri)
+
+    # Delete chunks and their topic associations to prevent orphaned chunks
+    chunk_ids = [c.id for c in db.query(Chunk.id).filter(Chunk.document_id == doc.id).all()]
+    if chunk_ids:
+        db.query(ChunkTopic).filter(ChunkTopic.chunk_id.in_(chunk_ids)).delete(synchronize_session=False)
+        db.query(Chunk).filter(Chunk.document_id == doc.id).delete(synchronize_session=False)
+
+    db.delete(doc)
     db.commit()
 
 

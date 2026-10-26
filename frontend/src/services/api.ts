@@ -104,6 +104,12 @@ export const api = {
     return request<User>("/api/me");
   },
 
+  async deleteAccount(): Promise<void> {
+    await request<void>("/api/me", {
+      method: "DELETE",
+    });
+  },
+
   // Courses
   async getCourses(): Promise<Course[]> {
     return request<Course[]>("/api/courses");
