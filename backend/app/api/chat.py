@@ -18,6 +18,7 @@ from app.ai.tutor.graph import tutor_app
 from app.api.schemas import ChatHistoryResponse, ChatMessageItem, SourceReference
 from app.buddy.tone import ToneContext
 from app.core.auth import get_current_user
+from app.core.quota import check_daily_llm_quota, check_rate_limit
 from app.db.models import ChatMessageRecord, ChatThread, Course, User
 from app.db.session import get_db
 
@@ -147,6 +148,10 @@ async def chat_with_tutor(
     Supports standard JSON responses and SSE streaming (when stream=True or Accept: text/event-stream).
     Persists user questions and grounded assistant replies to the chat history.
     """
+    # 0. Enforce per-user rate limits and daily LLM quota
+    check_rate_limit(current_user.id, "chat")
+    check_daily_llm_quota(db, current_user.id)
+
     # 1. Enforce course ownership at the SQL level
     course = (
         db.query(Course).filter(Course.id == course_id, Course.user_id == current_user.id).first()

@@ -1,0 +1,48 @@
+name: Nightly Live Evals
+
+# Run live evaluations on a nightly schedule against free-tier model APIs under hard call budget.
+# NEVER run live evals on pull requests (per README Section 15 and BUILD_PLAYBOOK.md Phase 8 Task 8B).
+on:
+  schedule:
+    - cron: '0 2 * * *' # 2:00 AM UTC nightly
+  workflow_dispatch:
+
+jobs:
+  nightly-eval:
+    name: Nightly Live Benchmark & Regression Gate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: "backend/pyproject.toml"
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          cd backend
+          uv pip install --system -e ".[dev]"
+
+      - name: Run Nightly Live Evals Under Budget
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          CEREBRAS_API_KEY: ${{ secrets.CEREBRAS_API_KEY }}
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+        run: |
+          python scripts/eval_nightly.py --budget 50 --output eval/results/nightly_eval.json
+
+      - name: Upload Nightly Eval Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nightly-eval-results
+          path: eval/results/nightly_eval.json

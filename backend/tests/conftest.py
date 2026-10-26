@@ -30,7 +30,11 @@ settings.GOOGLE_API_KEY = ""
 settings.CEREBRAS_API_KEY = ""
 settings.EMBED_PROVIDER = "fake"
 settings.EMBEDDING_PROVIDER = "fake"
+settings.RATE_LIMIT_CHAT_RPM = 100
+settings.RATE_LIMIT_UPLOAD_RPM = 100
+settings.RATE_LIMIT_BUDDY_RPM = 100
 
+from app.core.quota import reset_rate_limits  # noqa: E402
 from app.core.storage import LocalStorageBackend, get_storage  # noqa: E402
 from app.db.session import Base, get_db  # noqa: E402
 from app.main import app  # noqa: E402
@@ -42,6 +46,14 @@ test_engine = create_engine(
     poolclass=StaticPool,
 )
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=test_engine)
+
+
+@pytest.fixture(autouse=True)
+def auto_reset_rate_limits():
+    """Reset in-memory rate limits before and after every test."""
+    reset_rate_limits()
+    yield
+    reset_rate_limits()
 
 
 @pytest.fixture(scope="session", autouse=True)

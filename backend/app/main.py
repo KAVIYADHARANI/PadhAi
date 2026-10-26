@@ -16,6 +16,7 @@ from app.api import roadmap as api_roadmap
 from app.api import sessions as api_sessions
 from app.core.config import settings
 from app.core.logging import setup_logging
+from app.core.observability import setup_observability
 
 # Configure structured logging
 setup_logging()
@@ -25,6 +26,9 @@ app = FastAPI(
     description="Adaptive Learning Platform API",
     version="0.1.0",
 )
+
+# Initialize error monitoring hook
+setup_observability(app)
 
 # CORS configuration
 app.add_middleware(

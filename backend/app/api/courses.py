@@ -9,6 +9,7 @@ from app.api.schemas import CourseCreate, CourseResponse, DocumentResponse, Topi
 from app.core.auth import get_current_user
 from app.core.config import settings
 from app.core.logging import get_logger
+from app.core.quota import check_daily_llm_quota, check_rate_limit
 from app.core.storage import StorageBackend, get_storage
 from app.db.models import Course, Document, Topic, User
 from app.db.session import get_db
@@ -398,6 +399,9 @@ async def upload_document(
     storage: StorageBackend = Depends(get_storage),
 ) -> DocumentResponse:
     """Validates and uploads a document to a user's course, creating a queued document row."""
+    # Enforce upload rate limit
+    check_rate_limit(current_user.id, "upload")
+
     # Strict ownership check on course
     course = (
         db.query(Course).filter(Course.id == course_id, Course.user_id == current_user.id).first()
@@ -469,6 +473,8 @@ async def get_course_weekly_recap(
     db: Session = Depends(get_db),
 ):
     """Generates weekly recap over strictly numeric aggregates for this course."""
+    check_daily_llm_quota(db, current_user.id)
+
     course = (
         db.query(Course).filter(Course.id == course_id, Course.user_id == current_user.id).first()
     )

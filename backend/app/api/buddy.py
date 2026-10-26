@@ -13,6 +13,7 @@ from app.api.schemas import (
     BuddySettingsUpdateRequest,
 )
 from app.core.auth import get_current_user
+from app.core.quota import check_rate_limit
 from app.db.models import BuddyState, User
 from app.db.session import get_db
 
@@ -25,6 +26,7 @@ def get_buddy_settings(
     db: Session = Depends(get_db),
 ) -> BuddySettingsResponse:
     """Fetch user's study companion preferences, creating default record if missing."""
+    check_rate_limit(current_user.id, "buddy")
     state = db.query(BuddyState).filter(BuddyState.user_id == current_user.id).first()
     if not state:
         state = BuddyState(
@@ -50,6 +52,7 @@ def update_buddy_settings(
     db: Session = Depends(get_db),
 ) -> BuddySettingsResponse:
     """Update user's study companion preferences."""
+    check_rate_limit(current_user.id, "buddy")
     state = db.query(BuddyState).filter(BuddyState.user_id == current_user.id).first()
     if not state:
         state = BuddyState(
@@ -78,3 +81,46 @@ def update_buddy_settings(
     db.commit()
     db.refresh(state)
     return state
+
+
+@router.get("/line")
+def get_buddy_line(
+    trigger: str = "greeting",
+    tone: str | None = None,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> dict[str, str]:
+    """Retrieves a human-reviewed dialogue line for the mascot based on current context.
+
+    Enforces per-user buddy endpoint rate limits.
+    """
+    check_rate_limit(current_user.id, "buddy")
+
+    state = db.query(BuddyState).filter(BuddyState.user_id == current_user.id).first()
+    pack_name = state.persona_pack if state else "tanglish"
+    address_term = state.address_term if state else "boss"
+
+    from app.persona.loader import load_persona_pack
+
+    pack = load_persona_pack(pack_name)
+    # Filter lines by trigger and tone if requested
+    matching = [line for line in pack.lines if line.trigger == trigger]
+    if tone:
+        matching_tone = [line for line in matching if line.tone == tone]
+        if matching_tone:
+            matching = matching_tone
+
+    chosen = matching[0] if matching else (pack.lines[0] if pack.lines else None)
+    line_text = (
+        chosen.text.replace("{{address_term}}", address_term)
+        if chosen
+        else f"Padikka vaa, {address_term}!"
+    )
+
+    return {
+        "id": chosen.id if chosen else "fallback",
+        "trigger": trigger,
+        "tone": chosen.tone if chosen else "friendly",
+        "line": line_text,
+    }
+
