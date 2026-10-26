@@ -17,7 +17,7 @@ from pathlib import Path
 
 from sqlalchemy.orm import Session
 
-from app.ai.embedding.embedder import BGEEmbedder, Embedder, FakeEmbedder
+from app.ai.embedding.embedder import Embedder, get_embedder
 from app.ai.harness.gateway import LLMGateway
 from app.ai.topics.topic_grouping import group_chunks_into_topics
 from app.core.config import settings
@@ -63,9 +63,7 @@ async def process_document(
     db.refresh(document)
 
     storage_backend = storage or get_storage()
-    embedder_engine = embedder or (
-        BGEEmbedder() if (settings.EMBED_PROVIDER or settings.OPENROUTER_API_KEY) else FakeEmbedder()
-    )
+    embedder_engine = embedder or get_embedder()
 
     try:
         with db.begin_nested():
@@ -101,6 +99,21 @@ async def process_document(
                 target_max_tokens=800,
             )
 
+            if not chunk_data_items:
+                document.pages = total_pages
+                document.pages_ocr = total_ocr_pages
+                document.ocr_avg_conf = round(avg_conf, 4)
+                document.status = "failed"
+                document.error = "Document produced 0 readable text chunks. Ensure the document contains extractable text or clear scans."
+                db.commit()
+                db.refresh(document)
+                logger.warning("Document %d failed: 0 chunks extracted", document.id)
+                return document
+
+            # Clean up any existing chunks from previous runs for idempotent reprocessing
+            db.query(Chunk).filter(Chunk.document_id == document.id).delete()
+            db.flush()
+
             # 5. Generate embeddings for all chunks
             chunk_texts = [item.text for item in chunk_data_items]
             embeddings = await embedder_engine.embed_texts(chunk_texts)
@@ -125,17 +138,21 @@ async def process_document(
 
             db.flush()
 
-            # 7. Group chunks into topics if gateway provided or available
-            if gateway is not None or settings.OPENROUTER_API_KEY or settings.GROQ_API_KEY:
-                llm_gw = gateway or LLMGateway()
-                course = db.query(Course).filter(Course.id == document.course_id).first()
-                course_name = course.name if course else "Course Material"
+            # 7. Group chunks into topics
+            course = db.query(Course).filter(Course.id == document.course_id).first()
+            course_name = course.name if course else "Course Material"
+            llm_gw = gateway or LLMGateway()
+            try:
                 await group_chunks_into_topics(
                     course_id=document.course_id,
                     chunks=created_chunks,
                     gateway=llm_gw,
                     db=db,
                     course_name=course_name,
+                )
+            except Exception as exc:
+                logging.getLogger("app.worker.ingest").warning(
+                    "Topic grouping skipped or failed: %s", exc
                 )
 
             # 8. Update document metrics and ready status

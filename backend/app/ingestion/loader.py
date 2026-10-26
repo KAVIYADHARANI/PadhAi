@@ -152,8 +152,7 @@ def load_document_pages(
             # Native text layer present
             raw_lines = [line.strip() for line in native_text.splitlines() if line.strip()]
             page_lines = [
-                PageLine(text=line, confidence=1.0, is_low_conf=False)
-                for line in raw_lines
+                PageLine(text=line, confidence=1.0, is_low_conf=False) for line in raw_lines
             ]
             results.append(
                 LoadedPage(

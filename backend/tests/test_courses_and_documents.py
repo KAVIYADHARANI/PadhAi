@@ -25,7 +25,12 @@ def test_course_creation_and_isolation(
     res = client.post(
         "/api/courses",
         headers=auth_headers_user1,
-        json={"name": "Organic Chemistry", "goal_days": 45, "hours_per_day": 2.0, "level": "intermediate"},
+        json={
+            "name": "Organic Chemistry",
+            "goal_days": 45,
+            "hours_per_day": 2.0,
+            "level": "intermediate",
+        },
     )
     assert res.status_code == 201
     user1_course = res.json()
@@ -123,31 +128,41 @@ def test_upload_validations(
 ):
     """Validate bad extensions, bad MIME types, empty files, and oversized uploads."""
     # Create course
-    course = client.post("/api/courses", headers=auth_headers_user1, json={"name": "Validation Test"}).json()
+    course = client.post(
+        "/api/courses", headers=auth_headers_user1, json={"name": "Validation Test"}
+    ).json()
     course_id = course["id"]
 
     # 1. Invalid extension
     bad_ext_file = {"file": ("malicious.exe", io.BytesIO(b"binary"), "application/pdf")}
-    res_bad_ext = client.post(f"/api/courses/{course_id}/documents", headers=auth_headers_user1, files=bad_ext_file)
+    res_bad_ext = client.post(
+        f"/api/courses/{course_id}/documents", headers=auth_headers_user1, files=bad_ext_file
+    )
     assert res_bad_ext.status_code == 400
     assert "Unsupported file extension" in res_bad_ext.json()["detail"]
 
     # 2. Invalid MIME type
     bad_mime_file = {"file": ("notes.pdf", io.BytesIO(b"content"), "text/plain")}
-    res_bad_mime = client.post(f"/api/courses/{course_id}/documents", headers=auth_headers_user1, files=bad_mime_file)
+    res_bad_mime = client.post(
+        f"/api/courses/{course_id}/documents", headers=auth_headers_user1, files=bad_mime_file
+    )
     assert res_bad_mime.status_code == 400
     assert "Unsupported MIME type" in res_bad_mime.json()["detail"]
 
     # 3. Empty file
     empty_file = {"file": ("empty.pdf", io.BytesIO(b""), "application/pdf")}
-    res_empty = client.post(f"/api/courses/{course_id}/documents", headers=auth_headers_user1, files=empty_file)
+    res_empty = client.post(
+        f"/api/courses/{course_id}/documents", headers=auth_headers_user1, files=empty_file
+    )
     assert res_empty.status_code == 400
     assert "Uploaded file is empty" in res_empty.json()["detail"]
 
     # 4. Oversized file
     oversized_data = b"0" * ((settings.MAX_UPLOAD_MB * 1024 * 1024) + 100)
     big_file = {"file": ("huge.pdf", io.BytesIO(oversized_data), "application/pdf")}
-    res_big = client.post(f"/api/courses/{course_id}/documents", headers=auth_headers_user1, files=big_file)
+    res_big = client.post(
+        f"/api/courses/{course_id}/documents", headers=auth_headers_user1, files=big_file
+    )
     assert res_big.status_code == 413
     assert "exceeds maximum size limit" in res_big.json()["detail"]
 
@@ -159,7 +174,9 @@ def test_list_course_documents_and_isolation(
 ):
     """Test GET /api/courses/{course_id}/documents returns course docs with safe metadata and enforces user isolation."""
     # 1. User 1 creates course
-    res_course = client.post("/api/courses", headers=auth_headers_user1, json={"name": "Quantum Physics"})
+    res_course = client.post(
+        "/api/courses", headers=auth_headers_user1, json={"name": "Quantum Physics"}
+    )
     course_id = res_course.json()["id"]
 
     # 2. Before upload, documents list is empty
@@ -202,7 +219,9 @@ def test_upload_failure_cleans_up_file(
     """If database save fails, stored file must be deleted to prevent orphaned files."""
     from app.core.storage import LocalStorageBackend
 
-    course = client.post("/api/courses", headers=auth_headers_user1, json={"name": "Cleanup Test"}).json()
+    course = client.post(
+        "/api/courses", headers=auth_headers_user1, json={"name": "Cleanup Test"}
+    ).json()
     course_id = course["id"]
 
     saved_uris = []
@@ -228,11 +247,14 @@ def test_upload_failure_cleans_up_file(
         raise RuntimeError("Simulated DB failure")
 
     from sqlalchemy.orm import Session
+
     monkeypatch.setattr(Session, "commit", failing_commit)
 
     file_payload = {"file": ("test.pdf", io.BytesIO(b"%PDF-1.4 file content"), "application/pdf")}
     try:
-        client.post(f"/api/courses/{course_id}/documents", headers=auth_headers_user1, files=file_payload)
+        client.post(
+            f"/api/courses/{course_id}/documents", headers=auth_headers_user1, files=file_payload
+        )
     except Exception:
         pass
 

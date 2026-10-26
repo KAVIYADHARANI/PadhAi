@@ -64,8 +64,7 @@ def initialize_firebase() -> None:
         os.environ["FIREBASE_AUTH_EMULATOR_HOST"] = settings.FIREBASE_AUTH_EMULATOR_HOST
         firebase_admin.initialize_app(options={"projectId": project_id})
         logger.info(
-            "Firebase Admin initialized in emulator mode. "
-            "project_id=%s emulator_host=%s",
+            "Firebase Admin initialized in emulator mode. project_id=%s emulator_host=%s",
             project_id,
             settings.FIREBASE_AUTH_EMULATOR_HOST,
         )
@@ -101,8 +100,7 @@ def initialize_firebase() -> None:
     try:
         firebase_admin.initialize_app(options={"projectId": project_id})
         logger.info(
-            "Firebase Admin initialized with Application Default Credentials. "
-            "project_id=%s",
+            "Firebase Admin initialized with Application Default Credentials. project_id=%s",
             project_id,
         )
     except Exception as exc:

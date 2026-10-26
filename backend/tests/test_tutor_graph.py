@@ -94,12 +94,15 @@ async def test_tutor_answerable_query(db_session, test_user, seeded_course):
 
         assert result["is_sufficient"] is True
         assert "[doc p.3]" in result["citations"]
-        assert "processor [doc p.3]" in result["final_reply"]
+        assert "processor" in result["final_reply"]
+        assert "[doc p.3]" in result["final_reply"]
         mock_call.assert_called_once()
 
 
 @pytest.mark.asyncio
-async def test_tutor_unanswerable_refusal_makes_zero_smart_calls(db_session, test_user, seeded_course):
+async def test_tutor_unanswerable_refusal_makes_zero_smart_calls(
+    db_session, test_user, seeded_course
+):
     """Unanswerable query fails sufficiency gate and refuses without smart generation call."""
     state = {
         "db": db_session,
@@ -131,7 +134,9 @@ async def test_tutor_unanswerable_refusal_makes_zero_smart_calls(db_session, tes
 
 
 @pytest.mark.asyncio
-async def test_tutor_hallucinated_citation_triggers_safe_fallback(db_session, test_user, seeded_course):
+async def test_tutor_hallucinated_citation_triggers_safe_fallback(
+    db_session, test_user, seeded_course
+):
     """If model cites a page not in the retrieved chunks, guard_out falls back safely."""
     # Model cites page 999 which does not exist in retrieved chunks
     mock_llm_res = LLMResponse(
@@ -223,7 +228,9 @@ def test_guardrail_events_logged_without_text(db_session, test_user, seeded_cour
         assert not hasattr(ev, "document_text")
 
 
-def test_chat_endpoint_course_isolation(client: TestClient, db_session, test_user, auth_headers_user1):
+def test_chat_endpoint_course_isolation(
+    client: TestClient, db_session, test_user, auth_headers_user1
+):
     """A user cannot access or chat with another user's course."""
     other_user = User(firebase_uid="uid_other_user", email="other@test.com")
     db_session.add(other_user)
@@ -247,3 +254,45 @@ def test_chat_endpoint_course_isolation(client: TestClient, db_session, test_use
     )
     assert resp.status_code == 404
     assert "Course not found" in resp.json()["detail"]
+
+
+def test_rag_tutor_sources_section_formatting():
+    """Verify check_output_guardrails appends a separate Sources section at the end."""
+    from app.ai.guardrails.output_guard import check_output_guardrails
+    from app.retrieval.search import SearchResult
+
+    mock_chunks = [
+        SearchResult(
+            chunk_id=1,
+            document_id=1,
+            course_id=1,
+            user_id=1,
+            page=2,
+            text="Pipelining hazard",
+            score=0.9,
+        ),
+        SearchResult(
+            chunk_id=2,
+            document_id=1,
+            course_id=1,
+            user_id=1,
+            page=4,
+            text="Branch prediction",
+            score=0.85,
+        ),
+    ]
+
+    raw_tutor_answer = (
+        "Structural hazards happen when resources are busy [doc p.2]. "
+        "Branch predictors mitigate control hazards [doc p.4]."
+    )
+
+    guard_res = check_output_guardrails(raw_tutor_answer, mock_chunks)
+    assert guard_res.is_grounded is True
+    assert "[doc p.2]" in guard_res.citations
+    assert "[doc p.4]" in guard_res.citations
+
+    # Verify dedicated Sources section
+    assert "**Sources:**" in guard_res.clean_reply
+    assert "- [doc p.2]" in guard_res.clean_reply
+    assert "- [doc p.4]" in guard_res.clean_reply

@@ -7,7 +7,7 @@ import {
   AlertCircle,
   Loader2,
 } from "lucide-react";
-import { Document, DocumentStatus } from "../types";
+import { Document } from "../types";
 import { api } from "../services/api";
 
 interface DocumentUploadProps {
@@ -151,36 +151,55 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({
     }
   };
 
-  const renderStatusBadge = (status: DocumentStatus) => {
-    switch (status) {
-      case "ready":
-      case "indexed":
-        return (
-          <span className="flex items-center gap-1 text-[11px] font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">
-            <CheckCircle2 className="w-3 h-3" /> Ready
-          </span>
-        );
-      case "processing":
-        return (
-          <span className="flex items-center gap-1 text-[11px] font-semibold text-blue-400 bg-blue-500/10 border border-blue-500/20 px-2 py-0.5 rounded-full">
-            <Loader2 className="w-3 h-3 animate-spin" /> Processing
-          </span>
-        );
-      case "failed":
-      case "error":
-        return (
-          <span className="flex items-center gap-1 text-[11px] font-semibold text-rose-400 bg-rose-500/10 border border-rose-500/20 px-2 py-0.5 rounded-full">
-            <AlertCircle className="w-3 h-3" /> Failed
-          </span>
-        );
-      case "queued":
-      default:
-        return (
-          <span className="flex items-center gap-1 text-[11px] font-semibold text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-full">
-            <Clock className="w-3 h-3 animate-pulse" /> Queued
-          </span>
-        );
+  const [reprocessingId, setReprocessingId] = useState<number | null>(null);
+
+  const handleReprocess = async (docId: number) => {
+    try {
+      setReprocessingId(docId);
+      setError(null);
+      const updated = await api.reprocessDocument(courseId, docId);
+      setDocuments((prev) => prev.map((d) => (d.id === docId ? updated : d)));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to reprocess document");
+    } finally {
+      setReprocessingId(null);
     }
+  };
+
+  const renderStatusBadge = (doc: Document) => {
+    if (doc.status === "ready" && (doc.chunks_count ?? 0) > 0) {
+      return (
+        <span className="flex items-center gap-1 text-[11px] font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">
+          <CheckCircle2 className="w-3 h-3" /> Ready ({doc.chunks_count} chunks)
+        </span>
+      );
+    }
+    if (doc.status === "ready" && (doc.chunks_count ?? 0) === 0) {
+      return (
+        <span className="flex items-center gap-1 text-[11px] font-semibold text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-full">
+          <AlertCircle className="w-3 h-3" /> No Chunks
+        </span>
+      );
+    }
+    if (doc.status === "processing" || reprocessingId === doc.id) {
+      return (
+        <span className="flex items-center gap-1 text-[11px] font-semibold text-blue-400 bg-blue-500/10 border border-blue-500/20 px-2 py-0.5 rounded-full">
+          <Loader2 className="w-3 h-3 animate-spin" /> Ingesting & Indexing
+        </span>
+      );
+    }
+    if (doc.status === "failed" || doc.status === "error") {
+      return (
+        <span className="flex items-center gap-1 text-[11px] font-semibold text-rose-400 bg-rose-500/10 border border-rose-500/20 px-2 py-0.5 rounded-full">
+          <AlertCircle className="w-3 h-3" /> Failed
+        </span>
+      );
+    }
+    return (
+      <span className="flex items-center gap-1 text-[11px] font-semibold text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-full">
+        <Clock className="w-3 h-3 animate-pulse" /> Queued
+      </span>
+    );
   };
 
   return (
@@ -264,6 +283,7 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({
                     <p className="text-[10px] text-slate-400">
                       {doc.size_bytes ? `${(doc.size_bytes / 1024).toFixed(1)} KB • ` : ""}
                       {doc.pages ? `${doc.pages} pages • ` : ""}
+                      {doc.chunks_count !== undefined ? `${doc.chunks_count} chunks • ` : ""}
                       {new Date(doc.created_at).toLocaleDateString()}
                     </p>
                     {doc.error && (
@@ -274,7 +294,17 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({
                   </div>
                 </div>
 
-                <div className="shrink-0">{renderStatusBadge(doc.status)}</div>
+                <div className="flex items-center gap-2 shrink-0">
+                  {renderStatusBadge(doc)}
+                  <button
+                    onClick={() => handleReprocess(doc.id)}
+                    disabled={reprocessingId === doc.id || doc.status === "processing"}
+                    title="Reprocess document"
+                    className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition disabled:opacity-40 text-[10px] font-semibold"
+                  >
+                    Reprocess
+                  </button>
+                </div>
               </div>
             ))}
           </div>

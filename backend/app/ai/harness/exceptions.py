@@ -77,3 +77,10 @@ class GuardrailViolationError(HarnessError):
         self.layer = layer
         self.rule = rule
         self.action = action
+
+
+class AuthenticationError(HarnessError):
+    """Raised when an API key is missing or invalid for an LLM provider."""
+
+    def __init__(self, message: str = "Invalid or missing LLM provider API credentials"):
+        super().__init__(message, error_code="AUTHENTICATION_ERROR")

@@ -77,9 +77,7 @@ class FakeLLM:
 
     def add_provider_failure(self, provider: str, exception: Exception) -> None:
         """Enqueue an exception specific to a provider."""
-        self._provider_queues.setdefault(provider, []).append(
-            ScriptedCall(exception=exception)
-        )
+        self._provider_queues.setdefault(provider, []).append(ScriptedCall(exception=exception))
 
     def add_rate_limit_failure(self, provider: str | None = None) -> None:
         """Convenience method to enqueue a 429 rate limit failure."""

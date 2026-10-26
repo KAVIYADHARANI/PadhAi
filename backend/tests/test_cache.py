@@ -56,8 +56,12 @@ def test_cache_user_isolation():
     assert "u102" in user2_key
 
     # Generated set keys
-    gen_u1 = make_generated_set_cache_key(topic_id=4, chunk_hash="abc123hash", kind="quiz", user_id=101)
-    gen_u2 = make_generated_set_cache_key(topic_id=4, chunk_hash="abc123hash", kind="quiz", user_id=102)
+    gen_u1 = make_generated_set_cache_key(
+        topic_id=4, chunk_hash="abc123hash", kind="quiz", user_id=101
+    )
+    gen_u2 = make_generated_set_cache_key(
+        topic_id=4, chunk_hash="abc123hash", kind="quiz", user_id=102
+    )
 
     assert gen_u1 != gen_u2
     assert "u101" in gen_u1

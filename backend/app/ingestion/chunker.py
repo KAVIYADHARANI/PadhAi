@@ -141,7 +141,10 @@ def chunk_document(
                 current_tokens += estimate_tokens(trimmed)
             else:
                 line_tokens = estimate_tokens(trimmed)
-                if current_tokens + line_tokens > target_max_tokens and current_tokens >= target_min_tokens:
+                if (
+                    current_tokens + line_tokens > target_max_tokens
+                    and current_tokens >= target_min_tokens
+                ):
                     flush_buffer()
                     current_page = page.page_number
 

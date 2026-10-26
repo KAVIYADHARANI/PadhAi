@@ -1,4 +1,22 @@
-import { Course, CreateCourseInput, Document, User } from "../types";
+import {
+  AttemptResult,
+  AttemptSubmission,
+  ChatHistoryResponse,
+  ChatReplyResponse,
+  Course,
+  CourseProgress,
+  CreateCourseInput,
+  Document,
+  Lesson,
+  LessonChatResponse,
+  LessonProgress,
+  LessonProgressUpdateRequest,
+  QuizResponse,
+  RoadmapItem,
+  RoadmapProgress,
+  Topic,
+  User,
+} from "../types";
 import { getAuthToken } from "./firebase";
 
 const API_BASE_URL =
@@ -114,7 +132,258 @@ export const api = {
     });
   },
 
+  async reprocessDocument(courseId: number, documentId: number): Promise<Document> {
+    return request<Document>(`/api/courses/${courseId}/documents/${documentId}/reprocess`, {
+      method: "POST",
+    });
+  },
+
   async getDocument(documentId: number): Promise<Document> {
     return request<Document>(`/api/documents/${documentId}`);
   },
+
+  // Topics
+  async getCourseTopics(courseId: number): Promise<Topic[]> {
+    return request<Topic[]>(`/api/courses/${courseId}/topics`);
+  },
+
+  async reprocessCourseTopics(courseId: number): Promise<Topic[]> {
+    return request<Topic[]>(`/api/courses/${courseId}/reprocess-topics`, {
+      method: "POST",
+    });
+  },
+
+  // Quizzes & Attempts
+  async generateQuiz(courseId: number, topicId: number, count = 5): Promise<QuizResponse> {
+    return request<QuizResponse>("/api/quizzes", {
+      method: "POST",
+      body: JSON.stringify({
+        course_id: courseId,
+        topic_id: topicId,
+        count,
+      }),
+    });
+  },
+
+  async submitAttempt(submission: AttemptSubmission): Promise<AttemptResult> {
+    return request<AttemptResult>("/api/attempts", {
+      method: "POST",
+      body: JSON.stringify(submission),
+    });
+  },
+
+  // Progress
+  async getCourseProgress(courseId: number): Promise<CourseProgress> {
+    return request<CourseProgress>(`/api/progress/${courseId}`);
+  },
+
+  // Roadmap
+  async getCourseRoadmap(courseId: number): Promise<RoadmapProgress> {
+    return request<RoadmapProgress>(`/api/courses/${courseId}/roadmap`);
+  },
+
+  async generateCourseRoadmap(courseId: number, overwrite = false): Promise<RoadmapProgress> {
+    const query = overwrite ? "?overwrite=true" : "";
+    return request<RoadmapProgress>(`/api/courses/${courseId}/roadmap${query}`, {
+      method: "POST",
+    });
+  },
+
+  async updateRoadmapItem(
+    courseId: number,
+    itemId: number,
+    payload: { completed?: boolean; task_id?: string; task_completed?: boolean }
+  ): Promise<RoadmapItem> {
+    return request<RoadmapItem>(`/api/courses/${courseId}/roadmap/${itemId}`, {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    });
+  },
+
+  // Chat / Assistant
+  async getChatHistory(courseId: number): Promise<ChatHistoryResponse> {
+    return request<ChatHistoryResponse>(`/api/courses/${courseId}/chat/history`);
+  },
+
+  async sendChatMessage(
+    courseId: number,
+    message: string,
+    userToneSetting: "full" | "balanced" | "serious" | "english_only" = "balanced"
+  ): Promise<ChatReplyResponse> {
+    return request<ChatReplyResponse>(`/api/courses/${courseId}/chat`, {
+      method: "POST",
+      body: JSON.stringify({
+        message,
+        user_tone_setting: userToneSetting,
+      }),
+    });
+  },
+
+  async clearChatHistory(courseId: number): Promise<void> {
+    await request<void>(`/api/courses/${courseId}/chat/history`, {
+      method: "DELETE",
+    });
+  },
+
+  // Buddy & Sessions
+  async getBuddySettings(): Promise<BuddySettingsResponse> {
+    return request<BuddySettingsResponse>("/api/buddy/settings");
+  },
+
+  async updateBuddySettings(
+    payload: BuddySettingsUpdateRequest
+  ): Promise<BuddySettingsResponse> {
+    return request<BuddySettingsResponse>("/api/buddy/settings", {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    });
+  },
+
+  async startStudySession(courseId: number): Promise<StudySessionResponse> {
+    return request<StudySessionResponse>("/api/sessions", {
+      method: "POST",
+      body: JSON.stringify({ course_id: courseId }),
+    });
+  },
+
+  async updateStudySession(
+    sessionId: number,
+    payload: StudySessionUpdateRequest
+  ): Promise<StudySessionResponse> {
+    return request<StudySessionResponse>(`/api/sessions/${sessionId}`, {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    });
+  },
+
+  async recordBreakEvent(
+    sessionId: number,
+    payload: BreakEventCreateRequest
+  ): Promise<BreakEventResponse> {
+    return request<BreakEventResponse>(`/api/sessions/${sessionId}/break-events`, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  },
+
+  // Interactive Lessons & Learning Companion
+  async getLesson(
+    courseId: number,
+    itemId: number,
+    taskId: string
+  ): Promise<Lesson> {
+    return request<Lesson>(
+      `/api/courses/${courseId}/roadmap/${itemId}/tasks/${taskId}/lesson`
+    );
+  },
+
+  async generateLesson(
+    courseId: number,
+    itemId: number,
+    taskId: string,
+    overwrite = false
+  ): Promise<Lesson> {
+    const query = overwrite ? "?overwrite=true" : "";
+    return request<Lesson>(
+      `/api/courses/${courseId}/roadmap/${itemId}/tasks/${taskId}/lesson${query}`,
+      { method: "POST" }
+    );
+  },
+
+  async getLessonProgress(
+    courseId: number,
+    itemId: number,
+    taskId: string
+  ): Promise<LessonProgress> {
+    return request<LessonProgress>(
+      `/api/courses/${courseId}/roadmap/${itemId}/tasks/${taskId}/lesson/progress`
+    );
+  },
+
+  async updateLessonProgress(
+    courseId: number,
+    itemId: number,
+    taskId: string,
+    payload: LessonProgressUpdateRequest
+  ): Promise<LessonProgress> {
+    return request<LessonProgress>(
+      `/api/courses/${courseId}/roadmap/${itemId}/tasks/${taskId}/lesson/progress`,
+      {
+        method: "PATCH",
+        body: JSON.stringify(payload),
+      }
+    );
+  },
+
+  async sendLessonChatMessage(
+    courseId: number,
+    itemId: number,
+    taskId: string,
+    payload: {
+      message: string;
+      current_section_title?: string;
+      current_exercise_id?: string;
+      user_tone_setting?: "full" | "balanced" | "serious" | "english_only";
+    }
+  ): Promise<LessonChatResponse> {
+    return request<LessonChatResponse>(
+      `/api/courses/${courseId}/roadmap/${itemId}/tasks/${taskId}/lesson/chat`,
+      {
+        method: "POST",
+        body: JSON.stringify(payload),
+      }
+    );
+  },
 };
+
+export interface StudySessionResponse {
+  id: number;
+  user_id: number;
+  course_id: number;
+  started_at: string;
+  ended_at?: string | null;
+  pomodoros: number;
+  focus_avg?: number | null;
+  drowsy_minutes?: number | null;
+}
+
+export interface StudySessionUpdateRequest {
+  pomodoros?: number;
+  focus_avg?: number;
+  drowsy_minutes?: number;
+  ended?: boolean;
+}
+
+export interface BreakEventResponse {
+  id: number;
+  session_id: number;
+  user_id: number;
+  break_type: string;
+  outcome: string;
+  cooldown_at_time_s: number;
+  created_at: string;
+}
+
+export interface BreakEventCreateRequest {
+  break_type: string;
+  outcome: string;
+  cooldown_at_time_s: number;
+}
+
+export interface BuddySettingsResponse {
+  persona_pack: string;
+  tone_mode: string;
+  address_term: string;
+  sensitivity: string;
+  camera_enabled: boolean;
+}
+
+export interface BuddySettingsUpdateRequest {
+  persona_pack?: string;
+  tone_mode?: string;
+  address_term?: string;
+  sensitivity?: string;
+  camera_enabled?: boolean;
+}
+
+

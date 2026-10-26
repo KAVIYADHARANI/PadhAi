@@ -1,15 +1,50 @@
-import React from "react";
-import { ArrowLeft, Calendar, Clock, BookMarked, Sparkles } from "lucide-react";
-import { Course } from "../types";
+import React, { useState } from "react";
+import {
+  ArrowLeft,
+  BarChart3,
+  BookMarked,
+  Calendar,
+  Clock,
+  HelpCircle,
+  MessageSquare,
+  Sparkles,
+} from "lucide-react";
+import { MASCOT_NAME } from "../brand";
+import { Buddy } from "../components/buddy/Buddy";
+import { ChatView } from "../components/ChatView";
 import { DocumentUpload } from "../components/DocumentUpload";
-import { MascotPlaceholder } from "../components/MascotPlaceholder";
+import { LessonView } from "../components/LessonView";
+import { ProgressView } from "../components/ProgressView";
+import { QuizView } from "../components/QuizView";
+import { RoadmapView } from "../components/RoadmapView";
+import { Course, RoadmapItem } from "../types";
 
 interface CoursePageProps {
   course: Course;
   onBack: () => void;
 }
 
+type CourseTab = "materials" | "roadmap" | "chat" | "quiz" | "progress";
+
 export const CoursePage: React.FC<CoursePageProps> = ({ course, onBack }) => {
+  const [activeTab, setActiveTab] = useState<CourseTab>("materials");
+  const [targetQuizTopicId, setTargetQuizTopicId] = useState<number | null>(null);
+  const [activeLesson, setActiveLesson] = useState<{
+    item: RoadmapItem;
+    taskId: string;
+  } | null>(null);
+
+  const handleStartPracticeForTopic = (topicId: number) => {
+    setActiveLesson(null);
+    setTargetQuizTopicId(topicId);
+    setActiveTab("quiz");
+  };
+
+  const handleTabChange = (tab: CourseTab) => {
+    setActiveLesson(null);
+    setActiveTab(tab);
+  };
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 animate-fadeIn">
       {/* Back button */}
@@ -63,36 +98,157 @@ export const CoursePage: React.FC<CoursePageProps> = ({ course, onBack }) => {
         </div>
       </div>
 
-      {/* Main Content Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Left 2 Cols: Document Upload and Processing Status */}
-        <div className="lg:col-span-2 space-y-6">
-          <div className="flex items-center gap-2">
-            <BookMarked className="w-4 h-4 text-brand-400" />
-            <h2 className="text-base font-bold text-white">Course Knowledge Base</h2>
-          </div>
+      {/* Navigation Tabs */}
+      <div className="flex items-center gap-2 border-b border-slate-800 pb-1 overflow-x-auto">
+        <button
+          onClick={() => handleTabChange("materials")}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition border shrink-0 ${
+            activeTab === "materials"
+              ? "bg-brand-500/15 border-brand-500/30 text-white"
+              : "bg-transparent border-transparent text-slate-400 hover:text-slate-200"
+          }`}
+        >
+          <BookMarked className="w-4 h-4" />
+          <span>Knowledge Base</span>
+        </button>
 
-          <DocumentUpload courseId={course.id} />
-        </div>
+        <button
+          onClick={() => handleTabChange("roadmap")}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition border shrink-0 ${
+            activeTab === "roadmap"
+              ? "bg-brand-500/15 border-brand-500/30 text-white"
+              : "bg-transparent border-transparent text-slate-400 hover:text-slate-200"
+          }`}
+        >
+          <Calendar className="w-4 h-4" />
+          <span>Study Roadmap</span>
+        </button>
 
-        {/* Right Col: Study Companion Status */}
-        <div className="space-y-6">
-          <div className="flex items-center gap-2">
-            <Sparkles className="w-4 h-4 text-brand-400" />
-            <h2 className="text-base font-bold text-white">Companion Readiness</h2>
-          </div>
+        <button
+          onClick={() => handleTabChange("chat")}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition border shrink-0 ${
+            activeTab === "chat"
+              ? "bg-brand-500/15 border-brand-500/30 text-white"
+              : "bg-transparent border-transparent text-slate-400 hover:text-slate-200"
+          }`}
+        >
+          <MessageSquare className="w-4 h-4" />
+          <span>Ask {MASCOT_NAME}</span>
+        </button>
 
-          <MascotPlaceholder status="standby" />
+        <button
+          onClick={() => handleTabChange("quiz")}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition border shrink-0 ${
+            activeTab === "quiz"
+              ? "bg-brand-500/15 border-brand-500/30 text-white"
+              : "bg-transparent border-transparent text-slate-400 hover:text-slate-200"
+          }`}
+        >
+          <HelpCircle className="w-4 h-4" />
+          <span>Practice Quiz</span>
+        </button>
 
-          <div className="glass-card rounded-2xl p-5 border border-slate-800/80 text-xs text-slate-400 space-y-2">
-            <h3 className="font-semibold text-white">Document Ingestion Pipeline</h3>
-            <p>
-              Once PDFs or notes are uploaded, the ingestion worker segments them into semantic chunks
-              and generates BGE-M3 vector embeddings for grounded tutor chat.
-            </p>
-          </div>
-        </div>
+        <button
+          onClick={() => handleTabChange("progress")}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition border shrink-0 ${
+            activeTab === "progress"
+              ? "bg-brand-500/15 border-brand-500/30 text-white"
+              : "bg-transparent border-transparent text-slate-400 hover:text-slate-200"
+          }`}
+        >
+          <BarChart3 className="w-4 h-4" />
+          <span>Mastery & Progress</span>
+        </button>
       </div>
+
+      {/* Tab Content */}
+      {activeTab === "materials" && (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="lg:col-span-2 space-y-6">
+            <div className="flex items-center gap-2">
+              <BookMarked className="w-4 h-4 text-brand-400" />
+              <h2 className="text-base font-bold text-white">Course Knowledge Base</h2>
+            </div>
+
+            <DocumentUpload courseId={course.id} />
+          </div>
+
+          <div className="space-y-6">
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-brand-400" />
+              <h2 className="text-base font-bold text-white">Companion Readiness</h2>
+            </div>
+
+            <div className="glass-card rounded-2xl p-5 border border-slate-800/80 flex flex-col items-center">
+              <Buddy
+                courseId={course.id}
+                onNavigateToQuiz={() => setActiveTab("quiz")}
+                onNavigateToChat={() => setActiveTab("chat")}
+              />
+            </div>
+
+            <div className="glass-card rounded-2xl p-5 border border-slate-800/80 text-xs text-slate-400 space-y-2">
+              <h3 className="font-semibold text-white">Document Ingestion Pipeline</h3>
+              <p>
+                Once PDFs or notes are uploaded, the ingestion worker segments them into semantic chunks
+                and generates BGE-M3 vector embeddings for grounded tutor chat, personalized study roadmaps,
+                and interactive quizzes.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {activeTab === "roadmap" &&
+        (activeLesson ? (
+          <LessonView
+            course={course}
+            roadmapItem={activeLesson.item}
+            taskId={activeLesson.taskId}
+            onBackToRoadmap={() => setActiveLesson(null)}
+          />
+        ) : (
+          <RoadmapView
+            course={course}
+            onGoToMaterials={() => handleTabChange("materials")}
+            onOpenLesson={(item, taskId) => setActiveLesson({ item, taskId })}
+          />
+        ))}
+
+      {activeTab === "chat" && (
+        <ChatView
+          course={course}
+        />
+      )}
+
+      {activeTab === "quiz" && (
+        <QuizView
+          courseId={course.id}
+          initialTopicId={targetQuizTopicId}
+          onViewProgress={() => setActiveTab("progress")}
+        />
+      )}
+
+      {activeTab === "progress" && (
+        <ProgressView
+          courseId={course.id}
+          onPracticeTopic={handleStartPracticeForTopic}
+        />
+      )}
+
+      {/* Floating Study Companion when navigating other tabs */}
+      {activeTab !== "materials" && (
+        <div className="fixed bottom-6 right-6 z-40 hidden sm:block animate-in fade-in slide-in-from-bottom-4">
+          <div className="glass-card p-3 rounded-3xl border border-slate-800/90 shadow-2xl backdrop-blur-xl">
+            <Buddy
+              courseId={course.id}
+              onNavigateToQuiz={() => setActiveTab("quiz")}
+              onNavigateToChat={() => setActiveTab("chat")}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 };
+

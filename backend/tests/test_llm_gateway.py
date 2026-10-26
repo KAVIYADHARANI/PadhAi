@@ -71,9 +71,7 @@ async def test_gateway_all_providers_exhausted(fake_llm):
     # Make all providers fail with server error
     for provider in gateway.chain:
         for _ in range(3):
-            fake_llm.add_provider_failure(
-                provider, ProviderUnavailableError(f"{provider} down")
-            )
+            fake_llm.add_provider_failure(provider, ProviderUnavailableError(f"{provider} down"))
 
     request = LLMRequest(
         messages=[ChatMessage(role="user", content="Testing exhaustion")],

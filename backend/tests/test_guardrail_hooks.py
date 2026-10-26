@@ -22,7 +22,9 @@ def test_pre_call_hook_passes_and_modifies_request():
     hooks = GuardrailHooks()
 
     def add_delimiter_hook(request: LLMRequest) -> LLMRequest:
-        request.messages[0].content = f"---BEGIN DATA---\n{request.messages[0].content}\n---END DATA---"
+        request.messages[
+            0
+        ].content = f"---BEGIN DATA---\n{request.messages[0].content}\n---END DATA---"
         return request
 
     hooks.register_pre_call_hook("data_delimiter", add_delimiter_hook)

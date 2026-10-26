@@ -21,6 +21,7 @@ from typing import Any
 import httpx
 
 from app.ai.harness.exceptions import (
+    AuthenticationError,
     ProviderUnavailableError,
     RateLimitExceededError,
     TimeoutError,
@@ -123,9 +124,7 @@ class LLMGateway:
         }
 
         # Circuit breakers & rate limiters per provider
-        self.circuit_breakers: dict[str, CircuitBreaker] = {
-            p: CircuitBreaker() for p in self.chain
-        }
+        self.circuit_breakers: dict[str, CircuitBreaker] = {p: CircuitBreaker() for p in self.chain}
         self.rate_limiters: dict[str, ProviderRateLimiter] = {
             p: ProviderRateLimiter(rpm_limit=60) for p in self.chain
         }
@@ -161,14 +160,33 @@ class LLMGateway:
         return key
 
     def resolve_model_slug(self, provider: str, role: ModelRole | str) -> str:
-        """Resolve the model slug for a given provider and role."""
+        """Resolve the model slug for a given provider and role with canonical fallbacks."""
         role_str = str(role).upper()
+        slug: str | None = None
+
+        default_smart = {
+            "groq": "llama-3.3-70b-versatile",
+            "openrouter": "meta-llama/llama-3.3-70b-instruct",
+            "google": "gemini-1.5-pro",
+            "cerebras": "llama3.3-70b",
+        }
+        default_fast = {
+            "groq": "llama-3.1-8b-instant",
+            "openrouter": "meta-llama/llama-3.1-8b-instruct",
+            "google": "gemini-1.5-flash",
+            "cerebras": "llama3.1-8b",
+        }
+
         if "SMART" in role_str:
             slug = self.smart_slugs.get(provider)
+            if not slug or slug.lower() in ("slug", "default", "none", ""):
+                slug = default_smart.get(provider)
         elif "VISION" in role_str:
             slug = self.vision_slugs.get(provider)
         else:
             slug = self.fast_slugs.get(provider)
+            if not slug or slug.lower() in ("slug", "default", "none", ""):
+                slug = default_fast.get(provider)
 
         return slug or f"{provider}-default-model"
 
@@ -177,14 +195,23 @@ class LLMGateway:
         last_error: Exception | None = None
         overall_retries = 0
 
-        for provider in self.chain:
+        # Only attempt providers that have an API key configured (unless using custom test caller)
+        eligible_providers = [
+            p for p in self.chain if self._custom_caller is not None or bool(self.get_api_key(p))
+        ]
+
+        if not eligible_providers:
+            raise AuthenticationError(
+                "No LLM provider API key configured. Please set GROQ_API_KEY, "
+                "OPENROUTER_API_KEY, GOOGLE_API_KEY, or CEREBRAS_API_KEY in your .env file."
+            )
+
+        for provider in eligible_providers:
             cb = self.circuit_breakers.setdefault(provider, CircuitBreaker())
             rl = self.rate_limiters.setdefault(provider, ProviderRateLimiter())
 
             if not cb.is_available():
-                logger.warning(
-                    "Skipping provider '%s': circuit breaker is OPEN", provider
-                )
+                logger.warning("Skipping provider '%s': circuit breaker is OPEN", provider)
                 continue
 
             if not rl.can_call():
@@ -203,8 +230,7 @@ class LLMGateway:
                     # Jittered exponential backoff
                     backoff = min(
                         self._max_backoff_s,
-                        self._base_backoff_s * (2 ** (attempt - 1))
-                        + random.uniform(0, 0.05),
+                        self._base_backoff_s * (2 ** (attempt - 1)) + random.uniform(0, 0.05),
                     )
                     if backoff > 0:
                         await asyncio.sleep(backoff)
@@ -216,9 +242,7 @@ class LLMGateway:
                         # Use custom caller / FakeLLM
                         response = await self._custom_caller(request, provider, model)
                     else:
-                        response = await self._execute_http_call(
-                            request, provider, model
-                        )
+                        response = await self._execute_http_call(request, provider, model)
 
                     # Success!
                     cb.record_success()
@@ -278,13 +302,16 @@ class LLMGateway:
     ) -> LLMResponse:
         """Execute HTTP request to OpenAI-compatible provider endpoint."""
         api_key = self.get_api_key(provider)
+        if not api_key:
+            raise AuthenticationError(f"No API key configured for provider '{provider}'")
+
         base_url = self._provider_base_urls.get(provider)
         if not base_url:
             raise ProviderUnavailableError(f"No base URL configured for provider '{provider}'")
 
         endpoint = f"{base_url.rstrip('/')}/chat/completions"
         headers = {
-            "Authorization": f"Bearer {api_key or ''}",
+            "Authorization": f"Bearer {api_key.strip()}",
             "Content-Type": "application/json",
         }
 
@@ -314,9 +341,13 @@ class LLMGateway:
         if res.status_code == 429:
             raise RateLimitExceededError(f"Provider {provider} returned 429: {res.text}")
         if res.status_code >= 500:
-            raise ProviderUnavailableError(f"Provider {provider} returned server error {res.status_code}")
+            raise ProviderUnavailableError(
+                f"Provider {provider} returned server error {res.status_code}"
+            )
         if res.status_code != 200:
-            raise ProviderUnavailableError(f"Provider {provider} returned HTTP {res.status_code}: {res.text}")
+            raise ProviderUnavailableError(
+                f"Provider {provider} returned HTTP {res.status_code}: {res.text}"
+            )
 
         data = res.json()
         content = data["choices"][0]["message"]["content"]

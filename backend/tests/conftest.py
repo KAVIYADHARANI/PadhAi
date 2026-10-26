@@ -15,10 +15,25 @@ os.environ["DATABASE_URL"] = "sqlite:///:memory:"
 os.environ["FIREBASE_AUTH_EMULATOR_HOST"] = "localhost:9099"
 os.environ["STORAGE_BACKEND"] = "local"
 os.environ["STORAGE_LOCAL_DIR"] = "./test_storage"
+os.environ["OPENROUTER_API_KEY"] = ""
+os.environ["GROQ_API_KEY"] = ""
+os.environ["GOOGLE_API_KEY"] = ""
+os.environ["CEREBRAS_API_KEY"] = ""
+os.environ["EMBED_PROVIDER"] = "fake"
+os.environ["EMBEDDING_PROVIDER"] = "fake"
 
-from app.core.storage import LocalStorageBackend, get_storage
-from app.db.session import Base, get_db
-from app.main import app
+from app.core.config import settings
+
+settings.OPENROUTER_API_KEY = ""
+settings.GROQ_API_KEY = ""
+settings.GOOGLE_API_KEY = ""
+settings.CEREBRAS_API_KEY = ""
+settings.EMBED_PROVIDER = "fake"
+settings.EMBEDDING_PROVIDER = "fake"
+
+from app.core.storage import LocalStorageBackend, get_storage  # noqa: E402
+from app.db.session import Base, get_db  # noqa: E402
+from app.main import app  # noqa: E402
 
 # In-memory SQLite engine for tests
 test_engine = create_engine(
@@ -57,6 +72,7 @@ def client(db_session: Session, tmp_path) -> Generator[TestClient, None, None]:
 
     # Override storage dependency to use temp directory
     test_storage = LocalStorageBackend(base_dir=str(tmp_path / "storage"))
+
     def override_get_storage():
         return test_storage
 
@@ -72,6 +88,7 @@ def client(db_session: Session, tmp_path) -> Generator[TestClient, None, None]:
 @pytest.fixture(autouse=True)
 def mock_firebase_verify():
     """Mocks Firebase Admin verify_id_token for deterministic offline authentication tests."""
+
     def fake_verify_id_token(token: str, *args, **kwargs):
         if token == "token_user_1":
             return {
