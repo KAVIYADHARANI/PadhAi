@@ -103,3 +103,40 @@ export interface BuddyEngineSnapshot {
   recent_miss_count: number;
   recent_streak_count: number;
 }
+
+export type CameraStudyMode = "screen" | "book_notes" | "presence_only" | "camera_off";
+
+export interface FaceSignalsPayload {
+  timestamp: number;
+  facePresent: boolean;
+  qualityScore: number; // 0 to 100
+  eyeBlinkLeft: number; // 0.0 to 1.0
+  eyeBlinkRight: number; // 0.0 to 1.0
+  eyeClosure: number; // 0.0 to 1.0
+  earFallback: number; // Eye Aspect Ratio
+  jawOpen: number; // 0.0 to 1.0
+  pitchDeg: number; // Head up/down (negative = looking down)
+  yawDeg: number; // Head turn left/right
+  rollDeg: number; // Head tilt
+}
+
+export interface CameraState {
+  isEnabled: boolean;
+  hasPermission: boolean;
+  isStreaming: boolean;
+  mode: CameraStudyMode;
+  qualityScore: number;
+  isLowQuality: boolean;
+  error: string | null;
+}
+
+export type FaceWorkerInMessage =
+  | { type: "INIT"; wasmLoaderPath?: string; modelAssetPath?: string }
+  | { type: "PROCESS_FRAME"; bitmap: ImageBitmap; timestamp: number }
+  | { type: "RESET" };
+
+export type FaceWorkerOutMessage =
+  | { type: "INITIALIZED"; success: boolean; error?: string }
+  | { type: "SIGNALS"; data: FaceSignalsPayload }
+  | { type: "ERROR"; error: string };
+

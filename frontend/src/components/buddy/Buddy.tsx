@@ -10,6 +10,7 @@ import { BreakChoice, QuizEvent } from "../../buddy/types";
 import { useBuddyEngine } from "../../hooks/useBuddyEngine";
 import { api } from "../../services/api";
 import { PlaceholderMascot } from "./PlaceholderMascot";
+import { CameraMonitor } from "./CameraMonitor";
 
 import {
   Coffee,
@@ -206,6 +207,11 @@ export const Buddy: React.FC<BuddyProps> = ({
         >
           <Sparkles className="w-3.5 h-3.5 text-brand-400" />
         </button>
+      </div>
+
+      {/* Focus & Drowsiness Sensor Monitor */}
+      <div className="mt-2">
+        <CameraMonitor />
       </div>
 
       {/* Quick-Action Popup Menu */}
