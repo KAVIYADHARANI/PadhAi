@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 from sqlalchemy.orm.attributes import flag_modified
 
-from app.ai.roadmap.roadmap_gen import generate_course_roadmap
+from app.ai.roadmap.roadmap_gen import generate_course_roadmap, replan_course_roadmap
 from app.api.schemas import (
     RoadmapItemResponse,
     RoadmapItemUpdateRequest,
@@ -19,6 +19,7 @@ from app.db.models import Course, RoadmapItem, User
 from app.db.session import get_db
 
 router = APIRouter(prefix="/api/courses/{course_id}/roadmap", tags=["roadmap"])
+alias_router = APIRouter(prefix="/api/roadmap/{course_id}", tags=["roadmap"])
 
 
 def _calculate_progress(items: list[RoadmapItem], course_id: int) -> RoadmapProgressResponse:
@@ -164,3 +165,39 @@ def update_roadmap_item_progress(
     db.refresh(item)
 
     return RoadmapItemResponse.model_validate(item)
+
+
+@router.post("/replan", response_model=RoadmapProgressResponse)
+async def replan_roadmap_endpoint(
+    course_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> RoadmapProgressResponse:
+    """Re-plans course roadmap based on updated topic mastery while preserving completed items."""
+    items = await replan_course_roadmap(
+        course_id=course_id,
+        user_id=current_user.id,
+        db=db,
+    )
+    return _calculate_progress(items, course_id)
+
+
+# Direct /api/roadmap/{course_id} aliases per API specification
+@alias_router.get("", response_model=RoadmapProgressResponse)
+def get_roadmap_alias(
+    course_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> RoadmapProgressResponse:
+    """Alias for /api/courses/{course_id}/roadmap."""
+    return get_course_roadmap(course_id=course_id, current_user=current_user, db=db)
+
+
+@alias_router.post("/replan", response_model=RoadmapProgressResponse)
+async def replan_roadmap_alias(
+    course_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> RoadmapProgressResponse:
+    """Alias for /api/courses/{course_id}/roadmap/replan."""
+    return await replan_roadmap_endpoint(course_id=course_id, current_user=current_user, db=db)

@@ -14,6 +14,7 @@ import { PlaceholderMascot } from "./PlaceholderMascot";
 import {
   Coffee,
   HelpCircle,
+  Layers,
   MessageSquare,
   Play,
   RotateCcw,
@@ -27,6 +28,7 @@ export interface BuddyProps {
   courseId: number;
   onNavigateToQuiz?: () => void;
   onNavigateToChat?: () => void;
+  onNavigateToFlashcards?: () => void;
   lastQuizEvent?: QuizEvent | null;
   className?: string;
 }
@@ -35,6 +37,7 @@ export const Buddy: React.FC<BuddyProps> = ({
   courseId,
   onNavigateToQuiz,
   onNavigateToChat,
+  onNavigateToFlashcards,
   lastQuizEvent,
   className = "",
 }) => {
@@ -149,10 +152,13 @@ export const Buddy: React.FC<BuddyProps> = ({
 
   const handleBreakAction = (action: BreakChoice["action"]) => {
     respondToSuggestion(action);
+    if (action === "flashcards" && onNavigateToFlashcards) {
+      onNavigateToFlashcards();
+    }
     if (currentSessionId) {
       api.recordBreakEvent(currentSessionId, {
         break_type: "pomodoro_break",
-        outcome: action === "accept" ? "accepted" : "dismissed",
+        outcome: action === "accept" || action === "flashcards" ? "accepted" : "dismissed",
         cooldown_at_time_s: snapshot.current_cooldown_s,
       }).catch(() => {});
     }
@@ -250,6 +256,18 @@ export const Buddy: React.FC<BuddyProps> = ({
             >
               <MessageSquare className="w-3.5 h-3.5 text-sky-400" />
               <span>Ask course tutor</span>
+            </button>
+          )}
+          {onNavigateToFlashcards && (
+            <button
+              onClick={() => {
+                setShowQuickMenu(false);
+                onNavigateToFlashcards();
+              }}
+              className="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-slate-800 flex items-center gap-2 transition-colors"
+            >
+              <Layers className="w-3.5 h-3.5 text-brand-400" />
+              <span>Review flashcards</span>
             </button>
           )}
           <button

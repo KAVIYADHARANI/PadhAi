@@ -101,6 +101,7 @@ class User(Base):
     lesson_progress = relationship(
         "LessonProgress", back_populates="user", cascade="all, delete-orphan"
     )
+    flashcards = relationship("Flashcard", back_populates="user", cascade="all, delete-orphan")
 
 
 class Course(Base):
@@ -144,6 +145,7 @@ class Course(Base):
     lesson_progress = relationship(
         "LessonProgress", back_populates="course", cascade="all, delete-orphan"
     )
+    flashcards = relationship("Flashcard", back_populates="course", cascade="all, delete-orphan")
 
 
 class Document(Base):
@@ -320,6 +322,7 @@ class Topic(Base):
     masteries = relationship("Mastery", back_populates="topic", cascade="all, delete-orphan")
     roadmap_items = relationship("RoadmapItem", back_populates="topic")
     lessons = relationship("Lesson", back_populates="topic")
+    flashcards = relationship("Flashcard", back_populates="topic", cascade="all, delete-orphan")
 
     __table_args__ = (Index("ix_topics_course", "course_id"),)
 
@@ -730,4 +733,56 @@ class LessonProgress(Base):
     __table_args__ = (
         UniqueConstraint("user_id", "lesson_id", name="uq_lesson_progress_user_lesson"),
         Index("ix_lesson_progress_user_course", "user_id", "course_id"),
+    )
+
+
+class Flashcard(Base):
+    """Spaced repetition flashcard generated from topic chunks."""
+
+    __tablename__ = "flashcards"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    user_id = Column(
+        Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    course_id = Column(
+        Integer, ForeignKey("courses.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    topic_id = Column(
+        Integer, ForeignKey("topics.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    front = Column(Text, nullable=False)
+    back = Column(Text, nullable=False)
+    source_chunk_ids = Column(JSON, nullable=False, default=list)
+    reps = Column(Integer, default=0, nullable=False)
+    interval_days = Column(Integer, default=0, nullable=False)
+    ease_factor = Column(Float, default=2.5, nullable=False)
+    due_date = Column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(UTC),
+        nullable=False,
+        index=True,
+    )
+    last_reviewed_at = Column(DateTime(timezone=True), nullable=True)
+    created_at = Column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(UTC),
+        nullable=False,
+    )
+    updated_at = Column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(UTC),
+        onupdate=lambda: datetime.now(UTC),
+        nullable=False,
+    )
+
+    # Relationships
+    user = relationship("User", back_populates="flashcards")
+    course = relationship("Course", back_populates="flashcards")
+    topic = relationship("Topic", back_populates="flashcards")
+
+    __table_args__ = (
+        Index("ix_flashcards_user_course", "user_id", "course_id"),
+        Index("ix_flashcards_user_due", "user_id", "due_date"),
+        Index("ix_flashcards_course_topic", "course_id", "topic_id"),
     )

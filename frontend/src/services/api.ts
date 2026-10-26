@@ -7,6 +7,9 @@ import {
   CourseProgress,
   CreateCourseInput,
   Document,
+  Flashcard,
+  FlashcardListResponse,
+  FlashcardReviewResult,
   Lesson,
   LessonChatResponse,
   LessonProgress,
@@ -189,6 +192,12 @@ export const api = {
     });
   },
 
+  async replanCourseRoadmap(courseId: number): Promise<RoadmapProgress> {
+    return request<RoadmapProgress>(`/api/courses/${courseId}/roadmap/replan`, {
+      method: "POST",
+    });
+  },
+
   async updateRoadmapItem(
     courseId: number,
     itemId: number,
@@ -333,6 +342,52 @@ export const api = {
         body: JSON.stringify(payload),
       }
     );
+  },
+
+  // Flashcards (Spaced Repetition SM-2)
+  async generateFlashcards(
+    courseId: number,
+    topicId?: number | null,
+    count: number = 5
+  ): Promise<Flashcard[]> {
+    return request<Flashcard[]>("/api/flashcards/generate", {
+      method: "POST",
+      body: JSON.stringify({
+        course_id: courseId,
+        topic_id: topicId ?? null,
+        count,
+      }),
+    });
+  },
+
+  async getDueFlashcards(courseId: number): Promise<Flashcard[]> {
+    return request<Flashcard[]>(`/api/flashcards/due?course_id=${courseId}`);
+  },
+
+  async getCourseFlashcards(
+    courseId: number,
+    topicId?: number | null
+  ): Promise<FlashcardListResponse> {
+    const url = topicId
+      ? `/api/flashcards?course_id=${courseId}&topic_id=${topicId}`
+      : `/api/flashcards?course_id=${courseId}`;
+    return request<FlashcardListResponse>(url);
+  },
+
+  async reviewFlashcard(
+    cardId: number,
+    quality: number
+  ): Promise<FlashcardReviewResult> {
+    return request<FlashcardReviewResult>(`/api/flashcards/${cardId}/review`, {
+      method: "POST",
+      body: JSON.stringify({ quality }),
+    });
+  },
+
+  async deleteFlashcard(cardId: number): Promise<void> {
+    await request<void>(`/api/flashcards/${cardId}`, {
+      method: "DELETE",
+    });
   },
 };
 

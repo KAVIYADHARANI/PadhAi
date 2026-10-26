@@ -308,5 +308,34 @@ export interface LessonChatResponse {
   tone: string;
 }
 
+export interface Flashcard {
+  id: number;
+  course_id: number;
+  topic_id?: number | null;
+  front: string;
+  back: string;
+  source_chunk_ids: number[];
+  reps: number;
+  interval_days: number;
+  ease_factor: number;
+  due_date: string;
+  last_reviewed_at?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface FlashcardListResponse {
+  cards: Flashcard[];
+  total_count: number;
+  due_count: number;
+}
+
+export interface FlashcardReviewResult {
+  card: Flashcard;
+  new_interval_days: number;
+  new_ease_factor: number;
+  next_due_date: string;
+}
+
 
 

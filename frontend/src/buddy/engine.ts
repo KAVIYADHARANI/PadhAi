@@ -335,7 +335,7 @@ export class BuddyEngine {
    * Modifies cooldown adaptively via plain arithmetic per README 11.4.
    */
   public respondToSuggestion(
-    action: "accept" | "dismiss" | "switch_topic" | "easier_task",
+    action: "accept" | "dismiss" | "switch_topic" | "easier_task" | "flashcards",
     nowMs: number = Date.now()
   ): BuddyEngineSnapshot {
     const suggestion = this.activeSuggestion;
@@ -346,14 +346,18 @@ export class BuddyEngine {
       return this.getSnapshot(nowMs);
     }
 
-    if (action === "accept") {
+    if (action === "accept" || action === "flashcards") {
       this.recordBreakOutcome("accepted", suggestion.type, nowMs);
       // Adaptive: Accepting keeps or slightly lowers cooldown toward baseline
       this.currentCooldownS = Math.max(
         this.config.base_cooldown_s,
         Math.round(this.currentCooldownS * 0.9)
       );
-      this.startBreak(suggestion.suggested_duration_s, suggestion.type);
+      if (action === "accept") {
+        this.startBreak(suggestion.suggested_duration_s, suggestion.type);
+      } else {
+        this.transitionTo("studying");
+      }
     } else {
       this.recordBreakOutcome("dismissed", suggestion.type, nowMs);
       // Adaptive: Dismissals increase threshold and lengthen cooldown by 20% (capped at 30m)
@@ -392,17 +396,17 @@ export class BuddyEngine {
       this.recentStreakCount = 0;
       this.signals.last_interaction_time = nowMs;
 
-      // Two misses in a row trigger supportive pause recommendation
+      // Two misses in a row trigger supportive pause recommendation and offer flashcard review
       if (this.recentMissCount >= 2 && !this.activeSuggestion && !this.signals.quiz_active) {
         this.activeSuggestion = {
           id: `frustration_${nowMs}`,
           type: "frustration_pause",
-          title: "Take a Breather?",
-          message: "Tricky questions! Would you like a quick stretch or an easier question set?",
+          title: "Review with Flashcards?",
+          message: "Tricky questions! Would you like to review flashcards for this topic or take a breather?",
           suggested_duration_s: 180,
           choices: [
+            { label: "Review flashcards", action: "flashcards" },
             { label: "Short breather", action: "accept" },
-            { label: "Switch topic", action: "switch_topic" },
             { label: "I'm fine", action: "dismiss" },
           ],
           created_at: nowMs,

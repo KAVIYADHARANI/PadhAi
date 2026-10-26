@@ -5,6 +5,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { BuddyEngine, DEFAULT_CONFIG } from "../buddy/engine";
 import {
+  BreakChoice,
   BuddyEngineConfig,
   BuddyEngineSnapshot,
   BuddySignals,
@@ -77,7 +78,7 @@ export function useBuddyEngine(options: UseBuddyEngineOptions = {}) {
 
   // Actions
   const respondToSuggestion = useCallback(
-    (action: "accept" | "dismiss" | "switch_topic" | "easier_task") => {
+    (action: BreakChoice["action"]) => {
       const updated = engineRef.current.respondToSuggestion(action, Date.now());
       setSnapshot(updated);
     },

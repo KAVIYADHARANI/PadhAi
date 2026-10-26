@@ -10,6 +10,7 @@ vi.mock("../services/api", () => ({
   api: {
     getCourseRoadmap: vi.fn(),
     generateCourseRoadmap: vi.fn(),
+    replanCourseRoadmap: vi.fn(),
     updateRoadmapItem: vi.fn(),
     getCourseDocuments: vi.fn(),
     getChatHistory: vi.fn(),
@@ -143,6 +144,34 @@ describe("RoadmapView and ChatView", () => {
       expect(screen.getByText("Introduction to Vector Spaces")).toBeInTheDocument();
       expect(screen.getByText("Matrix Multiplication & Inverses")).toBeInTheDocument();
       expect(screen.getByText("Read vector addition rules")).toBeInTheDocument();
+    });
+  });
+
+  it("RoadmapView allows re-planning from mastery", async () => {
+    vi.mocked(api.getCourseRoadmap).mockResolvedValue(mockRoadmap);
+    vi.mocked(api.getCourseDocuments).mockResolvedValue(mockDocumentsReady);
+    vi.mocked(api.replanCourseRoadmap).mockResolvedValue({
+      ...mockRoadmap,
+      items: [
+        {
+          ...mockRoadmap.items[0],
+          title: "Re-planned Day 1: Vector Spaces Focus",
+        },
+        mockRoadmap.items[1],
+      ],
+    });
+
+    render(<RoadmapView course={mockCourse} onGoToMaterials={() => {}} />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Re-plan from Mastery")).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByText("Re-plan from Mastery"));
+
+    await waitFor(() => {
+      expect(api.replanCourseRoadmap).toHaveBeenCalledWith(mockCourse.id);
+      expect(screen.getByText("Re-planned Day 1: Vector Spaces Focus")).toBeInTheDocument();
     });
   });
 

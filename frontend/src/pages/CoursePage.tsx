@@ -6,6 +6,7 @@ import {
   Calendar,
   Clock,
   HelpCircle,
+  Layers,
   MessageSquare,
   Sparkles,
 } from "lucide-react";
@@ -13,6 +14,7 @@ import { MASCOT_NAME } from "../brand";
 import { Buddy } from "../components/buddy/Buddy";
 import { ChatView } from "../components/ChatView";
 import { DocumentUpload } from "../components/DocumentUpload";
+import { FlashcardsView } from "../components/FlashcardsView";
 import { LessonView } from "../components/LessonView";
 import { ProgressView } from "../components/ProgressView";
 import { QuizView } from "../components/QuizView";
@@ -24,7 +26,7 @@ interface CoursePageProps {
   onBack: () => void;
 }
 
-type CourseTab = "materials" | "roadmap" | "chat" | "quiz" | "progress";
+type CourseTab = "materials" | "roadmap" | "chat" | "quiz" | "flashcards" | "progress";
 
 export const CoursePage: React.FC<CoursePageProps> = ({ course, onBack }) => {
   const [activeTab, setActiveTab] = useState<CourseTab>("materials");
@@ -149,6 +151,18 @@ export const CoursePage: React.FC<CoursePageProps> = ({ course, onBack }) => {
         </button>
 
         <button
+          onClick={() => handleTabChange("flashcards")}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition border shrink-0 ${
+            activeTab === "flashcards"
+              ? "bg-brand-500/15 border-brand-500/30 text-white"
+              : "bg-transparent border-transparent text-slate-400 hover:text-slate-200"
+          }`}
+        >
+          <Layers className="w-4 h-4" />
+          <span>Flashcards</span>
+        </button>
+
+        <button
           onClick={() => handleTabChange("progress")}
           className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition border shrink-0 ${
             activeTab === "progress"
@@ -184,6 +198,7 @@ export const CoursePage: React.FC<CoursePageProps> = ({ course, onBack }) => {
                 courseId={course.id}
                 onNavigateToQuiz={() => setActiveTab("quiz")}
                 onNavigateToChat={() => setActiveTab("chat")}
+                onNavigateToFlashcards={() => setActiveTab("flashcards")}
               />
             </div>
 
@@ -229,6 +244,13 @@ export const CoursePage: React.FC<CoursePageProps> = ({ course, onBack }) => {
         />
       )}
 
+      {activeTab === "flashcards" && (
+        <FlashcardsView
+          courseId={course.id}
+          onNavigateToQuiz={() => setActiveTab("quiz")}
+        />
+      )}
+
       {activeTab === "progress" && (
         <ProgressView
           courseId={course.id}
@@ -244,6 +266,7 @@ export const CoursePage: React.FC<CoursePageProps> = ({ course, onBack }) => {
               courseId={course.id}
               onNavigateToQuiz={() => setActiveTab("quiz")}
               onNavigateToChat={() => setActiveTab("chat")}
+              onNavigateToFlashcards={() => setActiveTab("flashcards")}
             />
           </div>
         </div>

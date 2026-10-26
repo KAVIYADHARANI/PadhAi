@@ -324,3 +324,44 @@ class LessonChatResponse(BaseModel):
     citations: list[str] = Field(default_factory=list)
     tone: str = "patient"
 
+
+class FlashcardResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    course_id: int
+    topic_id: int | None = None
+    front: str
+    back: str
+    source_chunk_ids: list[int] = Field(default_factory=list)
+    reps: int
+    interval_days: int
+    ease_factor: float
+    due_date: datetime
+    last_reviewed_at: datetime | None = None
+    created_at: datetime
+    updated_at: datetime
+
+
+class FlashcardGenerateRequest(BaseModel):
+    course_id: int
+    topic_id: int | None = None
+    count: int = Field(default=5, ge=1, le=20)
+
+
+class FlashcardReviewRequest(BaseModel):
+    quality: int = Field(..., ge=0, le=5, description="SM-2 review rating from 0 to 5")
+
+
+class FlashcardReviewResponse(BaseModel):
+    card: FlashcardResponse
+    new_interval_days: int
+    new_ease_factor: float
+    next_due_date: datetime
+
+
+class FlashcardListResponse(BaseModel):
+    cards: list[FlashcardResponse]
+    total_count: int
+    due_count: int
+

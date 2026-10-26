@@ -32,7 +32,7 @@ export type BreakOutcome = "accepted" | "dismissed" | "ignored";
 
 export interface BreakChoice {
   label: string;
-  action: "accept" | "dismiss" | "switch_topic" | "easier_task";
+  action: "accept" | "dismiss" | "switch_topic" | "easier_task" | "flashcards";
 }
 
 export interface BreakSuggestion {
