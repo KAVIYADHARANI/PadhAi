@@ -56,6 +56,7 @@ IGNORED_DIR_PARTS = {
     "build",
     "storage",
     "test_storage",
+    "results",
 }
 
 

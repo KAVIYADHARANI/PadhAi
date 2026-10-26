@@ -217,13 +217,15 @@ export const api = {
   async sendChatMessage(
     courseId: number,
     message: string,
-    userToneSetting: "full" | "balanced" | "serious" | "english_only" = "balanced"
+    userToneSetting: "full" | "balanced" | "serious" | "english_only" = "balanced",
+    intent?: string
   ): Promise<ChatReplyResponse> {
     return request<ChatReplyResponse>(`/api/courses/${courseId}/chat`, {
       method: "POST",
       body: JSON.stringify({
         message,
         user_tone_setting: userToneSetting,
+        intent,
       }),
     });
   },

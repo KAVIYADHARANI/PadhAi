@@ -153,6 +153,11 @@ export interface ChatMessage {
   tone?: string | null;
   is_sufficient?: boolean;
   grounding_status?: string;
+  agent?: string;
+  route_source?: string;
+  route_confidence?: number;
+  confirmation_chip?: string | null;
+  follow_up_chip?: string | null;
   created_at?: string;
 }
 
@@ -170,6 +175,11 @@ export interface ChatReplyResponse {
   tone: string;
   is_sufficient: boolean;
   grounding_status?: string;
+  agent?: string;
+  route_source?: string;
+  route_confidence?: number;
+  confirmation_chip?: string | null;
+  follow_up_chip?: string | null;
 }
 
 export interface WebResource {

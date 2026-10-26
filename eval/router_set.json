@@ -1,0 +1,250 @@
+[
+  {
+    "id": "tutor_01",
+    "message": "Can you explain how Newton's second law applies to circular motion?",
+    "expected_agent": "tutor",
+    "is_ambiguous": false,
+    "is_multi_intent": false
+  },
+  {
+    "id": "tutor_02",
+    "message": "What is the difference between synchronous and asynchronous RAM?",
+    "expected_agent": "tutor",
+    "is_ambiguous": false,
+    "is_multi_intent": false
+  },
+  {
+    "id": "tutor_03",
+    "message": "Why does the derivative of e^x equal e^x?",
+    "expected_agent": "tutor",
+    "is_ambiguous": false,
+    "is_multi_intent": false
+  },
+  {
+    "id": "tutor_04",
+    "message": "How does pipelining reduce total instruction latency in RISC processors?",
+    "expected_agent": "tutor",
+    "is_ambiguous": false,
+    "is_multi_intent": false
+  },
+  {
+    "id": "tutor_05",
+    "message": "Define eigenvalue and eigenvector in linear algebra",
+    "expected_agent": "tutor",
+    "is_ambiguous": false,
+    "is_multi_intent": false
+  },
+  {
+    "id": "tutor_06",
+    "message": "What are the four components of a database ACID transaction?",
+    "expected_agent": "tutor",
+    "is_ambiguous": false,
+    "is_multi_intent": false
+  },
+  {
+    "id": "quiz_01",
+    "message": "Quiz me on cache memory and locality",
+    "expected_agent": "quiz_gen",
+    "is_ambiguous": false,
+    "is_multi_intent": false
+  },
+  {
+    "id": "quiz_02",
+    "message": "Give me 5 practice questions on matrix multiplication",
+    "expected_agent": "quiz_gen",
+    "is_ambiguous": false,
+    "is_multi_intent": false
+  },
+  {
+    "id": "quiz_03",
+    "message": "/quiz thermodynamics",
+    "expected_agent": "quiz_gen",
+    "is_ambiguous": false,
+    "is_multi_intent": false
+  },
+  {
+    "id": "quiz_04",
+    "message": "Test my knowledge on graph traversal algorithms",
+    "expected_agent": "quiz_gen",
+    "is_ambiguous": false,
+    "is_multi_intent": false
+  },
+  {
+    "id": "quiz_05",
+    "message": "Can I take a quick quiz on organic chemistry functional groups?",
+    "expected_agent": "quiz_gen",
+    "is_ambiguous": false,
+    "is_multi_intent": false
+  },
+  {
+    "id": "quiz_06",
+    "message": "Generate a quiz for chapter 3",
+    "expected_agent": "quiz_gen",
+    "is_ambiguous": false,
+    "is_multi_intent": false
+  },
+  {
+    "id": "cards_01",
+    "message": "Make flashcards for key formulas in calculus",
+    "expected_agent": "flashcards",
+    "is_ambiguous": false,
+    "is_multi_intent": false
+  },
+  {
+    "id": "cards_02",
+    "message": "/cards",
+    "expected_agent": "flashcards",
+    "is_ambiguous": false,
+    "is_multi_intent": false
+  },
+  {
+    "id": "cards_03",
+    "message": "Do I have any due cards to review today?",
+    "expected_agent": "flashcards",
+    "is_ambiguous": false,
+    "is_multi_intent": false
+  },
+  {
+    "id": "cards_04",
+    "message": "Generate spaced repetition cards for cell organelles",
+    "expected_agent": "flashcards",
+    "is_ambiguous": false,
+    "is_multi_intent": false
+  },
+  {
+    "id": "cards_05",
+    "message": "Create flashcards on SQL joins and normal forms",
+    "expected_agent": "flashcards",
+    "is_ambiguous": false,
+    "is_multi_intent": false
+  },
+  {
+    "id": "cards_06",
+    "message": "I want to review my flashcards",
+    "expected_agent": "flashcards",
+    "is_ambiguous": false,
+    "is_multi_intent": false
+  },
+  {
+    "id": "roadmap_01",
+    "message": "Show my study roadmap",
+    "expected_agent": "roadmap",
+    "is_ambiguous": false,
+    "is_multi_intent": false
+  },
+  {
+    "id": "roadmap_02",
+    "message": "What should I study next?",
+    "expected_agent": "roadmap",
+    "is_ambiguous": false,
+    "is_multi_intent": false
+  },
+  {
+    "id": "roadmap_03",
+    "message": "/plan",
+    "expected_agent": "roadmap",
+    "is_ambiguous": false,
+    "is_multi_intent": false
+  },
+  {
+    "id": "roadmap_04",
+    "message": "What is on my schedule for today?",
+    "expected_agent": "roadmap",
+    "is_ambiguous": false,
+    "is_multi_intent": false
+  },
+  {
+    "id": "roadmap_05",
+    "message": "I fell behind by 2 days, please replan my roadmap",
+    "expected_agent": "roadmap",
+    "is_ambiguous": false,
+    "is_multi_intent": false
+  },
+  {
+    "id": "roadmap_06",
+    "message": "View my daily learning milestones",
+    "expected_agent": "roadmap",
+    "is_ambiguous": false,
+    "is_multi_intent": false
+  },
+  {
+    "id": "insights_01",
+    "message": "How am I doing in this course?",
+    "expected_agent": "insights",
+    "is_ambiguous": false,
+    "is_multi_intent": false
+  },
+  {
+    "id": "insights_02",
+    "message": "What are my weak topics?",
+    "expected_agent": "insights",
+    "is_ambiguous": false,
+    "is_multi_intent": false
+  },
+  {
+    "id": "insights_03",
+    "message": "Show my mastery report",
+    "expected_agent": "insights",
+    "is_ambiguous": false,
+    "is_multi_intent": false
+  },
+  {
+    "id": "insights_04",
+    "message": "/progress",
+    "expected_agent": "insights",
+    "is_ambiguous": false,
+    "is_multi_intent": false
+  },
+  {
+    "id": "insights_05",
+    "message": "Where am I struggling the most?",
+    "expected_agent": "insights",
+    "is_ambiguous": false,
+    "is_multi_intent": false
+  },
+  {
+    "id": "insights_06",
+    "message": "Show my study stats and focus score",
+    "expected_agent": "insights",
+    "is_ambiguous": false,
+    "is_multi_intent": false
+  },
+  {
+    "id": "multi_01",
+    "message": "Quiz me on limits and create flashcards",
+    "expected_agent": "quiz_gen",
+    "expected_secondary": "flashcards",
+    "is_ambiguous": false,
+    "is_multi_intent": true
+  },
+  {
+    "id": "multi_02",
+    "message": "Check my weak topics and update my study plan",
+    "expected_agent": "insights",
+    "expected_secondary": "roadmap",
+    "is_ambiguous": false,
+    "is_multi_intent": true
+  },
+  {
+    "id": "multi_03",
+    "message": "Make flashcards for vectors and give me a quiz",
+    "expected_agent": "flashcards",
+    "expected_secondary": "quiz_gen",
+    "is_ambiguous": false,
+    "is_multi_intent": true
+  },
+  {
+    "id": "ambig_01",
+    "message": "Limits",
+    "expected_agent": "tutor",
+    "is_ambiguous": true,
+    "is_multi_intent": false
+  },
+  {
+    "id": "ambig_02",
+    "message": "Hmm, maybe something with integrals later",
+    "expected_agent": "tutor",
+    "is_ambiguous": true,
+    "is_multi_intent": false
+  }
+]

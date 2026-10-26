@@ -22,6 +22,7 @@ class ChatRequest(BaseModel):
     """Payload for asking the tutor a question."""
 
     message: str = Field(..., min_length=1, max_length=4000)
+    intent: str | None = Field(default=None, description="Explicit UI intent, e.g. quiz, cards, plan, progress")
     minutes_since_last_session: float | None = None
     recent_miss_count: int = Field(default=0, ge=0)
     quiz_active: bool = False
@@ -32,7 +33,7 @@ class ChatRequest(BaseModel):
 
 
 class ChatResponse(BaseModel):
-    """Response returned by the tutor."""
+    """Response returned by the tutor and multi-agent router."""
 
     reply: str
     clean_answer: str | None = None
@@ -41,6 +42,11 @@ class ChatResponse(BaseModel):
     tone: str = "patient"
     is_sufficient: bool = True
     grounding_status: str = "grounded"
+    agent: str = "tutor"
+    route_source: str = "rule"
+    route_confidence: float = 1.0
+    confirmation_chip: str | None = None
+    follow_up_chip: str | None = None
 
 
 @router.get("/history", response_model=ChatHistoryResponse)
@@ -172,12 +178,27 @@ async def chat_with_tutor(
         user_tone_setting=payload.user_tone_setting,
     )
 
-    # 5. Invoke LangGraph
+    # 5. Extract short conversation history (at most 3 previous messages, no document text)
+    recent_history: list[dict[str, str]] = []
+    if thread:
+        prior_messages = (
+            db.query(ChatMessageRecord)
+            .filter(ChatMessageRecord.thread_id == thread.id, ChatMessageRecord.id != user_msg_record.id)
+            .order_by(ChatMessageRecord.created_at.desc())
+            .limit(3)
+            .all()
+        )
+        for m in reversed(prior_messages):
+            recent_history.append({"role": m.role, "content": m.content})
+
+    # 6. Invoke LangGraph
     initial_state = {
         "db": db,
         "user_id": current_user.id,
         "course_id": course.id,
         "message": payload.message,
+        "intent": payload.intent,
+        "history": recent_history,
         "tone_context": tone_ctx,
     }
 
@@ -212,7 +233,7 @@ async def chat_with_tutor(
     tone_str = result.get("tone", "patient")
     is_sufficient_bool = result.get("is_sufficient", True)
 
-    # 6. Persist assistant response record
+    # 7. Persist assistant response record
     assistant_msg_record = ChatMessageRecord(
         thread_id=thread.id,
         user_id=current_user.id,
@@ -235,4 +256,9 @@ async def chat_with_tutor(
         tone=tone_str,
         is_sufficient=is_sufficient_bool,
         grounding_status=grounding_status,
+        agent=result.get("route_agent", "tutor"),
+        route_source=result.get("route_source", "rule"),
+        route_confidence=result.get("route_confidence", 1.0),
+        confirmation_chip=result.get("confirmation_chip"),
+        follow_up_chip=result.get("follow_up_chip"),
     )
