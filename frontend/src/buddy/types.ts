@@ -102,6 +102,14 @@ export interface BuddyEngineSnapshot {
   quiet_period_remaining_s: number;
   recent_miss_count: number;
   recent_streak_count: number;
+  drowsiness_score: number;
+  attention_score: number;
+  focus_avg: number;
+  drowsy_minutes: number;
+  quality_gate_passed: boolean;
+  quality_gate_message: string | null;
+  study_mode: CameraStudyMode;
+  sensitivity: "relaxed" | "balanced" | "strict";
 }
 
 export type CameraStudyMode = "screen" | "book_notes" | "presence_only" | "camera_off";

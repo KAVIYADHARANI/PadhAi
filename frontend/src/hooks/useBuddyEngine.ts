@@ -4,13 +4,16 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { BuddyEngine, DEFAULT_CONFIG } from "../buddy/engine";
+import { signalManager } from "../buddy/signalManager";
 import {
   BreakChoice,
   BuddyEngineConfig,
   BuddyEngineSnapshot,
   BuddySignals,
+  CameraStudyMode,
   QuizEvent,
 } from "../buddy/types";
+import { SensitivityLevel } from "../buddy/drowsiness";
 
 export interface UseBuddyEngineOptions {
   config?: Partial<BuddyEngineConfig>;
@@ -37,7 +40,25 @@ export function useBuddyEngine(options: UseBuddyEngineOptions = {}) {
     return () => clearInterval(intervalId);
   }, [enabled]);
 
-  // 2. DOM activity listeners (visibility, mouse, keyboard)
+  // 2. Wire Camera SignalManager directly into pure engine
+  useEffect(() => {
+    if (!enabled) return;
+
+    const unsubSignals = signalManager.subscribeSignals((payload) => {
+      engineRef.current.processFaceSignal(payload, Date.now());
+    });
+
+    const unsubState = signalManager.subscribeState((st) => {
+      engineRef.current.setStudyMode(st.mode);
+    });
+
+    return () => {
+      unsubSignals();
+      unsubState();
+    };
+  }, [enabled]);
+
+  // 3. DOM activity listeners (visibility, mouse, keyboard)
   useEffect(() => {
     if (!enabled || typeof window === "undefined" || typeof document === "undefined") return;
 
@@ -105,6 +126,22 @@ export function useBuddyEngine(options: UseBuddyEngineOptions = {}) {
     setSnapshot(engineRef.current.getSnapshot());
   }, []);
 
+  const setStudyMode = useCallback((mode: CameraStudyMode) => {
+    signalManager.setMode(mode);
+    engineRef.current.setStudyMode(mode);
+    setSnapshot(engineRef.current.getSnapshot());
+  }, []);
+
+  const setSensitivity = useCallback((level: SensitivityLevel) => {
+    engineRef.current.setSensitivity(level);
+    setSnapshot(engineRef.current.getSnapshot());
+  }, []);
+
+  const resetCalibration = useCallback(() => {
+    engineRef.current.resetCalibration(Date.now());
+    setSnapshot(engineRef.current.getSnapshot());
+  }, []);
+
   return {
     snapshot,
     respondToSuggestion,
@@ -112,6 +149,9 @@ export function useBuddyEngine(options: UseBuddyEngineOptions = {}) {
     endBreak,
     sendQuizEvent,
     updateSignals,
+    setStudyMode,
+    setSensitivity,
+    resetCalibration,
     config: { ...DEFAULT_CONFIG, ...config },
   };
 }

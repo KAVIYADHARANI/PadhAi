@@ -19,9 +19,15 @@ import {
   BuddyEngineSnapshot,
   BuddySignals,
   BuddyState,
+  CameraStudyMode,
+  FaceSignalsPayload,
   NudgeStep,
   QuizEvent,
 } from "./types";
+import { DEFAULT_BASELINE, SessionCalibrator } from "./calibration";
+import { DrowsinessDetector, SensitivityLevel } from "./drowsiness";
+import { AttentionDetector } from "./attention";
+import { evaluateQualityGate, QualityGateDecision } from "./qualityGate";
 
 export const DEFAULT_CONFIG: BuddyEngineConfig = {
   work_duration_s: 25 * 60, // 25 min default Pomodoro work phase
@@ -59,6 +65,23 @@ export class BuddyEngine {
   private lastTickMs: number;
   private signals: BuddySignals;
 
+  // Signal detectors & settings
+  private calibrator: SessionCalibrator;
+  private drowsinessDetector: DrowsinessDetector;
+  private attentionDetector: AttentionDetector;
+  private studyMode: CameraStudyMode = "screen";
+  private sensitivity: SensitivityLevel = "balanced";
+  private qualityGateDecision: QualityGateDecision;
+
+  // Realtime scores & aggregates
+  private drowsinessScore: number = 0;
+  private attentionScore: number = 85;
+  private totalFocusSum: number = 0;
+  private totalStudyTicks: number = 0;
+  private drowsySeconds: number = 0;
+  private sustainedDrowsyS: number = 0;
+  private sustainedLowAttentionS: number = 0;
+
   constructor(
     initialNowMs: number = Date.now(),
     customConfig?: Partial<BuddyEngineConfig>
@@ -73,6 +96,63 @@ export class BuddyEngine {
       last_interaction_time: initialNowMs,
       quiz_active: false,
     };
+
+    this.calibrator = new SessionCalibrator();
+    this.drowsinessDetector = new DrowsinessDetector();
+    this.attentionDetector = new AttentionDetector();
+    this.qualityGateDecision = evaluateQualityGate(100, true, "screen");
+  }
+
+  public setStudyMode(mode: CameraStudyMode): void {
+    this.studyMode = mode;
+    this.qualityGateDecision = evaluateQualityGate(
+      this.qualityGateDecision.qualityScore,
+      true,
+      mode
+    );
+  }
+
+  public setSensitivity(sensitivity: SensitivityLevel): void {
+    this.sensitivity = sensitivity;
+  }
+
+  public resetCalibration(nowMs: number = Date.now()): void {
+    this.calibrator.reset(nowMs);
+  }
+
+  /**
+   * Ingests FaceSignalsPayload from worker or replay harness.
+   */
+  public processFaceSignal(signal: FaceSignalsPayload, nowMs: number = Date.now()): void {
+    const baseline = this.calibrator.addSample(signal, nowMs);
+
+    this.qualityGateDecision = evaluateQualityGate(
+      signal.qualityScore,
+      signal.facePresent,
+      this.studyMode
+    );
+
+    if (this.qualityGateDecision.shouldSilenceDrowsiness) {
+      this.drowsinessScore = 0;
+    } else {
+      const dMetrics = this.drowsinessDetector.processSignal(
+        signal,
+        baseline,
+        this.qualityGateDecision.effectiveStudyMode,
+        this.sensitivity
+      );
+      this.drowsinessScore = dMetrics.score;
+    }
+
+    const aMetrics = this.attentionDetector.processSignal(
+      signal,
+      this.signals.tab_visible,
+      this.signals.last_interaction_time,
+      nowMs,
+      baseline,
+      this.qualityGateDecision.effectiveStudyMode
+    );
+    this.attentionScore = aMetrics.score;
   }
 
   /**
@@ -95,12 +175,65 @@ export class BuddyEngine {
         this.transitionTo("away");
       }
       return this.getSnapshot(nowMs);
-    } else if (this.state === "away") {
+    } else if (this.state === "away" || this.state === "ready") {
       this.transitionTo(this.pomodoroPhase === "break" ? "break_time" : "studying");
     }
 
     // 2. Timers accumulation
     this.sessionElapsedS += deltaS;
+
+    // Update attention from input recency if camera is not updating scores
+    if (this.studyMode === "camera_off") {
+      const aMetrics = this.attentionDetector.processSignal(
+        null,
+        this.signals.tab_visible,
+        this.signals.last_interaction_time,
+        nowMs,
+        DEFAULT_BASELINE,
+        "camera_off"
+      );
+      this.attentionScore = aMetrics.score;
+    }
+
+    // Accumulate study statistics
+    if (this.pomodoroPhase === "work" && (this.state === "studying" || this.state === "deep_focus")) {
+      this.totalFocusSum += this.attentionScore;
+      this.totalStudyTicks += 1;
+
+      if (this.drowsinessScore >= 50) {
+        this.drowsySeconds += deltaS;
+      }
+
+      // Check for deep focus transition (high focus, sustained, not drowsy, recent interaction, not quiet period)
+      const inQuietPeriod = nowMs < this.quietPeriodUntil;
+      const inputRecent = (nowMs - this.signals.last_interaction_time) < 60_000;
+
+      if (
+        this.state === "studying" &&
+        !inQuietPeriod &&
+        inputRecent &&
+        this.attentionScore >= 80 &&
+        this.drowsinessScore < 25 &&
+        this.sessionElapsedS >= 300
+      ) {
+        this.transitionTo("deep_focus");
+      } else if (this.state === "deep_focus" && (!inputRecent || inQuietPeriod || this.attentionScore < 60 || this.drowsinessScore >= 45)) {
+        this.transitionTo("studying");
+      }
+    }
+
+    // Track sustained fatigue / inattention for adaptive breaks
+    if (this.drowsinessScore >= 70 && !this.qualityGateDecision.shouldSilenceDrowsiness) {
+      this.sustainedDrowsyS += deltaS;
+    } else {
+      this.sustainedDrowsyS = Math.max(0, this.sustainedDrowsyS - deltaS * 0.5);
+    }
+
+    if (this.attentionScore < 35 && this.drowsinessScore < 50) {
+      this.sustainedLowAttentionS += deltaS;
+    } else {
+      this.sustainedLowAttentionS = Math.max(0, this.sustainedLowAttentionS - deltaS * 0.5);
+    }
 
     // 3. Temporary celebrate state expiration
     if (this.state === "celebrate" && nowMs >= this.celebrateUntil) {
@@ -125,7 +258,7 @@ export class BuddyEngine {
       this.evaluateNudgeLadder(nowMs);
     }
 
-    // 6. Proactive Break Checks (long unbroken study, fatigue)
+    // 6. Proactive Break Checks (fatigue, sustained low attention, long unbroken study)
     if (this.pomodoroPhase === "work" && !this.activeSuggestion && !this.queuedSuggestion) {
       this.evaluateProactiveBreakNeeds(nowMs);
     }
@@ -215,8 +348,10 @@ export class BuddyEngine {
 
   /**
    * Evaluates proactive break triggers per README 11.4:
-   * - Long unbroken study (>= 50 minutes) -> eye rest + stand suggestion
-   * - At most 1 proactive prompt per cooldown period (default 15 minutes)
+   * 1. Sustained drowsiness (> 70 for > 2 min): suggest movement break (drowsy_stretch)
+   * 2. Sustained low attention (< 35 for > 2 min, not drowsy): suggest topic_switch or short sprint
+   * 3. Long unbroken study (>= 50 minutes): suggest eye_rest (20-20-20 rule + stand)
+   * At most 1 proactive prompt per cooldown period (default 15 minutes).
    */
   private evaluateProactiveBreakNeeds(nowMs: number): void {
     const timeSinceLastPrompt = nowMs - this.lastProactiveBreakTime;
@@ -228,7 +363,47 @@ export class BuddyEngine {
       return; // In quiet period
     }
 
-    // Long unbroken stretch (50+ min = 3000 s)
+    // 1. Sustained drowsiness (> 70 for > 120s)
+    if (this.sustainedDrowsyS >= 120 && !this.qualityGateDecision.shouldSilenceDrowsiness) {
+      this.sustainedDrowsyS = 0;
+      const suggestion: BreakSuggestion = {
+        id: `drowsy_${nowMs}`,
+        type: "drowsy_stretch",
+        title: "Movement Break?",
+        message: "You might be getting tired. Would you like to do a quick 3-minute stretch or walk around?",
+        suggested_duration_s: 180,
+        choices: [
+          { label: "Quick stretch", action: "accept" },
+          { label: "Switch topic", action: "switch_topic" },
+          { label: "I'm fine", action: "dismiss" },
+        ],
+        created_at: nowMs,
+      };
+      this.deliverOrQueueSuggestion(suggestion, nowMs);
+      return;
+    }
+
+    // 2. Sustained low attention (< 35 for > 120s, not drowsy)
+    if (this.sustainedLowAttentionS >= 120 && this.drowsinessScore < 50) {
+      this.sustainedLowAttentionS = 0;
+      const suggestion: BreakSuggestion = {
+        id: `attention_${nowMs}`,
+        type: "topic_switch",
+        title: "Switch Topics or Sprint?",
+        message: "Focus seems a bit tough right now. Would you like to switch to an easier topic or do a quick flashcard sprint?",
+        suggested_duration_s: 180,
+        choices: [
+          { label: "Switch topic", action: "switch_topic" },
+          { label: "Flashcards", action: "flashcards" },
+          { label: "I'm fine", action: "dismiss" },
+        ],
+        created_at: nowMs,
+      };
+      this.deliverOrQueueSuggestion(suggestion, nowMs);
+      return;
+    }
+
+    // 3. Long unbroken stretch (50+ min = 3000 s)
     if (this.sessionElapsedS >= 50 * 60) {
       const suggestion: BreakSuggestion = {
         id: `unbroken_${nowMs}`,
@@ -462,6 +637,11 @@ export class BuddyEngine {
    */
   public getSnapshot(nowMs: number = Date.now()): BuddyEngineSnapshot {
     const quietRemainingS = Math.max(0, Math.round((this.quietPeriodUntil - nowMs) / 1000));
+    const focusAvg =
+      this.totalStudyTicks > 0
+        ? Math.round((this.totalFocusSum / this.totalStudyTicks) / 100 * 100) / 100
+        : 0.85;
+
     return {
       state: this.state,
       previous_state: this.previousState,
@@ -477,6 +657,14 @@ export class BuddyEngine {
       quiet_period_remaining_s: quietRemainingS,
       recent_miss_count: this.recentMissCount,
       recent_streak_count: this.recentStreakCount,
+      drowsiness_score: this.drowsinessScore,
+      attention_score: this.attentionScore,
+      focus_avg: focusAvg,
+      drowsy_minutes: Math.round((this.drowsySeconds / 60) * 10) / 10,
+      quality_gate_passed: this.qualityGateDecision.passed,
+      quality_gate_message: this.qualityGateDecision.quietMessage,
+      study_mode: this.studyMode,
+      sensitivity: this.sensitivity,
     };
   }
 }
