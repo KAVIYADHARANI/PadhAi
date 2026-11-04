@@ -1,22 +1,32 @@
-"""LangGraph pipeline for the grounded RAG tutor with layered guardrails.
+"""LangGraph pipeline for multi-agent routing with layered guardrails.
 
 Architecture:
-START -> guard_in -> [conditional: blocked/distress -> END]
-                  -> tutor -> guard_out -> END
+START -> guard_in -> [conditional: blocked/distress -> guard_out -> END]
+                   -> router -> [conditional:
+                                 confirm_chip -> confirm_chip_node
+                                 tutor -> tutor_node
+                                 insights -> insights_node
+                                 quiz_gen -> quiz_gen_node
+                                 flashcards -> flashcards_node
+                                 roadmap -> roadmap_node]
+                   -> guard_out -> END
 
 Security & Grounding Guarantees:
-1. Fixed deterministic pipeline (no autonomous tool selection or write tools).
+1. Fixed deterministic pipeline (no autonomous tool selection or arbitrary write tools).
 2. Uploaded documents wrapped in untrusted data delimiters.
 3. Chunks with injection_flag are explicitly labelled untrusted="true".
 4. If retrieval is insufficient, returns fixed refusal with 0 MODEL_SMART calls.
 5. All [doc p.N] citations must map to retrieved source chunks; ungrounded answers
    fall back to a safe "could not verify" message.
 6. Guardrail events recorded to DB with layer, rule, action — NO message/document text.
+7. Router classifies queries via UI intent -> rules -> cache -> fast LLM, ensuring
+   write agents require confirmation when confidence < ROUTER_CONFIRM_BELOW.
 """
 
 from __future__ import annotations
 
 import logging
+from dataclasses import replace
 from typing import Any, TypedDict
 
 from langgraph.graph import END, START, StateGraph
@@ -27,8 +37,12 @@ from app.ai.guardrails.input_guard import (
     GuardrailAuditRecord,
     check_input_guardrails,
 )
+from app.ai.guardrails.integrity_guard import check_academic_integrity
 from app.ai.guardrails.output_guard import check_output_guardrails
 from app.ai.harness.gateway import LLMGateway
+from app.ai.insights.insights_gen import generate_insights_summary
+from app.ai.router.router import route_message
+from app.ai.router.schemas import RouteDecision
 from app.buddy.tone import ToneContext, select_tone
 from app.db.models import GuardrailEvent
 from app.persona.prompt_builder import build_tutor_system_prompt
@@ -44,7 +58,7 @@ INSUFFICIENT_REFUSAL = (
 
 
 class TutorState(TypedDict, total=False):
-    """Execution state flowing through the tutor graph."""
+    """Execution state flowing through the orchestrator graph."""
 
     db: Session
     gateway: LLMGateway
@@ -52,6 +66,17 @@ class TutorState(TypedDict, total=False):
     course_id: int
     message: str
     tone_context: ToneContext
+    intent: str | None
+    history: list[dict[str, str]] | None
+
+    # Routing fields
+    route_decision: RouteDecision | None
+    route_agent: str | None
+    route_source: str | None
+    route_confidence: float | None
+    confirmation_chip: str | None
+    follow_up_chip: str | None
+    topic_hint: str | None
 
     # Intermediate / Output fields
     is_blocked: bool
@@ -68,7 +93,7 @@ class TutorState(TypedDict, total=False):
 
 
 def guard_in_node(state: TutorState) -> dict[str, Any]:
-    """Execute input guardrails: length check, wellbeing distress, injection scan."""
+    """Execute input guardrails: length check, wellbeing distress, injection scan, academic integrity."""
     message = state.get("message", "")
     guard_result = check_input_guardrails(message)
 
@@ -76,28 +101,170 @@ def guard_in_node(state: TutorState) -> dict[str, Any]:
     records.extend(guard_result.audit_records)
 
     if guard_result.is_blocked:
+        tone_ctx = state.get("tone_context")
+        new_tone_ctx = tone_ctx
+        if tone_ctx and guard_result.turn_persona_off:
+            new_tone_ctx = replace(tone_ctx, distress_flag=True)
         return {
             "is_blocked": True,
+            "tone_context": new_tone_ctx,
             "final_reply": guard_result.response_override or "",
             "clean_answer": guard_result.response_override or "",
             "citations": [],
             "sources": [],
             "is_sufficient": False,
             "grounding_status": "blocked",
+            "tone": "off" if guard_result.is_distress else "neutral",
             "audit_records": records,
         }
 
+    # Check academic integrity option
+    integrity_enabled = state.get("academic_integrity", True)
+    integrity_res = check_academic_integrity(message, integrity_enabled=integrity_enabled)
+    integrity_directive: str | None = None
+    if integrity_res.is_triggered:
+        records.extend(integrity_res.audit_records)
+        integrity_directive = integrity_res.system_directive
+
     return {
         "is_blocked": False,
+        "academic_integrity_directive": integrity_directive,
         "audit_records": records,
     }
 
 
-def should_continue_to_tutor(state: TutorState) -> str:
+def route_after_guard_in(state: TutorState) -> str:
     """Routing condition after guard_in."""
     if state.get("is_blocked", False):
-        return END
+        return "guard_out"
+    return "router"
+
+
+async def router_node(state: TutorState) -> dict[str, Any]:
+    """Classifies user intent via UI -> rules -> cache -> fast LLM."""
+    message = state["message"]
+    history = state.get("history")
+    explicit_intent = state.get("intent")
+    gateway = state.get("gateway")
+    user_id = state.get("user_id")
+
+    decision = await route_message(
+        message=message,
+        history=history,
+        explicit_intent=explicit_intent,
+        gateway=gateway,
+        user_id=user_id,
+    )
+    return {
+        "route_decision": decision,
+        "route_agent": decision.agent,
+        "route_source": decision.source,
+        "route_confidence": decision.confidence,
+        "confirmation_chip": decision.confirmation_chip,
+        "follow_up_chip": decision.follow_up_chip,
+        "topic_hint": decision.topic_hint,
+    }
+
+
+def route_after_router(state: TutorState) -> str:
+    """Routes to chosen specialist agent or confirmation prompt."""
+    if state.get("confirmation_chip"):
+        return "confirm_chip"
+    agent = state.get("route_agent", "tutor")
+    if agent in ("tutor", "insights", "quiz_gen", "flashcards", "roadmap"):
+        return agent
     return "tutor"
+
+
+async def insights_node(state: TutorState) -> dict[str, Any]:
+    """Generates pure SQL aggregates and short fast summary."""
+    db: Session = state["db"]
+    user_id = state["user_id"]
+    course_id = state["course_id"]
+    gateway = state.get("gateway")
+
+    text, _ = await generate_insights_summary(
+        course_id=course_id,
+        user_id=user_id,
+        db=db,
+        gateway=gateway,
+    )
+    return {
+        "final_reply": text,
+        "clean_answer": text,
+        "citations": [],
+        "sources": [],
+        "is_sufficient": True,
+        "grounding_status": "grounded",
+    }
+
+
+async def quiz_gen_node(state: TutorState) -> dict[str, Any]:
+    """Prepares and navigates student to practice quiz."""
+    topic = state.get("topic_hint")
+    topic_str = f" on {topic}" if topic else ""
+    text = (
+        f"I'm ready to quiz you{topic_str}! "
+        f"You can jump into the Practice Quiz tab to take a dedicated quiz, "
+        f"or let me know if you would like me to ask practice questions directly here."
+    )
+    return {
+        "final_reply": text,
+        "clean_answer": text,
+        "citations": [],
+        "sources": [],
+        "is_sufficient": True,
+        "grounding_status": "grounded",
+    }
+
+
+async def flashcards_node(state: TutorState) -> dict[str, Any]:
+    """Prepares flashcards and provides deck review summary."""
+    topic = state.get("topic_hint")
+    topic_str = f" for {topic}" if topic else ""
+    text = (
+        f"Your flashcards{topic_str} are available in the Flashcards tab. "
+        f"You can review your spaced repetition cards and track your retention intervals there!"
+    )
+    return {
+        "final_reply": text,
+        "clean_answer": text,
+        "citations": [],
+        "sources": [],
+        "is_sufficient": True,
+        "grounding_status": "grounded",
+    }
+
+
+async def roadmap_node(state: TutorState) -> dict[str, Any]:
+    """Surfaces study roadmap milestones and replan options."""
+    text = (
+        "Here is your personalized study roadmap. "
+        "Head over to the Roadmap tab to view your daily schedule, track completed milestones, "
+        "or request an automatic re-plan when your mastery updates!"
+    )
+    return {
+        "final_reply": text,
+        "clean_answer": text,
+        "citations": [],
+        "sources": [],
+        "is_sufficient": True,
+        "grounding_status": "grounded",
+    }
+
+
+def confirm_chip_node(state: TutorState) -> dict[str, Any]:
+    """Renders confirmation prompt for write agents below confidence threshold."""
+    chip = state.get("confirmation_chip", "Would you like me to proceed?")
+    text = f"Before I proceed: {chip}"
+    return {
+        "final_reply": text,
+        "clean_answer": text,
+        "citations": [],
+        "sources": [],
+        "is_sufficient": True,
+        "grounding_status": "grounded",
+    }
 
 
 async def tutor_node(state: TutorState) -> dict[str, Any]:
@@ -203,8 +370,11 @@ async def tutor_node(state: TutorState) -> dict[str, Any]:
         english_only=(tone_ctx.user_tone_setting == "english_only"),
     )
 
+    integrity_directive = state.get("academic_integrity_directive")
+    integrity_block = f"{integrity_directive}\n\n" if integrity_directive else ""
+
     user_prompt = (
-        f"{context_block}\n\n"
+        f"{integrity_block}{context_block}\n\n"
         f"Student question: {message}\n\n"
         f"Answer the question thoroughly, clearly, and concisely using the study materials above. "
         f"Do not invent facts or extrapolate beyond what is supported. "
@@ -237,13 +407,13 @@ def guard_out_node(state: TutorState) -> dict[str, Any]:
     db: Session = state["db"]
     user_id = state["user_id"]
 
-    # If already set (refusal or blocked), keep final_reply
+    # If already set (refusal or blocked or specialist agent), keep final_reply
     if "final_reply" in state:
         final_reply = state["final_reply"]
         clean_answer = state.get("clean_answer", final_reply)
         citations = state.get("citations", [])
         sources = state.get("sources", [])
-        grounding_status = state.get("grounding_status", "insufficient")
+        grounding_status = state.get("grounding_status", "grounded")
     else:
         raw_reply = state.get("raw_response", "")
         chunks = state.get("retrieved_chunks", [])
@@ -277,24 +447,52 @@ def guard_out_node(state: TutorState) -> dict[str, Any]:
         "sources": sources,
         "grounding_status": grounding_status,
         "audit_records": records,
+        "route_agent": state.get("route_agent", "tutor"),
+        "route_source": state.get("route_source", "rule"),
+        "route_confidence": state.get("route_confidence", 1.0),
+        "confirmation_chip": state.get("confirmation_chip"),
+        "follow_up_chip": state.get("follow_up_chip"),
     }
 
 
 def build_tutor_graph():
-    """Build and compile the LangGraph workflow."""
+    """Build and compile the multi-agent orchestrator workflow."""
     workflow = StateGraph(TutorState)
 
     workflow.add_node("guard_in", guard_in_node)
+    workflow.add_node("router", router_node)
     workflow.add_node("tutor", tutor_node)
+    workflow.add_node("insights", insights_node)
+    workflow.add_node("quiz_gen", quiz_gen_node)
+    workflow.add_node("flashcards", flashcards_node)
+    workflow.add_node("roadmap", roadmap_node)
+    workflow.add_node("confirm_chip", confirm_chip_node)
     workflow.add_node("guard_out", guard_out_node)
 
     workflow.add_edge(START, "guard_in")
     workflow.add_conditional_edges(
         "guard_in",
-        should_continue_to_tutor,
-        {"tutor": "tutor", END: END},
+        route_after_guard_in,
+        {"router": "router", "guard_out": "guard_out"},
+    )
+    workflow.add_conditional_edges(
+        "router",
+        route_after_router,
+        {
+            "tutor": "tutor",
+            "insights": "insights",
+            "quiz_gen": "quiz_gen",
+            "flashcards": "flashcards",
+            "roadmap": "roadmap",
+            "confirm_chip": "confirm_chip",
+        },
     )
     workflow.add_edge("tutor", "guard_out")
+    workflow.add_edge("insights", "guard_out")
+    workflow.add_edge("quiz_gen", "guard_out")
+    workflow.add_edge("flashcards", "guard_out")
+    workflow.add_edge("roadmap", "guard_out")
+    workflow.add_edge("confirm_chip", "guard_out")
     workflow.add_edge("guard_out", END)
 
     return workflow.compile()

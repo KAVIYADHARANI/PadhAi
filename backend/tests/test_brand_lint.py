@@ -56,6 +56,7 @@ IGNORED_DIR_PARTS = {
     "build",
     "storage",
     "test_storage",
+    "results",
 }
 
 
@@ -82,12 +83,23 @@ def test_brand_strings_only_in_allowed_files():
         ):
             continue
 
-        # Skip binary files or non-source files
-        if file_path.suffix.lower() in {".png", ".jpg", ".jpeg", ".ico", ".pdf", ".bin", ".lock"}:
+        # Skip binary files, lockfiles, or runtime log files
+        if file_path.suffix.lower() in {
+            ".png",
+            ".jpg",
+            ".jpeg",
+            ".ico",
+            ".pdf",
+            ".bin",
+            ".lock",
+            ".log",
+        }:
             continue
 
-        # Skip local uncommitted environment files (e.g. .env, .env.local)
-        if file_path.name.startswith(".env") and file_path.name != ".env.example":
+        # Skip runtime debug logs and local uncommitted environment files
+        if file_path.name.startswith("firebase-debug") or (
+            file_path.name.startswith(".env") and file_path.name != ".env.example"
+        ):
             continue
 
         try:

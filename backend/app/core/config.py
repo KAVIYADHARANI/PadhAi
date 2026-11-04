@@ -46,6 +46,7 @@ class Settings(BaseSettings):
         "S3_BUCKET_NAME",
         "S3_ACCESS_KEY_ID",
         "S3_SECRET_ACCESS_KEY",
+        "SENTRY_DSN",
         mode="before",
     )
     @classmethod
@@ -194,6 +195,15 @@ class Settings(BaseSettings):
     S3_BUCKET_NAME: str | None = Field(default=None, description="S3 bucket name")
     S3_ACCESS_KEY_ID: str | None = Field(default=None, description="S3 access key")
     S3_SECRET_ACCESS_KEY: str | None = Field(default=None, description="S3 secret key")
+
+    # Observability & Error Monitoring
+    SENTRY_DSN: str | None = Field(default=None, description="Sentry DSN for error monitoring")
+    SENTRY_ENVIRONMENT: str = Field(default="production", description="Sentry environment")
+
+    # Rate Limiting & User Quotas (Requests per minute per user)
+    RATE_LIMIT_CHAT_RPM: int = Field(default=20, description="Chat requests per minute per user")
+    RATE_LIMIT_UPLOAD_RPM: int = Field(default=5, description="Document uploads per minute per user")
+    RATE_LIMIT_BUDDY_RPM: int = Field(default=60, description="Buddy requests per minute per user")
 
 
 settings = Settings()

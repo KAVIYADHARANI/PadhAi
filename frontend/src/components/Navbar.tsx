@@ -5,9 +5,10 @@ import { useAuth } from "../contexts/AuthContext";
 
 interface NavbarProps {
   onNavigateHome?: () => void;
+  onNavigatePrivacy?: () => void;
 }
 
-export const Navbar: React.FC<NavbarProps> = ({ onNavigateHome }) => {
+export const Navbar: React.FC<NavbarProps> = ({ onNavigateHome, onNavigatePrivacy }) => {
   const { user, logout } = useAuth();
 
   return (
@@ -37,6 +38,16 @@ export const Navbar: React.FC<NavbarProps> = ({ onNavigateHome }) => {
         {/* User state and actions */}
         {user ? (
           <div className="flex items-center gap-3">
+            {onNavigatePrivacy && (
+              <button
+                onClick={onNavigatePrivacy}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-emerald-400 bg-slate-900/60 hover:bg-emerald-500/10 border border-slate-800 hover:border-emerald-500/30 transition-all"
+                title="Privacy & Data Sovereignty"
+              >
+                <span>Privacy</span>
+              </button>
+            )}
+
             <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-900/80 border border-slate-800 text-xs text-slate-300">
               <UserCircle className="w-4 h-4 text-brand-400" />
               <span className="font-medium max-w-[180px] truncate">

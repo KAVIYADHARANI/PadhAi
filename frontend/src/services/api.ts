@@ -3,10 +3,15 @@ import {
   AttemptSubmission,
   ChatHistoryResponse,
   ChatReplyResponse,
+  ChatStreamCallbacks,
+  ChatStreamRequest,
   Course,
   CourseProgress,
   CreateCourseInput,
   Document,
+  Flashcard,
+  FlashcardListResponse,
+  FlashcardReviewResult,
   Lesson,
   LessonChatResponse,
   LessonProgress,
@@ -99,6 +104,12 @@ export const api = {
     return request<User>("/api/me");
   },
 
+  async deleteAccount(): Promise<void> {
+    await request<void>("/api/me", {
+      method: "DELETE",
+    });
+  },
+
   // Courses
   async getCourses(): Promise<Course[]> {
     return request<Course[]>("/api/courses");
@@ -189,6 +200,12 @@ export const api = {
     });
   },
 
+  async replanCourseRoadmap(courseId: number): Promise<RoadmapProgress> {
+    return request<RoadmapProgress>(`/api/courses/${courseId}/roadmap/replan`, {
+      method: "POST",
+    });
+  },
+
   async updateRoadmapItem(
     courseId: number,
     itemId: number,
@@ -208,15 +225,119 @@ export const api = {
   async sendChatMessage(
     courseId: number,
     message: string,
-    userToneSetting: "full" | "balanced" | "serious" | "english_only" = "balanced"
+    userToneSetting: "full" | "balanced" | "serious" | "english_only" = "balanced",
+    intent?: string
   ): Promise<ChatReplyResponse> {
     return request<ChatReplyResponse>(`/api/courses/${courseId}/chat`, {
       method: "POST",
       body: JSON.stringify({
         message,
         user_tone_setting: userToneSetting,
+        intent,
       }),
     });
+  },
+
+  async streamChatMessage(
+    courseId: number,
+    payload: ChatStreamRequest,
+    callbacks: ChatStreamCallbacks
+  ): Promise<void> {
+    const token = await getAuthToken();
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+    };
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
+    }
+
+    const response = await fetch(`${API_BASE_URL}/api/courses/${courseId}/chat`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        ...payload,
+        stream: true,
+      }),
+    });
+
+    if (!response.ok) {
+      const errText = await response.text();
+      let errorData;
+      try {
+        errorData = JSON.parse(errText);
+      } catch {
+        errorData = errText;
+      }
+      const err = new ApiError(response.status, `HTTP error ${response.status}`, errorData);
+      callbacks.onError?.(err);
+      throw err;
+    }
+
+    if (!response.body) {
+      callbacks.onDone?.();
+      return;
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+
+    try {
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() || "";
+
+        let currentEvent = "message";
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (!trimmed) {
+            currentEvent = "message";
+            continue;
+          }
+          if (trimmed.startsWith("event:")) {
+            currentEvent = trimmed.replace("event:", "").trim();
+          } else if (trimmed.startsWith("data:")) {
+            const rawData = trimmed.replace("data:", "").trim();
+            try {
+              const data = JSON.parse(rawData);
+              switch (currentEvent) {
+                case "agent":
+                  callbacks.onAgent?.(data.agent);
+                  break;
+                case "route_source":
+                  callbacks.onRouteSource?.(data.route_source);
+                  break;
+                case "chip":
+                  callbacks.onChip?.(data);
+                  break;
+                case "token":
+                  callbacks.onToken?.(data.token);
+                  break;
+                case "replace":
+                  callbacks.onReplace?.(data.text);
+                  break;
+                case "citations":
+                  callbacks.onCitations?.(data.citations || [], data.sources);
+                  break;
+                case "done":
+                  callbacks.onDone?.();
+                  break;
+              }
+            } catch {
+              // Ignore invalid JSON on data line
+            }
+          }
+        }
+      }
+      callbacks.onDone?.();
+    } catch (err: any) {
+      callbacks.onError?.(err);
+      throw err;
+    }
   },
 
   async clearChatHistory(courseId: number): Promise<void> {
@@ -334,7 +455,66 @@ export const api = {
       }
     );
   },
+
+  // Flashcards (Spaced Repetition SM-2)
+  async generateFlashcards(
+    courseId: number,
+    topicId?: number | null,
+    count: number = 5
+  ): Promise<Flashcard[]> {
+    return request<Flashcard[]>("/api/flashcards/generate", {
+      method: "POST",
+      body: JSON.stringify({
+        course_id: courseId,
+        topic_id: topicId ?? null,
+        count,
+      }),
+    });
+  },
+
+  async getDueFlashcards(courseId: number): Promise<Flashcard[]> {
+    return request<Flashcard[]>(`/api/flashcards/due?course_id=${courseId}`);
+  },
+
+  async getCourseFlashcards(
+    courseId: number,
+    topicId?: number | null
+  ): Promise<FlashcardListResponse> {
+    const url = topicId
+      ? `/api/flashcards?course_id=${courseId}&topic_id=${topicId}`
+      : `/api/flashcards?course_id=${courseId}`;
+    return request<FlashcardListResponse>(url);
+  },
+
+  async reviewFlashcard(
+    cardId: number,
+    quality: number
+  ): Promise<FlashcardReviewResult> {
+    return request<FlashcardReviewResult>(`/api/flashcards/${cardId}/review`, {
+      method: "POST",
+      body: JSON.stringify({ quality }),
+    });
+  },
+
+  async deleteFlashcard(cardId: number): Promise<void> {
+    await request<void>(`/api/flashcards/${cardId}`, {
+      method: "DELETE",
+    });
+  },
+
+  // Weekly Recap
+  async getWeeklyRecap(courseId: number): Promise<WeeklyRecapResponse> {
+    return request<WeeklyRecapResponse>(`/api/courses/${courseId}/recap`);
+  },
 };
+
+export interface WeeklyRecapResponse {
+  headline: string;
+  summary: string;
+  focus_highlight: string;
+  next_week_goal: string;
+  is_fallback: boolean;
+}
 
 export interface StudySessionResponse {
   id: number;

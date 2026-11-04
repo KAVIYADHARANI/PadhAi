@@ -65,4 +65,37 @@ describe("Study Companion Mascot and UI", () => {
     const lineWithScholar = getBuddyLine("long_unbroken_study", "friendly_checkin", "scholar");
     expect(lineWithScholar).toContain("scholar");
   });
+
+  it("offers flashcards after two misses on a topic and navigates on click", () => {
+    const handleFlashcardsNav = vi.fn();
+    const { rerender } = render(
+      <Buddy courseId={1} onNavigateToFlashcards={handleFlashcardsNav} />
+    );
+
+    // Send first miss
+    rerender(
+      <Buddy
+        courseId={1}
+        onNavigateToFlashcards={handleFlashcardsNav}
+        lastQuizEvent={{ type: "miss", timestamp: Date.now() }}
+      />
+    );
+
+    // Send second miss
+    rerender(
+      <Buddy
+        courseId={1}
+        onNavigateToFlashcards={handleFlashcardsNav}
+        lastQuizEvent={{ type: "miss", timestamp: Date.now() + 1000 }}
+      />
+    );
+
+    // Verify modal appeared with flashcard offer
+    expect(screen.getByText("Review with Flashcards?")).toBeInTheDocument();
+    expect(screen.getByText("Review flashcards")).toBeInTheDocument();
+
+    // Click "Review flashcards"
+    fireEvent.click(screen.getByText("Review flashcards"));
+    expect(handleFlashcardsNav).toHaveBeenCalledTimes(1);
+  });
 });

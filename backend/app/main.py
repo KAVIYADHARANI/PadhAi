@@ -7,6 +7,7 @@ from app.api import buddy as api_buddy
 from app.api import chat as api_chat
 from app.api import courses as api_courses
 from app.api import documents as api_documents
+from app.api import flashcards as api_flashcards
 from app.api import lessons as api_lessons
 from app.api import me as api_me
 from app.api import progress as api_progress
@@ -15,6 +16,7 @@ from app.api import roadmap as api_roadmap
 from app.api import sessions as api_sessions
 from app.core.config import settings
 from app.core.logging import setup_logging
+from app.core.observability import setup_observability
 
 # Configure structured logging
 setup_logging()
@@ -24,6 +26,9 @@ app = FastAPI(
     description="Adaptive Learning Platform API",
     version="0.1.0",
 )
+
+# Initialize error monitoring hook
+setup_observability(app)
 
 # CORS configuration
 app.add_middleware(
@@ -53,6 +58,8 @@ app.include_router(api_chat.router)
 app.include_router(api_quizzes.router)
 app.include_router(api_progress.router)
 app.include_router(api_roadmap.router)
+app.include_router(api_roadmap.alias_router)
 app.include_router(api_lessons.router)
+app.include_router(api_flashcards.router)
 app.include_router(api_sessions.router)
 app.include_router(api_buddy.router)

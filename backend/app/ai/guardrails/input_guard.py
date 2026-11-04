@@ -11,14 +11,17 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass, field
+from pathlib import Path
 
 MAX_MESSAGE_LENGTH = 2000
 
 DISTRESS_PATTERNS = [
     re.compile(
-        r"\b(suicide|kill myself|end my life|want to die|hurt myself|self[- ]harm)\b", re.IGNORECASE
+        r"\b(suicide|kill myself|end my life|want to die|hurt(?:ing)? myself|self[- ]harm)\b", re.IGNORECASE
     ),
     re.compile(r"\b(can't go on|hopeless|depressed|end it all)\b", re.IGNORECASE),
+    re.compile(r"\b(hang myself|overdose|cut my wrists|no reason to live|better off dead)\b", re.IGNORECASE),
+    re.compile(r"\b(hate living|give up on life|wishing i was dead)\b", re.IGNORECASE),
 ]
 
 INJECTION_PATTERNS = [
@@ -31,13 +34,32 @@ INJECTION_PATTERNS = [
     re.compile(r"<\s*/?\s*(system|instruction|prompt)\s*>", re.IGNORECASE),
 ]
 
-DISTRESS_SUPPORT_REPLY = (
-    "It sounds like you might be going through a really difficult time. Please remember that you are not alone "
-    "and there is support available. Please reach out to someone you trust, or contact a local crisis support service:\n\n"
+WELLBEING_COPY_PATH = Path(__file__).parent / "wellbeing_copy.md"
+
+_DEFAULT_DISTRESS_SUPPORT_REPLY = (
+    "It sounds like you might be going through a really difficult time right now. "
+    "Please remember that you are not alone and there is support available. "
+    "Your wellbeing and safety are far more important than any study session.\n\n"
+    "Please pause and reach out to someone you trust, or contact a free, confidential crisis helpline:\n"
     "- India: Tele-MANAS (14416 or 1800 891 4416), Vandrevala Foundation (+91 9999 666 555)\n"
     "- International: Visit https://findahelpline.com to find free, confidential support in your country.\n\n"
     "I am here as a study companion, but your wellbeing is what matters most."
 )
+
+
+def get_wellbeing_copy() -> str:
+    """Loads the fixed supportive copy from wellbeing_copy.md with safe fallback."""
+    if WELLBEING_COPY_PATH.exists():
+        try:
+            content = WELLBEING_COPY_PATH.read_text(encoding="utf-8").strip()
+            if content:
+                return content
+        except Exception:
+            pass
+    return _DEFAULT_DISTRESS_SUPPORT_REPLY
+
+
+DISTRESS_SUPPORT_REPLY = get_wellbeing_copy()
 
 
 @dataclass
@@ -55,6 +77,7 @@ class InputGuardResult:
 
     is_blocked: bool = False
     is_distress: bool = False
+    turn_persona_off: bool = False
     injection_flag: bool = False
     response_override: str | None = None
     audit_records: list[GuardrailAuditRecord] = field(default_factory=list)
@@ -81,7 +104,8 @@ def check_input_guardrails(message: str) -> InputGuardResult:
         if pattern.search(message):
             result.is_blocked = True
             result.is_distress = True
-            result.response_override = DISTRESS_SUPPORT_REPLY
+            result.turn_persona_off = True
+            result.response_override = get_wellbeing_copy()
             result.audit_records.append(
                 GuardrailAuditRecord(
                     layer="wellbeing", rule="distress_detector", action="routed_support"

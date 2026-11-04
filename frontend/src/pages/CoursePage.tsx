@@ -6,6 +6,7 @@ import {
   Calendar,
   Clock,
   HelpCircle,
+  Layers,
   MessageSquare,
   Sparkles,
 } from "lucide-react";
@@ -13,6 +14,7 @@ import { MASCOT_NAME } from "../brand";
 import { Buddy } from "../components/buddy/Buddy";
 import { ChatView } from "../components/ChatView";
 import { DocumentUpload } from "../components/DocumentUpload";
+import { FlashcardsView } from "../components/FlashcardsView";
 import { LessonView } from "../components/LessonView";
 import { ProgressView } from "../components/ProgressView";
 import { QuizView } from "../components/QuizView";
@@ -24,7 +26,7 @@ interface CoursePageProps {
   onBack: () => void;
 }
 
-type CourseTab = "materials" | "roadmap" | "chat" | "quiz" | "progress";
+type CourseTab = "materials" | "roadmap" | "chat" | "quiz" | "flashcards" | "progress";
 
 export const CoursePage: React.FC<CoursePageProps> = ({ course, onBack }) => {
   const [activeTab, setActiveTab] = useState<CourseTab>("materials");
@@ -33,6 +35,16 @@ export const CoursePage: React.FC<CoursePageProps> = ({ course, onBack }) => {
     item: RoadmapItem;
     taskId: string;
   } | null>(null);
+
+  const currentLessonData = activeLesson
+    ? {
+        item: activeLesson.item,
+        taskId: activeLesson.taskId,
+        lessonTitle:
+          activeLesson.item.tasks.find((t) => t.id === activeLesson.taskId)?.task ||
+          activeLesson.item.title,
+      }
+    : null;
 
   const handleStartPracticeForTopic = (topicId: number) => {
     setActiveLesson(null);
@@ -149,6 +161,18 @@ export const CoursePage: React.FC<CoursePageProps> = ({ course, onBack }) => {
         </button>
 
         <button
+          onClick={() => handleTabChange("flashcards")}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition border shrink-0 ${
+            activeTab === "flashcards"
+              ? "bg-brand-500/15 border-brand-500/30 text-white"
+              : "bg-transparent border-transparent text-slate-400 hover:text-slate-200"
+          }`}
+        >
+          <Layers className="w-4 h-4" />
+          <span>Flashcards</span>
+        </button>
+
+        <button
           onClick={() => handleTabChange("progress")}
           className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition border shrink-0 ${
             activeTab === "progress"
@@ -163,8 +187,8 @@ export const CoursePage: React.FC<CoursePageProps> = ({ course, onBack }) => {
 
       {/* Tab Content */}
       {activeTab === "materials" && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2 space-y-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 min-w-0">
+          <div className="lg:col-span-2 space-y-6 min-w-0">
             <div className="flex items-center gap-2">
               <BookMarked className="w-4 h-4 text-brand-400" />
               <h2 className="text-base font-bold text-white">Course Knowledge Base</h2>
@@ -173,23 +197,25 @@ export const CoursePage: React.FC<CoursePageProps> = ({ course, onBack }) => {
             <DocumentUpload courseId={course.id} />
           </div>
 
-          <div className="space-y-6">
+          <div className="space-y-6 min-w-0">
             <div className="flex items-center gap-2">
               <Sparkles className="w-4 h-4 text-brand-400" />
               <h2 className="text-base font-bold text-white">Companion Readiness</h2>
             </div>
 
-            <div className="glass-card rounded-2xl p-5 border border-slate-800/80 flex flex-col items-center">
+            <div className="glass-card rounded-2xl p-5 border border-slate-800/80 flex flex-col items-center min-w-0">
               <Buddy
                 courseId={course.id}
+                currentLesson={currentLessonData}
                 onNavigateToQuiz={() => setActiveTab("quiz")}
                 onNavigateToChat={() => setActiveTab("chat")}
+                onNavigateToFlashcards={() => setActiveTab("flashcards")}
               />
             </div>
 
-            <div className="glass-card rounded-2xl p-5 border border-slate-800/80 text-xs text-slate-400 space-y-2">
+            <div className="glass-card rounded-2xl p-5 border border-slate-800/80 text-xs text-slate-400 space-y-2 min-w-0">
               <h3 className="font-semibold text-white">Document Ingestion Pipeline</h3>
-              <p>
+              <p className="break-words leading-relaxed">
                 Once PDFs or notes are uploaded, the ingestion worker segments them into semantic chunks
                 and generates BGE-M3 vector embeddings for grounded tutor chat, personalized study roadmaps,
                 and interactive quizzes.
@@ -229,6 +255,13 @@ export const CoursePage: React.FC<CoursePageProps> = ({ course, onBack }) => {
         />
       )}
 
+      {activeTab === "flashcards" && (
+        <FlashcardsView
+          courseId={course.id}
+          onNavigateToQuiz={() => setActiveTab("quiz")}
+        />
+      )}
+
       {activeTab === "progress" && (
         <ProgressView
           courseId={course.id}
@@ -238,12 +271,16 @@ export const CoursePage: React.FC<CoursePageProps> = ({ course, onBack }) => {
 
       {/* Floating Study Companion when navigating other tabs */}
       {activeTab !== "materials" && (
-        <div className="fixed bottom-6 right-6 z-40 hidden sm:block animate-in fade-in slide-in-from-bottom-4">
-          <div className="glass-card p-3 rounded-3xl border border-slate-800/90 shadow-2xl backdrop-blur-xl">
+        <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-40 block animate-in fade-in slide-in-from-bottom-4 max-w-[calc(100vw-2rem)]">
+          <div className="glass-card p-2.5 sm:p-3 rounded-3xl border border-slate-800/90 shadow-2xl backdrop-blur-xl">
             <Buddy
               courseId={course.id}
+              currentLesson={currentLessonData}
+              isFloating={true}
+              defaultCollapsed={false}
               onNavigateToQuiz={() => setActiveTab("quiz")}
               onNavigateToChat={() => setActiveTab("chat")}
+              onNavigateToFlashcards={() => setActiveTab("flashcards")}
             />
           </div>
         </div>

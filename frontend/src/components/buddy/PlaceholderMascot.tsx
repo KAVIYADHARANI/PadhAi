@@ -5,6 +5,7 @@
  */
 
 import React, { useEffect, useState } from "react";
+import { MASCOT_NAME } from "../../brand";
 import { BuddyState } from "../../buddy/types";
 
 export interface MascotRendererProps {
@@ -12,6 +13,8 @@ export interface MascotRendererProps {
   isTalking?: boolean;
   onTap?: () => void;
   className?: string;
+  title?: string;
+  ariaLabel?: string;
 }
 
 export const PlaceholderMascot: React.FC<MascotRendererProps> = ({
@@ -19,6 +22,8 @@ export const PlaceholderMascot: React.FC<MascotRendererProps> = ({
   isTalking = false,
   onTap,
   className = "w-36 h-36",
+  title = `Chat with ${MASCOT_NAME}`,
+  ariaLabel,
 }) => {
   const [pupilOffset, setPupilOffset] = useState({ x: 0, y: 0 });
   const [isTapped, setIsTapped] = useState(false);
@@ -64,7 +69,8 @@ export const PlaceholderMascot: React.FC<MascotRendererProps> = ({
       style={{
         transform: isTilted ? "rotate(14deg) translateY(-2px)" : undefined,
       }}
-      title="Click to interact with study companion"
+      title={title}
+      aria-label={ariaLabel || title}
       role="button"
       tabIndex={0}
       onKeyDown={(e) => {

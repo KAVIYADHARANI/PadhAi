@@ -41,7 +41,7 @@ def course_with_materials(db_session, test_user):
     course = Course(
         user_id=test_user.id,
         name="Linear Algebra",
-        goal_days=5,
+        goal_days=2,
         hours_per_day=1.5,
         level="intermediate",
     )
@@ -285,3 +285,64 @@ def test_roadmap_api_endpoints_and_progress_tracking(
 
     finally:
         app.dependency_overrides.pop(get_current_user, None)
+
+
+@pytest.mark.asyncio
+async def test_wording_call_cannot_change_topics_or_days_or_counts(
+    db_session, test_user, course_with_materials
+):
+    """Validation gate proves LLM wording output cannot alter topics, days, or task counts."""
+    # LLM hallucinates different topic names, wrong day numbers, and attempts to inject extra tasks
+    hallucinated_json = {
+        "days": [
+            {
+                "day": 999,  # Wrong day
+                "topic_name": "Quantum Computing & Teleportation",  # Invented topic
+                "title": "Quantum Mechanics Intro",
+                "learning_objectives": ["Build a qubit"],
+                "tasks": [
+                    {"id": "fake_1", "task": "Fake task 1", "estimated_minutes": 10, "completed": False},
+                    {"id": "fake_2", "task": "Fake task 2", "estimated_minutes": 10, "completed": False},
+                    {"id": "fake_3", "task": "Fake task 3", "estimated_minutes": 10, "completed": False},
+                    {"id": "fake_4", "task": "Fake task 4", "estimated_minutes": 10, "completed": False},
+                    {"id": "fake_5", "task": "Fake task 5", "estimated_minutes": 10, "completed": False},
+                ],
+                "estimated_minutes": 50,
+            }
+        ]
+    }
+
+    mock_resp = LLMResponse(
+        content=json.dumps(hallucinated_json),
+        role="assistant",
+        provider="fake",
+        model="fake-model",
+        tokens_in=50,
+        tokens_out=100,
+        latency_ms=10.0,
+    )
+    gw = LLMGateway()
+    gw.complete = AsyncMock(return_value=mock_resp)
+
+    items = await generate_course_roadmap(
+        course_id=course_with_materials.id,
+        user_id=test_user.id,
+        db=db_session,
+        gateway=gw,
+        overwrite=True,
+    )
+
+    # Invariant checks:
+    # 1. Total days strictly matches course.goal_days (2 days), not 999
+    assert len(items) == course_with_materials.goal_days
+    assert items[0].day == 1
+    assert items[1].day == 2
+
+    # 2. Topic names strictly match the grounded topics from syllabus, not "Quantum Computing"
+    assert items[0].topic_name == "Vector Spaces"
+    assert items[1].topic_name == "Eigenvalues & Eigenvectors"
+
+    # 3. Task counts & times match planner calculation, not LLM's 5 fake tasks of 10 minutes
+    assert len(items[0].tasks) == 2
+    assert items[0].estimated_minutes == 90
+    assert sum(t["estimated_minutes"] for t in items[0].tasks) == 90

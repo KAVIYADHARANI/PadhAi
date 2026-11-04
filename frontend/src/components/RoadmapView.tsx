@@ -29,6 +29,7 @@ export const RoadmapView: React.FC<RoadmapViewProps> = ({
 }) => {
   const [loading, setLoading] = useState<boolean>(true);
   const [generating, setGenerating] = useState<boolean>(false);
+  const [replanning, setReplanning] = useState<boolean>(false);
   const [roadmap, setRoadmap] = useState<RoadmapProgress | null>(null);
   const [documents, setDocuments] = useState<Document[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -75,6 +76,23 @@ export const RoadmapView: React.FC<RoadmapViewProps> = ({
       }
     } finally {
       setGenerating(false);
+    }
+  };
+
+  const handleReplanRoadmap = async () => {
+    setReplanning(true);
+    setError(null);
+    try {
+      const res = await api.replanCourseRoadmap(course.id);
+      setRoadmap(res);
+    } catch (err) {
+      if (err instanceof ApiError) {
+        setError(err.message);
+      } else {
+        setError("Failed to re-plan roadmap from mastery.");
+      }
+    } finally {
+      setReplanning(false);
     }
   };
 
@@ -321,11 +339,20 @@ export const RoadmapView: React.FC<RoadmapViewProps> = ({
                 </h2>
               </div>
 
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2.5">
+                <button
+                  onClick={handleReplanRoadmap}
+                  disabled={replanning || generating}
+                  title="Preserves completed milestones and optimizes remaining days using your latest topic mastery"
+                  className="px-3.5 py-2 rounded-xl text-xs font-bold text-brand-300 hover:text-white bg-brand-500/10 hover:bg-brand-500/20 transition border border-brand-500/30 flex items-center gap-1.5"
+                >
+                  <Sparkles className={`w-3.5 h-3.5 ${replanning ? "animate-spin" : ""}`} />
+                  <span>{replanning ? "Re-planning..." : "Re-plan from Mastery"}</span>
+                </button>
                 <button
                   onClick={() => setShowConfirmRegenerate(true)}
-                  disabled={generating}
-                  className="px-4 py-2 rounded-xl text-xs font-bold text-slate-300 hover:text-white bg-slate-800/80 hover:bg-slate-700/80 transition border border-slate-700 flex items-center gap-2"
+                  disabled={generating || replanning}
+                  className="px-3.5 py-2 rounded-xl text-xs font-bold text-slate-300 hover:text-white bg-slate-800/80 hover:bg-slate-700/80 transition border border-slate-700 flex items-center gap-1.5"
                 >
                   <RefreshCw className={`w-3.5 h-3.5 ${generating ? "animate-spin" : ""}`} />
                   <span>Regenerate Plan</span>

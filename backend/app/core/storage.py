@@ -29,6 +29,11 @@ class StorageBackend(ABC):
         """Deletes file by URI. Returns True if deleted or did not exist."""
         pass
 
+    @abstractmethod
+    def exists(self, file_uri: str) -> bool:
+        """Checks if file exists by URI."""
+        pass
+
 
 class LocalStorageBackend(StorageBackend):
     """Stores files on the local filesystem."""
@@ -69,6 +74,15 @@ class LocalStorageBackend(StorageBackend):
         except Exception:
             return False
 
+    def exists(self, file_uri: str) -> bool:
+        try:
+            path = Path(file_uri)
+            if not path.is_absolute():
+                path = self.base_dir / path
+            return path.exists()
+        except Exception:
+            return False
+
 
 class S3StorageBackend(StorageBackend):
     """S3-compatible storage backend for Cloudflare R2 / Supabase Storage."""
@@ -85,6 +99,9 @@ class S3StorageBackend(StorageBackend):
         raise NotImplementedError("S3 backend requires boto3 and configured S3 credentials.")
 
     def delete(self, file_uri: str) -> bool:
+        raise NotImplementedError("S3 backend requires boto3 and configured S3 credentials.")
+
+    def exists(self, file_uri: str) -> bool:
         raise NotImplementedError("S3 backend requires boto3 and configured S3 credentials.")
 
 

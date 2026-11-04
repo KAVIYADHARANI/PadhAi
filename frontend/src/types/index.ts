@@ -141,6 +141,7 @@ export interface SourceReference {
   page: number;
   chunk_id?: number | null;
   heading?: string | null;
+  excerpt?: string | null;
 }
 
 export interface ChatMessage {
@@ -153,6 +154,11 @@ export interface ChatMessage {
   tone?: string | null;
   is_sufficient?: boolean;
   grounding_status?: string;
+  agent?: string;
+  route_source?: string;
+  route_confidence?: number;
+  confirmation_chip?: string | null;
+  follow_up_chip?: string | null;
   created_at?: string;
 }
 
@@ -170,6 +176,29 @@ export interface ChatReplyResponse {
   tone: string;
   is_sufficient: boolean;
   grounding_status?: string;
+  agent?: string;
+  route_source?: string;
+  route_confidence?: number;
+  confirmation_chip?: string | null;
+  follow_up_chip?: string | null;
+}
+
+export interface ChatStreamRequest {
+  message: string;
+  user_tone_setting?: "full" | "balanced" | "serious" | "english_only";
+  intent?: string;
+  academic_integrity?: boolean;
+}
+
+export interface ChatStreamCallbacks {
+  onAgent?: (agent: string) => void;
+  onRouteSource?: (source: string) => void;
+  onChip?: (chip: { confirmation_chip?: string | null; follow_up_chip?: string | null }) => void;
+  onToken?: (token: string) => void;
+  onReplace?: (text: string) => void;
+  onCitations?: (citations: string[], sources?: SourceReference[]) => void;
+  onDone?: () => void;
+  onError?: (err: Error) => void;
 }
 
 export interface WebResource {
@@ -306,6 +335,35 @@ export interface LessonChatResponse {
   sources: SourceReference[];
   citations: string[];
   tone: string;
+}
+
+export interface Flashcard {
+  id: number;
+  course_id: number;
+  topic_id?: number | null;
+  front: string;
+  back: string;
+  source_chunk_ids: number[];
+  reps: number;
+  interval_days: number;
+  ease_factor: number;
+  due_date: string;
+  last_reviewed_at?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface FlashcardListResponse {
+  cards: Flashcard[];
+  total_count: number;
+  due_count: number;
+}
+
+export interface FlashcardReviewResult {
+  card: Flashcard;
+  new_interval_days: number;
+  new_ease_factor: number;
+  next_due_date: string;
 }
 
 

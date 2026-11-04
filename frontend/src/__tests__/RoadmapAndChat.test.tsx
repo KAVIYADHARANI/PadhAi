@@ -10,10 +10,12 @@ vi.mock("../services/api", () => ({
   api: {
     getCourseRoadmap: vi.fn(),
     generateCourseRoadmap: vi.fn(),
+    replanCourseRoadmap: vi.fn(),
     updateRoadmapItem: vi.fn(),
     getCourseDocuments: vi.fn(),
     getChatHistory: vi.fn(),
     sendChatMessage: vi.fn(),
+    streamChatMessage: vi.fn(),
     clearChatHistory: vi.fn(),
   },
 }));
@@ -146,17 +148,44 @@ describe("RoadmapView and ChatView", () => {
     });
   });
 
+  it("RoadmapView allows re-planning from mastery", async () => {
+    vi.mocked(api.getCourseRoadmap).mockResolvedValue(mockRoadmap);
+    vi.mocked(api.getCourseDocuments).mockResolvedValue(mockDocumentsReady);
+    vi.mocked(api.replanCourseRoadmap).mockResolvedValue({
+      ...mockRoadmap,
+      items: [
+        {
+          ...mockRoadmap.items[0],
+          title: "Re-planned Day 1: Vector Spaces Focus",
+        },
+        mockRoadmap.items[1],
+      ],
+    });
+
+    render(<RoadmapView course={mockCourse} onGoToMaterials={() => {}} />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Re-plan from Mastery")).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByText("Re-plan from Mastery"));
+
+    await waitFor(() => {
+      expect(api.replanCourseRoadmap).toHaveBeenCalledWith(mockCourse.id);
+      expect(screen.getByText("Re-planned Day 1: Vector Spaces Focus")).toBeInTheDocument();
+    });
+  });
+
   it("ChatView renders empty state and sends grounded query", async () => {
     vi.mocked(api.getChatHistory).mockResolvedValue({
       course_id: 1,
       thread_id: 1,
       messages: [],
     });
-    vi.mocked(api.sendChatMessage).mockResolvedValue({
-      reply: "Vectors have both magnitude and direction [doc p.3].",
-      citations: ["[doc p.3]"],
-      tone: "patient",
-      is_sufficient: true,
+    vi.mocked(api.streamChatMessage).mockImplementation(async (_courseId, _payload, callbacks) => {
+      callbacks.onToken?.("Vectors have both magnitude and direction [doc p.3].");
+      callbacks.onCitations?.(["[doc p.3]"]);
+      callbacks.onDone?.();
     });
 
     render(<ChatView course={mockCourse} />);
@@ -176,4 +205,76 @@ describe("RoadmapView and ChatView", () => {
       expect(screen.getByText("[doc p.3]")).toBeInTheDocument();
     });
   });
+
+  it("ChatView handles streaming SSE tokens, confirmation chip and citation modal", async () => {
+    vi.mocked(api.getChatHistory).mockResolvedValue({
+      course_id: 1,
+      thread_id: 1,
+      messages: [],
+    });
+    vi.mocked(api.streamChatMessage).mockImplementation(async (_courseId, _payload, callbacks) => {
+      callbacks.onAgent?.("quiz_gen");
+      callbacks.onRouteSource?.("rule");
+      callbacks.onChip?.({ confirmation_chip: "Generate 5 practice questions" });
+      callbacks.onToken?.("Matrix inverses ");
+      callbacks.onToken?.("require a non-zero determinant.");
+      callbacks.onCitations?.(
+        ["[doc p.5]"],
+        [
+          {
+            document_id: 1,
+            document_name: "LinearAlgebra.pdf",
+            page: 5,
+            excerpt: "A square matrix is invertible if and only if its determinant is non-zero.",
+          },
+        ]
+      );
+      callbacks.onDone?.();
+    });
+
+    render(<ChatView course={mockCourse} />);
+
+    await waitFor(() => {
+      expect(screen.getByText(`How can ${MASCOT_NAME} help?`)).toBeInTheDocument();
+    });
+
+    // Check Integrity toggle is present and clickable
+    const integrityBtn = screen.getByText("Integrity Mode");
+    expect(integrityBtn).toBeInTheDocument();
+    fireEvent.click(integrityBtn);
+
+    const input = screen.getByPlaceholderText(new RegExp(`Ask ${MASCOT_NAME}`, "i"));
+    fireEvent.change(input, { target: { value: "Can you quiz me on matrix inverses?" } });
+
+    const askButton = screen.getByRole("button", { name: /ask/i });
+    fireEvent.click(askButton);
+
+    // Tokens and agent tag
+    await waitFor(() => {
+      expect(screen.getByText("Matrix inverses require a non-zero determinant.")).toBeInTheDocument();
+      expect(screen.getByText("quiz_gen")).toBeInTheDocument();
+    });
+
+    // Confirmation chip rendered
+    expect(screen.getByText("Generate 5 practice questions")).toBeInTheDocument();
+
+    // Click on citation source pill to open modal
+    const sourceBtn = screen.getByText("LinearAlgebra.pdf");
+    expect(sourceBtn).toBeInTheDocument();
+    fireEvent.click(sourceBtn);
+
+    // Modal opens showing excerpt
+    await waitFor(() => {
+      expect(
+        screen.getByText(
+          '"A square matrix is invertible if and only if its determinant is non-zero."'
+        )
+      ).toBeInTheDocument();
+    });
+
+    // Close modal
+    const closeBtn = screen.getByText("Close");
+    fireEvent.click(closeBtn);
+  });
 });
+
