@@ -7,9 +7,9 @@ Implements BUILD_PLAYBOOK.md Phase 8 Task 8B and README Section 10:
 
 from app.core.observability import (
     capture_exception,
+    scrub_sensitive_event_data,
     sentry_before_send,
     setup_observability,
-    scrub_sensitive_event_data,
 )
 
 

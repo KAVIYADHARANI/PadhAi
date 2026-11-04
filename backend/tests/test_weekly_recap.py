@@ -5,7 +5,6 @@ from fastapi.testclient import TestClient
 
 from app.ai.harness.fake import FakeLLM
 from app.ai.harness.gateway import LLMGateway
-from app.ai.harness.models import ModelRole
 from app.ai.recap.recap_gen import (
     compute_weekly_aggregates,
     deterministic_recap_fallback,

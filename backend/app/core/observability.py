@@ -7,7 +7,6 @@ Implements BUILD_PLAYBOOK.md Phase 8 Task 8B and README Section 10:
 - Structured fallback logging when Sentry is not configured.
 """
 
-import sys
 from typing import Any
 
 from fastapi import FastAPI

@@ -37,7 +37,7 @@ def compute_weekly_aggregates(
     days: int = 7,
 ) -> dict[str, Any]:
     """Computes strictly numeric 7-day study aggregates.
-    
+
     NEVER queries or passes document, message, or personal text.
     """
     cutoff = datetime.now(UTC) - timedelta(days=days)
