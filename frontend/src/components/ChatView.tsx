@@ -383,7 +383,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ course }) => {
   ];
 
   return (
-    <div className="flex flex-col h-[700px] glass-panel rounded-3xl border border-slate-800 overflow-hidden relative">
+    <div className="flex flex-col h-[700px] bg-white rounded-2xl border border-[#E2E8F0] shadow-card overflow-hidden relative">
       {/* Header Bar */}
       <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800 bg-slate-900/40">
         <div className="flex items-center gap-3">

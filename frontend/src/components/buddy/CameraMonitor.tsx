@@ -141,14 +141,14 @@ export const CameraMonitor: React.FC<CameraMonitorProps> = ({ className = "" }) 
           onClick={() => setShowDrawer(true)}
           className={`group flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs font-medium transition cursor-pointer select-none ${
             !cameraState.isEnabled
-              ? "bg-slate-800/80 text-slate-400 border-slate-700/80 hover:bg-slate-800 hover:text-slate-200"
+              ? "bg-white text-[#64748B] border-[#E2E8F0] hover:bg-slate-50 hover:text-[#0F172A]"
               : focusState === "looking_away"
-              ? "bg-amber-500/20 text-amber-300 border-amber-500/40 hover:bg-amber-500/30"
+              ? "bg-amber-50 text-[#D97706] border-amber-300 hover:bg-amber-100"
               : focusState === "drowsy"
-              ? "bg-rose-500/20 text-rose-300 border-rose-500/40 hover:bg-rose-500/30"
+              ? "bg-rose-50 text-[#E11D48] border-rose-300 hover:bg-rose-100"
               : cameraState.isLowQuality || focusState === "uncertain"
-              ? "bg-amber-500/10 text-amber-300 border-amber-500/30 hover:bg-amber-500/20"
-              : "bg-emerald-500/10 text-emerald-300 border-emerald-500/30 hover:bg-emerald-500/20"
+              ? "bg-amber-50 text-[#D97706] border-amber-300 hover:bg-amber-100"
+              : "bg-teal-50 text-[#0D9488] border-teal-300 hover:bg-teal-100"
           }`}
           title="Focus & Drowsiness Sensor Settings & Privacy Status"
         >
@@ -199,7 +199,7 @@ export const CameraMonitor: React.FC<CameraMonitorProps> = ({ className = "" }) 
           <button
             type="button"
             onClick={handleToggleCamera}
-            className="p-1.5 rounded-xl bg-slate-800/80 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 border border-slate-700/60 transition"
+            className="p-1.5 rounded-xl bg-white text-[#64748B] hover:text-[#E11D48] hover:bg-rose-50 border border-[#E2E8F0] transition"
             title="Turn camera sensor off instantly"
           >
             <CameraOff className="w-3.5 h-3.5" />
@@ -213,23 +213,23 @@ export const CameraMonitor: React.FC<CameraMonitorProps> = ({ className = "" }) 
           {/* Dimmed backdrop preventing background interaction */}
           <div
             onClick={() => setShowDrawer(false)}
-            className="fixed inset-0 bg-slate-950/75 backdrop-blur-sm transition-opacity animate-in fade-in duration-200"
+            className="fixed inset-0 bg-[#0F172A]/40 backdrop-blur-sm transition-opacity animate-in fade-in duration-200"
           />
 
           {/* Drawer container pinned to right on desktop/tablet, bottom-sheet/full on mobile */}
           <div className="fixed inset-y-0 right-0 z-50 flex max-w-full pl-0 sm:pl-10">
-            <div className="w-screen max-w-full sm:w-[400px] md:w-[420px] bg-slate-900 border-l border-slate-800 shadow-2xl flex flex-col h-full transform transition ease-in-out duration-300 animate-in slide-in-from-right">
+            <div className="w-screen max-w-full sm:w-[400px] md:w-[420px] bg-white border-l border-[#E2E8F0] shadow-2xl flex flex-col h-full transform transition ease-in-out duration-300 animate-in slide-in-from-right">
               {/* Drawer Header (pinned) */}
-              <div className="shrink-0 px-6 py-4 border-b border-slate-800 flex items-center justify-between bg-slate-900/90">
+              <div className="shrink-0 px-6 py-4 border-b border-[#E2E8F0] flex items-center justify-between bg-white/95">
                 <div className="flex items-center gap-2.5 min-w-0">
                   <div className="w-8 h-8 rounded-xl bg-brand-500/20 text-brand-400 flex items-center justify-center shrink-0">
                     <Camera className="w-4 h-4" />
                   </div>
                   <div className="min-w-0">
-                    <h3 className="text-sm font-bold text-white truncate">
+                    <h3 className="text-sm font-bold text-[#0F172A] truncate">
                       Focus & Drowsiness Sensor
                     </h3>
-                    <p className="text-[11px] text-slate-400 truncate">
+                    <p className="text-[11px] text-[#64748B] truncate">
                       Client-side privacy architecture
                     </p>
                   </div>
@@ -237,7 +237,7 @@ export const CameraMonitor: React.FC<CameraMonitorProps> = ({ className = "" }) 
                 <button
                   type="button"
                   onClick={() => setShowDrawer(false)}
-                  className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition shrink-0 ml-2"
+                  className="p-1.5 rounded-lg text-[#64748B] hover:text-[#0F172A] hover:bg-slate-100 transition shrink-0 ml-2"
                   aria-label="Close sensor drawer"
                 >
                   <X className="w-4 h-4" />
@@ -247,23 +247,23 @@ export const CameraMonitor: React.FC<CameraMonitorProps> = ({ className = "" }) 
               {/* Drawer Scrollable Body */}
               <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5 min-w-0">
                 {/* Privacy Guarantee Pledge */}
-                <div className="p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 text-xs space-y-1.5 min-w-0">
+                <div className="p-3.5 rounded-2xl bg-teal-50 border border-teal-200 text-[#0D9488] text-xs space-y-1.5 min-w-0">
                   <div className="flex items-center gap-1.5 font-bold">
                     <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
                     <span className="truncate">Zero Image / Video Storage Guarantee</span>
                   </div>
-                  <p className="text-[11px] text-emerald-200/90 leading-relaxed break-words">
+                  <p className="text-[11px] text-[#0F766E] leading-relaxed break-words">
                     Raw camera frames are processed exclusively inside an isolated Web Worker on your device at 8 FPS.
                     No pictures, videos, or facial images are EVER stored or sent across the network.
                   </p>
                 </div>
 
                 {/* Camera Enable Toggle & Status */}
-                <div className="p-3.5 rounded-2xl bg-slate-950/70 border border-slate-800 space-y-3 min-w-0">
+                <div className="p-3.5 rounded-2xl bg-[#F8FAFC] border border-[#E2E8F0] space-y-3 min-w-0">
                   <div className="flex items-center justify-between gap-3">
                     <div className="space-y-0.5 min-w-0">
-                      <span className="text-xs font-semibold text-white block">Sensor Status</span>
-                      <p className="text-[10px] text-slate-400 break-words">
+                      <span className="text-xs font-semibold text-[#0F172A] block">Sensor Status</span>
+                      <p className="text-[10px] text-[#64748B] break-words">
                         {cameraState.isEnabled
                           ? "Webcam active for posture & blink signals"
                           : "Camera off (Sensors in standby)"}
@@ -274,8 +274,8 @@ export const CameraMonitor: React.FC<CameraMonitorProps> = ({ className = "" }) 
                       onClick={handleToggleCamera}
                       className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition shadow-sm shrink-0 ${
                         cameraState.isEnabled
-                          ? "bg-rose-500/20 text-rose-300 border border-rose-500/30 hover:bg-rose-500/30"
-                          : "bg-brand-600 text-white hover:bg-brand-500"
+                          ? "bg-rose-50 text-[#E11D48] border border-rose-200 hover:bg-rose-100"
+                          : "bg-[#4F46E5] text-white hover:bg-[#4338CA]"
                       }`}
                     >
                       {cameraState.isEnabled ? "Stop Sensor" : "Enable Sensor"}
@@ -283,7 +283,7 @@ export const CameraMonitor: React.FC<CameraMonitorProps> = ({ className = "" }) 
                   </div>
 
                   {!cameraState.isEnabled && (
-                    <p className="text-[10px] text-slate-400 leading-relaxed border-t border-slate-850 pt-2 break-words">
+                    <p className="text-[10px] text-[#64748B] leading-relaxed border-t border-[#E2E8F0] pt-2 break-words">
                       Webcam access is requested only after you click Enable Sensor. It is used strictly on-device to measure head angle and blink rate for your study companion.
                     </p>
                   )}
@@ -311,7 +311,7 @@ export const CameraMonitor: React.FC<CameraMonitorProps> = ({ className = "" }) 
 
                 {/* Study Mode Selector */}
                 <div className="space-y-2 min-w-0">
-                  <label className="text-xs font-semibold text-slate-300 block">
+                  <label className="text-xs font-semibold text-[#334155] block">
                     Study Mode (Adjusts Tolerance)
                   </label>
                   <div className="grid grid-cols-2 gap-2 text-xs">
@@ -330,7 +330,7 @@ export const CameraMonitor: React.FC<CameraMonitorProps> = ({ className = "" }) 
                         className={`p-2.5 rounded-xl border text-left transition min-w-0 ${
                           cameraState.mode === m.id
                             ? "bg-brand-500/20 border-brand-500/40 text-white"
-                            : "bg-slate-950/40 border-slate-800 text-slate-400 hover:text-slate-200"
+                            : "bg-white border-[#E2E8F0] text-[#64748B] hover:text-[#0F172A] hover:border-slate-300"
                         }`}
                       >
                         <div className="font-semibold truncate">{m.label}</div>
@@ -341,14 +341,14 @@ export const CameraMonitor: React.FC<CameraMonitorProps> = ({ className = "" }) 
                 </div>
 
                 {/* Proactive Voice Reminders Settings */}
-                <div className="p-3.5 rounded-2xl bg-slate-950/70 border border-slate-800 space-y-3 min-w-0">
+                <div className="p-3.5 rounded-2xl bg-[#F8FAFC] border border-[#E2E8F0] space-y-3 min-w-0">
                   <div className="flex items-center justify-between gap-3">
                     <div className="min-w-0">
-                      <span className="text-xs font-semibold text-white flex items-center gap-1.5">
+                      <span className="text-xs font-semibold text-[#0F172A] flex items-center gap-1.5">
                         <Volume2 className="w-3.5 h-3.5 text-brand-400" />
                         Spoken Focus Reminders
                       </span>
-                      <p className="text-[10px] text-slate-400 break-words mt-0.5">
+                      <p className="text-[10px] text-[#64748B] break-words mt-0.5">
                         Opt-in voice prompts when looking away for 10s
                       </p>
                     </div>
@@ -359,7 +359,7 @@ export const CameraMonitor: React.FC<CameraMonitorProps> = ({ className = "" }) 
                       className={`px-3 py-1 rounded-xl text-xs font-bold transition shrink-0 ${
                         proactiveVoice
                           ? "bg-brand-500/20 text-brand-300 border border-brand-500/40"
-                          : "bg-slate-800 text-slate-400 hover:text-slate-200"
+                          : "bg-white border border-[#E2E8F0] text-[#64748B] hover:text-[#0F172A]"
                       }`}
                     >
                       {proactiveVoice ? "Enabled" : "Off"}
@@ -367,7 +367,7 @@ export const CameraMonitor: React.FC<CameraMonitorProps> = ({ className = "" }) 
                   </div>
 
                   {proactiveVoice && (
-                    <div className="pt-2 border-t border-slate-850 space-y-2.5">
+                    <div className="pt-2 border-t border-[#E2E8F0] space-y-2.5">
                       <div className="flex items-center justify-between text-xs">
                         <span className="text-slate-400 flex items-center gap-1">
                           {quietMode ? (
@@ -383,7 +383,7 @@ export const CameraMonitor: React.FC<CameraMonitorProps> = ({ className = "" }) 
                           className={`px-2 py-0.5 text-[11px] rounded-lg transition font-medium ${
                             quietMode
                               ? "bg-amber-500/20 text-amber-300 border border-amber-500/30"
-                              : "bg-slate-800 text-slate-400"
+                              : "bg-slate-100 text-[#64748B]"
                           }`}
                         >
                           {quietMode ? "Muted" : "Active"}
@@ -401,7 +401,7 @@ export const CameraMonitor: React.FC<CameraMonitorProps> = ({ className = "" }) 
                               className={`px-2 py-0.5 text-[10px] rounded-md transition ${
                                 cooldownS === sec
                                   ? "bg-brand-600 text-white font-bold"
-                                  : "bg-slate-800 text-slate-400 hover:text-slate-200"
+                                  : "bg-white border border-[#E2E8F0] text-[#64748B] hover:text-[#0F172A]"
                               }`}
                             >
                               {sec}s
@@ -415,9 +415,9 @@ export const CameraMonitor: React.FC<CameraMonitorProps> = ({ className = "" }) 
 
                 {/* Real-time Telemetry Viewer */}
                 {cameraState.isEnabled && (
-                  <div className="space-y-2 pt-1 border-t border-slate-800 min-w-0">
+                  <div className="space-y-2 pt-1 border-t border-[#E2E8F0] min-w-0">
                     <div className="flex items-center justify-between text-xs">
-                      <span className="font-semibold text-slate-300 flex items-center gap-1.5">
+                      <span className="font-semibold text-[#334155] flex items-center gap-1.5">
                         <Eye className="w-3.5 h-3.5 text-brand-400" />
                         Live Numeric Signals
                       </span>
@@ -436,7 +436,7 @@ export const CameraMonitor: React.FC<CameraMonitorProps> = ({ className = "" }) 
                     </div>
 
                     {showTelemetry && signals && (
-                      <div className="p-3 rounded-xl bg-slate-950/90 border border-slate-800 space-y-2 text-[11px] font-mono min-w-0">
+                      <div className="p-3 rounded-xl bg-slate-50 border border-[#E2E8F0] space-y-2 text-[11px] font-mono min-w-0 text-[#334155]">
                         <div className="flex justify-between items-center text-slate-300">
                           <span>Focus Evaluation:</span>
                           <span
@@ -485,9 +485,9 @@ export const CameraMonitor: React.FC<CameraMonitorProps> = ({ className = "" }) 
                 )}
 
                 {/* Offline Signal Recorder for Threshold Calibration */}
-                <div className="pt-2 border-t border-slate-800 flex items-center justify-between min-w-0">
+                <div className="pt-2 border-t border-[#E2E8F0] flex items-center justify-between min-w-0">
                   <div className="text-[11px] text-slate-400 min-w-0 pr-2">
-                    <span className="font-semibold text-slate-300 block truncate">Calibration Recorder</span>
+                    <span className="font-semibold text-[#0F172A] block truncate">Calibration Recorder</span>
                     <span className="truncate block">
                       {isRecording ? `Recording (${recordedCount} samples)` : "Inactive (Off by default)"}
                     </span>
@@ -506,7 +506,7 @@ export const CameraMonitor: React.FC<CameraMonitorProps> = ({ className = "" }) 
                       type="button"
                       disabled={!cameraState.isEnabled}
                       onClick={handleStartRecording}
-                      className="px-3 py-1.5 rounded-xl bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed text-xs font-medium flex items-center gap-1.5 transition shrink-0"
+                      className="px-3 py-1.5 rounded-xl bg-slate-100 text-[#334155] hover:text-[#0F172A] hover:bg-slate-200 disabled:opacity-40 disabled:cursor-not-allowed text-xs font-medium flex items-center gap-1.5 transition shrink-0"
                     >
                       <Play className="w-3 h-3 text-brand-400" />
                       <span>Record JSON</span>
@@ -516,11 +516,11 @@ export const CameraMonitor: React.FC<CameraMonitorProps> = ({ className = "" }) 
               </div>
 
               {/* Drawer Footer (pinned) */}
-              <div className="shrink-0 px-6 py-4 border-t border-slate-800 bg-slate-900/95 flex justify-end">
+              <div className="shrink-0 px-6 py-4 border-t border-[#E2E8F0] bg-white/95 flex justify-end">
                 <button
                   type="button"
                   onClick={() => setShowDrawer(false)}
-                  className="px-5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold transition"
+                  className="px-5 py-2 rounded-xl bg-[#4F46E5] hover:bg-[#4338CA] text-white text-xs font-semibold transition min-h-[44px]"
                 >
                   Done
                 </button>

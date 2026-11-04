@@ -10,7 +10,6 @@ import {
   Flame,
   CreditCard,
   TrendingUp,
-  ShieldCheck,
 } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -42,7 +41,6 @@ interface TrendPoint {
 
 export const DashboardPage: React.FC<DashboardPageProps> = ({
   onSelectCourse,
-  onNavigatePrivacy,
 }) => {
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
@@ -112,65 +110,65 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   );
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 animate-fadeIn">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 animate-in fade-in duration-200">
       {/* Top Banner with Mascot Placeholder & Highlights */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 glass-panel rounded-3xl p-6 sm:p-8 flex flex-col justify-between relative overflow-hidden">
-          <div className="absolute -right-12 -bottom-12 w-64 h-64 bg-brand-600/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="lg:col-span-2 bg-white rounded-2xl p-6 sm:p-8 flex flex-col justify-between border border-[#E2E8F0] shadow-card relative overflow-hidden">
+          <div className="absolute -right-12 -bottom-12 w-64 h-64 bg-indigo-50/60 rounded-full blur-3xl pointer-events-none" />
 
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-xs font-bold uppercase tracking-wider text-brand-400 bg-brand-500/10 border border-brand-500/20 px-3 py-1 rounded-full">
+              <span className="text-xs font-bold uppercase tracking-wider text-[#4F46E5] bg-[#EEF2FF] border border-indigo-100 px-3 py-1 rounded-pill">
                 Learning Dashboard
               </span>
-              <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-0.5 rounded-full">
-                <Flame className="w-3.5 h-3.5 text-amber-400" />
+              <span className="inline-flex items-center gap-1 text-[11px] font-bold text-[#0D9488] bg-[#F0FDFA] border border-teal-200 px-2.5 py-0.5 rounded-pill">
+                <Flame className="w-3.5 h-3.5 text-[#D97706]" />
                 4-Day Streak (Grace Active)
               </span>
             </div>
-            <h1 className="mt-3 text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+            <h1 className="mt-3 text-2xl sm:text-3xl font-extrabold text-[#0F172A] tracking-tight">
               Study Intelligence & Progress
             </h1>
-            <p className="mt-2 text-sm text-slate-400 max-w-xl">
+            <p className="mt-2 text-sm text-[#64748B] max-w-xl">
               Track mastery metrics, fatigue levels, and review due cards across your courses.
             </p>
           </div>
 
-          <div className="mt-8 grid grid-cols-2 sm:grid-cols-4 gap-4 pt-6 border-t border-slate-800 min-w-0">
+          <div className="mt-8 grid grid-cols-2 sm:grid-cols-4 gap-4 pt-6 border-t border-[#E2E8F0] min-w-0">
             <div className="min-w-0">
-              <div className="flex items-center gap-1.5 text-xs text-slate-400 mb-1">
-                <BookOpen className="w-3.5 h-3.5 text-brand-400" />
+              <div className="flex items-center gap-1.5 text-xs text-[#64748B] mb-1">
+                <BookOpen className="w-3.5 h-3.5 text-[#4F46E5]" />
                 <span>Courses</span>
               </div>
-              <p className="text-xl font-extrabold text-white">{courses.length}</p>
+              <p className="text-xl font-extrabold text-[#0F172A]">{courses.length}</p>
             </div>
 
             <div>
-              <div className="flex items-center gap-1.5 text-xs text-slate-400 mb-1">
-                <Clock className="w-3.5 h-3.5 text-brand-400" />
+              <div className="flex items-center gap-1.5 text-xs text-[#64748B] mb-1">
+                <Clock className="w-3.5 h-3.5 text-[#4F46E5]" />
                 <span>Planned</span>
               </div>
-              <p className="text-xl font-extrabold text-white">
+              <p className="text-xl font-extrabold text-[#0F172A]">
                 {totalHoursPlanned.toFixed(0)}h
               </p>
             </div>
 
             <div>
-              <div className="flex items-center gap-1.5 text-xs text-slate-400 mb-1">
-                <CreditCard className="w-3.5 h-3.5 text-amber-400" />
+              <div className="flex items-center gap-1.5 text-xs text-[#64748B] mb-1">
+                <CreditCard className="w-3.5 h-3.5 text-[#D97706]" />
                 <span>Due Cards</span>
               </div>
-              <p className="text-xl font-extrabold text-amber-300">
+              <p className="text-xl font-extrabold text-[#D97706]">
                 {dueCardsCount}
               </p>
             </div>
 
             <div>
-              <div className="flex items-center gap-1.5 text-xs text-slate-400 mb-1">
-                <Target className="w-3.5 h-3.5 text-emerald-400" />
+              <div className="flex items-center gap-1.5 text-xs text-[#64748B] mb-1">
+                <Target className="w-3.5 h-3.5 text-[#0D9488]" />
                 <span>Focus Avg</span>
               </div>
-              <p className="text-xl font-extrabold text-emerald-400">89%</p>
+              <p className="text-xl font-extrabold text-[#0D9488]">89%</p>
             </div>
           </div>
         </div>
@@ -184,19 +182,19 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
       {/* Analytics & Trends Section (Recharts) */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 min-w-0">
         {/* Trend 1: Focus & Fatigue Trends */}
-        <div className="glass-panel rounded-3xl p-6 border border-slate-800/80 space-y-4">
+        <div className="bg-white rounded-2xl p-6 border border-[#E2E8F0] shadow-card space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <TrendingUp className="w-4 h-4 text-brand-400" />
-              <h2 className="text-sm font-bold text-white tracking-tight">Focus & Fatigue Trends (7 Days)</h2>
+              <TrendingUp className="w-4 h-4 text-[#4F46E5]" />
+              <h2 className="text-sm font-bold text-[#0F172A] tracking-tight">Focus & Fatigue Trends (7 Days)</h2>
             </div>
             <div className="flex items-center gap-3 text-xs">
-              <span className="flex items-center gap-1.5 text-indigo-400">
-                <span className="w-2.5 h-2.5 rounded-full bg-indigo-500" />
+              <span className="flex items-center gap-1.5 text-[#4F46E5]">
+                <span className="w-2.5 h-2.5 rounded-full bg-[#4F46E5]" />
                 Focus %
               </span>
-              <span className="flex items-center gap-1.5 text-rose-400">
-                <span className="w-2.5 h-2.5 rounded-full bg-rose-500" />
+              <span className="flex items-center gap-1.5 text-[#E11D48]">
+                <span className="w-2.5 h-2.5 rounded-full bg-[#E11D48]" />
                 Drowsy (m)
               </span>
             </div>
@@ -207,48 +205,48 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
               <AreaChart data={trendData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                 <defs>
                   <linearGradient id="focusGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#6366f1" stopOpacity={0.35} />
-                    <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
+                    <stop offset="5%" stopColor="#4F46E5" stopOpacity={0.25} />
+                    <stop offset="95%" stopColor="#4F46E5" stopOpacity={0} />
                   </linearGradient>
                   <linearGradient id="fatigueGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#f43f5e" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="#f43f5e" stopOpacity={0} />
+                    <stop offset="5%" stopColor="#E11D48" stopOpacity={0.2} />
+                    <stop offset="95%" stopColor="#E11D48" stopOpacity={0} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-                <XAxis dataKey="day" stroke="#64748b" tick={{ fill: "#94a3b8", fontSize: 11 }} />
-                <YAxis stroke="#64748b" tick={{ fill: "#94a3b8", fontSize: 11 }} />
+                <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" />
+                <XAxis dataKey="day" stroke="#94A3B8" tick={{ fill: "#64748B", fontSize: 11 }} />
+                <YAxis stroke="#94A3B8" tick={{ fill: "#64748B", fontSize: 11 }} />
                 <Tooltip
-                  contentStyle={{ backgroundColor: "#0f172a", borderColor: "#334155", borderRadius: "0.75rem", fontSize: "12px" }}
+                  contentStyle={{ backgroundColor: "#FFFFFF", borderColor: "#E2E8F0", borderRadius: "0.75rem", fontSize: "12px", color: "#0F172A", boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)" }}
                 />
-                <Area type="monotone" dataKey="focus" stroke="#6366f1" strokeWidth={2} fillOpacity={1} fill="url(#focusGradient)" name="Focus Score" />
-                <Area type="monotone" dataKey="fatigue" stroke="#f43f5e" strokeWidth={2} fillOpacity={1} fill="url(#fatigueGradient)" name="Fatigue Minutes" />
+                <Area type="monotone" dataKey="focus" stroke="#4F46E5" strokeWidth={2} fillOpacity={1} fill="url(#focusGradient)" name="Focus Score" />
+                <Area type="monotone" dataKey="fatigue" stroke="#E11D48" strokeWidth={2} fillOpacity={1} fill="url(#fatigueGradient)" name="Fatigue Minutes" />
               </AreaChart>
             </ResponsiveContainer>
           </div>
         </div>
 
         {/* Trend 2: Topic Mastery Ranking */}
-        <div className="glass-panel rounded-3xl p-6 border border-slate-800/80 space-y-4">
+        <div className="bg-white rounded-2xl p-6 border border-[#E2E8F0] shadow-card space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Zap className="w-4 h-4 text-emerald-400" />
-              <h2 className="text-sm font-bold text-white tracking-tight">Topic Mastery Breakdown</h2>
+              <Zap className="w-4 h-4 text-[#0D9488]" />
+              <h2 className="text-sm font-bold text-[#0F172A] tracking-tight">Topic Mastery Breakdown</h2>
             </div>
-            <span className="text-xs text-slate-400">SM-2 & Quiz Graded</span>
+            <span className="text-xs text-[#64748B]">SM-2 & Quiz Graded</span>
           </div>
 
           <div className="h-56 w-full" style={{ minHeight: "220px" }}>
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={masteryData} layout="vertical" margin={{ top: 5, right: 20, left: 20, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" horizontal={false} />
-                <XAxis type="number" domain={[0, 100]} stroke="#64748b" tick={{ fill: "#94a3b8", fontSize: 11 }} unit="%" />
-                <YAxis type="category" dataKey="topic" stroke="#64748b" tick={{ fill: "#cbd5e1", fontSize: 11 }} width={90} />
+                <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" horizontal={false} />
+                <XAxis type="number" domain={[0, 100]} stroke="#94A3B8" tick={{ fill: "#64748B", fontSize: 11 }} unit="%" />
+                <YAxis type="category" dataKey="topic" stroke="#94A3B8" tick={{ fill: "#334155", fontSize: 11 }} width={90} />
                 <Tooltip
-                  contentStyle={{ backgroundColor: "#0f172a", borderColor: "#334155", borderRadius: "0.75rem", fontSize: "12px" }}
+                  contentStyle={{ backgroundColor: "#FFFFFF", borderColor: "#E2E8F0", borderRadius: "0.75rem", fontSize: "12px", color: "#0F172A", boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)" }}
                   formatter={(val: any) => [`${val}%`, "Mastery"]}
                 />
-                <Bar dataKey="mastery" fill="#10b981" radius={[0, 6, 6, 0]} />
+                <Bar dataKey="mastery" fill="#0D9488" radius={[0, 6, 6, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -258,17 +256,17 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
       {/* Courses Section Header */}
       <div className="flex items-center justify-between pt-2">
         <div>
-          <h2 className="text-lg font-bold text-white tracking-tight">
+          <h2 className="text-lg font-bold text-[#0F172A] tracking-tight">
             Your Courses
           </h2>
-          <p className="text-xs text-slate-400">
+          <p className="text-xs text-[#64748B]">
             Select a course to view uploaded documents and study progress.
           </p>
         </div>
 
         <button
           onClick={() => setIsModalOpen(true)}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold text-white bg-gradient-to-r from-brand-600 to-indigo-600 hover:from-brand-500 hover:to-indigo-500 shadow-lg shadow-brand-500/25 transition"
+          className="flex items-center gap-2 px-4 py-2.5 rounded-btn text-xs font-semibold text-white bg-[#4F46E5] hover:bg-[#4338CA] shadow-sm transition min-h-[44px]"
         >
           <Plus className="w-4 h-4" />
           <span>New Course</span>
@@ -277,14 +275,14 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
 
       {/* Course List / States */}
       {error && (
-        <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-center justify-between">
+        <div className="p-4 rounded-xl bg-[#FFF1F2] border border-rose-200 text-[#E11D48] text-xs flex items-center justify-between">
           <div className="flex items-center gap-2">
             <AlertCircle className="w-4 h-4 shrink-0" />
             <span>{error}</span>
           </div>
           <button
             onClick={fetchDashboardData}
-            className="underline hover:text-white font-medium"
+            className="underline hover:text-[#0F172A] font-medium"
           >
             Retry
           </button>
@@ -293,24 +291,21 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
 
       {loading ? (
         <div className="py-20 text-center flex flex-col items-center justify-center">
-          <Loader2 className="w-8 h-8 text-brand-400 animate-spin mb-3" />
-          <p className="text-xs text-slate-400 font-medium">Loading courses & analytics...</p>
+          <Loader2 className="w-8 h-8 text-[#4F46E5] animate-spin mb-3" />
+          <p className="text-xs text-[#64748B] font-medium">Loading courses & analytics...</p>
         </div>
       ) : courses.length === 0 ? (
-        <div className="glass-panel rounded-3xl p-12 text-center border-2 border-dashed border-slate-800">
-          <div className="w-14 h-14 mx-auto rounded-2xl bg-brand-500/10 border border-brand-500/20 flex items-center justify-center text-brand-400 mb-4">
-            <BookOpen className="w-7 h-7" />
-          </div>
-          <h3 className="text-base font-bold text-white mb-1">No courses yet</h3>
-          <p className="text-xs text-slate-400 max-w-sm mx-auto mb-6">
-            Get started by creating your first course and uploading your study materials.
+        <div className="bg-white rounded-2xl p-12 text-center border-2 border-dashed border-[#E2E8F0]">
+          <BookOpen className="w-12 h-12 text-[#64748B] mx-auto mb-3" />
+          <h3 className="text-base font-semibold text-[#0F172A]">No courses yet</h3>
+          <p className="text-xs text-[#64748B] max-w-sm mx-auto mt-1 mb-4">
+            Create your first study course to upload study notes, generate a roadmap, and take AI-graded quizzes.
           </p>
           <button
             onClick={() => setIsModalOpen(true)}
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-semibold text-white bg-brand-600 hover:bg-brand-500 transition shadow-lg shadow-brand-500/25"
+            className="px-4 py-2 bg-[#4F46E5] text-white rounded-btn text-xs font-semibold hover:bg-[#4338CA] transition shadow-sm min-h-[44px]"
           >
-            <Plus className="w-4 h-4" />
-            <span>Create First Course</span>
+            Create Course
           </button>
         </div>
       ) : (
@@ -326,23 +321,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
         </div>
       )}
 
-      {/* Privacy Pledge & Data Sovereignty Banner */}
-      <div className="glass-panel rounded-2xl p-4 border border-slate-800/80 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-400">
-        <div className="flex items-center gap-3">
-          <ShieldCheck className="w-5 h-5 text-emerald-400 shrink-0" />
-          <span>
-            <strong>Zero Raw Frames Guarantee:</strong> Camera signals run 100% locally in your browser. No video is ever stored or transmitted.
-          </span>
-        </div>
-        <button
-          onClick={onNavigatePrivacy}
-          className="px-3.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold border border-slate-700 transition-colors shrink-0"
-        >
-          Privacy & Data Rights
-        </button>
-      </div>
-
-      {/* Modal */}
+      {/* Course Creation Modal */}
       <CreateCourseModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}

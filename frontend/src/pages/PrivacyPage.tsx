@@ -37,13 +37,13 @@ export const PrivacyPage: React.FC<PrivacyPageProps> = ({ onBack }) => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 pb-20">
+    <div className="min-h-screen bg-[#F7F8FC] text-[#334155] pb-20">
       {/* Header */}
-      <header className="glass-panel border-b border-slate-800/80 sticky top-0 z-10">
+      <header className="bg-white/95 backdrop-blur-md border-b border-[#E2E8F0] sticky top-0 z-10">
         <div className="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
           <button
             onClick={onBack}
-            className="inline-flex items-center gap-2 text-sm text-slate-400 hover:text-white transition-colors font-medium"
+            className="inline-flex items-center gap-2 text-sm text-[#64748B] hover:text-[#0F172A] transition-colors font-medium min-h-[44px] min-w-[44px]"
           >
             <ArrowLeft className="w-4 h-4" />
             Back to Dashboard
@@ -56,14 +56,14 @@ export const PrivacyPage: React.FC<PrivacyPageProps> = ({ onBack }) => {
       </header>
 
       {/* Hero Banner */}
-      <div className="bg-gradient-to-br from-indigo-900 via-slate-900 to-indigo-950 text-white py-12 px-4 shadow-inner">
+      <div className="bg-gradient-to-br from-indigo-50/80 via-white to-teal-50/40 border-b border-[#E2E8F0] py-10 px-4 shadow-sm">
         <div className="max-w-4xl mx-auto space-y-3">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 text-xs font-semibold border border-emerald-500/30">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-teal-50 text-[#0D9488] text-xs font-semibold border border-teal-200">
             <Lock className="w-3.5 h-3.5" />
             Zero Raw Frame Telemetry & Local Processing
           </div>
-          <h1 className="text-3xl font-extrabold tracking-tight">Your Privacy & Data Rights</h1>
-          <p className="text-slate-300 text-sm max-w-2xl leading-relaxed">
+          <h1 className="text-3xl font-extrabold tracking-tight text-[#0F172A]">Your Privacy & Data Rights</h1>
+          <p className="text-[#64748B] text-sm max-w-2xl leading-relaxed">
             {PRODUCT_NAME} is built with privacy-first engineering. We believe you shouldn't have to trade your personal boundaries to get world-class learning assistance.
           </p>
         </div>

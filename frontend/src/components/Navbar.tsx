@@ -1,5 +1,5 @@
 import React from "react";
-import { BookOpen, LogOut, UserCircle } from "lucide-react";
+import { BookOpen, LogOut, Shield, UserCircle } from "lucide-react";
 import { PRODUCT_NAME, TAGLINE } from "../brand";
 import { useAuth } from "../contexts/AuthContext";
 
@@ -10,57 +10,65 @@ interface NavbarProps {
 
 export const Navbar: React.FC<NavbarProps> = ({ onNavigateHome, onNavigatePrivacy }) => {
   const { user, logout } = useAuth();
+  const displayUser = user?.email || user?.displayName || "Learner";
 
   return (
-    <header className="sticky top-0 z-40 w-full glass-panel border-b border-slate-800/80">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+    <header className="sticky top-0 z-40 w-full bg-white border-b border-[#E2E8F0] shadow-sm">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
         {/* Brand identity */}
         <button
           onClick={onNavigateHome}
-          className="flex items-center gap-3 group text-left transition"
+          className="flex items-center gap-3 group text-left transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[#4F46E5] rounded-xl p-1"
+          aria-label={`${PRODUCT_NAME} Home`}
         >
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 via-indigo-500 to-purple-500 flex items-center justify-center shadow-lg shadow-indigo-500/20 group-hover:scale-105 transition-transform">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#4F46E5] to-[#6366F1] flex items-center justify-center shadow-md shadow-indigo-500/15 group-hover:scale-105 transition-transform shrink-0">
             <BookOpen className="w-5 h-5 text-white" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="font-extrabold text-xl tracking-tight bg-gradient-to-r from-white via-slate-100 to-slate-400 bg-clip-text text-transparent">
+              <span className="font-extrabold text-xl tracking-tight text-[#0F172A]">
                 {PRODUCT_NAME}
               </span>
-              <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded-full bg-brand-500/10 text-brand-300 border border-brand-500/20">
+              <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-[#EEF2FF] text-[#4F46E5] border border-indigo-100">
                 Core
               </span>
             </div>
-            <p className="text-xs text-slate-400 font-medium">{TAGLINE}</p>
+            <p className="text-xs text-[#64748B] font-medium">{TAGLINE}</p>
           </div>
         </button>
 
         {/* User state and actions */}
         {user ? (
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             {onNavigatePrivacy && (
               <button
                 onClick={onNavigatePrivacy}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-emerald-400 bg-slate-900/60 hover:bg-emerald-500/10 border border-slate-800 hover:border-emerald-500/30 transition-all"
+                className="inline-flex items-center gap-1.5 px-3 py-2 min-h-[44px] rounded-btn text-xs font-semibold text-[#64748B] hover:text-[#0D9488] hover:bg-[#F0FDFA] transition border border-transparent hover:border-[#CCFBF1] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0D9488]"
                 title="Privacy & Data Sovereignty"
+                aria-label="Privacy settings"
               >
-                <span>Privacy</span>
+                <Shield className="w-4 h-4" />
+                <span className="hidden sm:inline">Privacy</span>
               </button>
             )}
 
-            <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-900/80 border border-slate-800 text-xs text-slate-300">
-              <UserCircle className="w-4 h-4 text-brand-400" />
+            <div
+              className="hidden md:flex items-center gap-2 px-3 py-2 min-h-[44px] rounded-btn bg-[#F8FAFC] border border-[#E2E8F0] text-xs text-[#334155]"
+              title={displayUser}
+            >
+              <UserCircle className="w-4 h-4 text-[#4F46E5] shrink-0" />
               <span className="font-medium max-w-[180px] truncate">
-                {user.email || user.displayName || "Learner"}
+                {displayUser}
               </span>
             </div>
 
             <button
               onClick={() => logout()}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-300 hover:text-white bg-slate-800/60 hover:bg-red-500/20 border border-slate-700/60 hover:border-red-500/30 transition-all"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 min-h-[44px] rounded-btn text-xs font-semibold text-[#64748B] hover:text-[#E11D48] hover:bg-[#FFF1F2] border border-[#E2E8F0] hover:border-rose-200 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[#E11D48]"
               title="Sign Out"
+              aria-label="Sign Out"
             >
-              <LogOut className="w-3.5 h-3.5" />
+              <LogOut className="w-4 h-4" />
               <span className="hidden sm:inline">Sign Out</span>
             </button>
           </div>
