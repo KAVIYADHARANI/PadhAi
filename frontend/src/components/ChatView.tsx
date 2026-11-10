@@ -383,27 +383,27 @@ export const ChatView: React.FC<ChatViewProps> = ({ course }) => {
   ];
 
   return (
-    <div className="flex flex-col h-[700px] bg-white rounded-2xl border border-[#E2E8F0] shadow-card overflow-hidden relative">
+    <div className="flex flex-col h-[700px] bg-surface rounded-2xl border border-line shadow-card overflow-hidden relative">
       {/* Header Bar */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800 bg-slate-900/40">
+      <div className="flex items-center justify-between gap-3 px-6 py-4 border-b border-line bg-subtle/80 flex-wrap">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-brand-500/20 to-indigo-600/20 border border-brand-500/30 flex items-center justify-center p-0.5 shadow-lg shadow-brand-500/20">
+          <div className="w-10 h-10 rounded-2xl bg-primary-light border border-primary/25 flex items-center justify-center p-0.5 shadow-sm">
             <PlaceholderMascot state={sending ? "studying" : "idle"} isTalking={sending} className="w-9 h-9" />
           </div>
           <div>
-            <div className="flex items-center gap-2">
-              <h2 className="text-base font-bold text-white">Ask {MASCOT_NAME}</h2>
-              <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h2 className="text-base font-bold text-heading">Ask {MASCOT_NAME}</h2>
+              <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-accent-light text-accent border border-accent/25">
                 Grounded RAG
               </span>
             </div>
-            <p className="text-xs text-slate-400">
+            <p className="text-xs text-muted">
               Answers are strictly grounded in your uploaded course materials with citations.
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
           {/* Academic Integrity Toggle */}
           <button
             type="button"
@@ -413,13 +413,13 @@ export const ChatView: React.FC<ChatViewProps> = ({ course }) => {
                 ? "Academic Integrity ON: Guides you through homework and exams with first principles rather than raw answers"
                 : "Academic Integrity OFF"
             }
-            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-medium border transition ${
+            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-medium border transition ${
               academicIntegrity
-                ? "bg-emerald-500/10 text-emerald-300 border-emerald-500/30 hover:bg-emerald-500/20"
-                : "bg-slate-800 text-slate-400 border-slate-700 hover:bg-slate-700"
+                ? "bg-accent-light text-accent border-accent/25 hover:opacity-90"
+                : "bg-surface text-muted border-line hover:bg-codeblock"
             }`}
           >
-            <ShieldCheck className={`w-3.5 h-3.5 ${academicIntegrity ? "text-emerald-400" : "text-slate-400"}`} />
+            <ShieldCheck className={`w-3.5 h-3.5 ${academicIntegrity ? "text-accent" : "text-muted"}`} />
             <span className="hidden md:inline">Integrity Mode</span>
           </button>
 
@@ -427,28 +427,28 @@ export const ChatView: React.FC<ChatViewProps> = ({ course }) => {
           <button
             type="button"
             onClick={handleToggleAutoRead}
-            className={`hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-medium border transition ${
+            className={`hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-medium border transition ${
               autoReadReplies
-                ? "bg-brand-500/15 border-brand-500/30 text-brand-300"
-                : "bg-slate-800 text-slate-400 border-slate-700 hover:bg-slate-700"
+                ? "bg-primary-light border-primary/25 text-primary"
+                : "bg-surface text-muted border-line hover:bg-codeblock"
             }`}
             title="Automatically read aloud new tutor responses"
           >
             {autoReadReplies ? (
-              <Volume2 className="w-3.5 h-3.5 text-brand-400" />
+              <Volume2 className="w-3.5 h-3.5 text-primary" />
             ) : (
-              <VolumeX className="w-3.5 h-3.5 text-slate-400" />
+              <VolumeX className="w-3.5 h-3.5 text-muted" />
             )}
             <span className="hidden md:inline">Auto-Read</span>
           </button>
 
           {/* Tone Setting selector */}
           <div className="hidden sm:flex items-center gap-1.5 text-xs">
-            <span className="text-slate-400 text-[11px] font-semibold">Persona Tone:</span>
+            <span className="text-muted text-[11px] font-semibold">Persona Tone:</span>
             <select
               value={toneSetting}
               onChange={(e) => setToneSetting(e.target.value as ToneSetting)}
-              className="bg-slate-800 text-slate-200 border border-slate-700 rounded-xl px-2.5 py-1 text-xs focus:ring-1 focus:ring-brand-400 focus:outline-none"
+              className="bg-surface text-heading border border-line rounded-xl px-2.5 py-1.5 text-xs focus:ring-1 focus:ring-primary focus:outline-none"
             >
               <option value="balanced">Balanced (Encouraging)</option>
               <option value="full">Full (Tanglish Buddy)</option>
@@ -461,7 +461,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ course }) => {
             <button
               onClick={handleClearHistory}
               title="Clear conversation"
-              className="p-2 rounded-xl text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition"
+              className="p-2 rounded-xl text-muted hover:text-error hover:bg-error-light transition"
             >
               <Trash2 className="w-4 h-4" />
             </button>
@@ -470,39 +470,39 @@ export const ChatView: React.FC<ChatViewProps> = ({ course }) => {
       </div>
 
       {/* Messages Scroll Area */}
-      <div className="flex-1 overflow-y-auto p-6 space-y-6">
+      <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-subtle/40">
         {loadingHistory && (
-          <div className="flex items-center justify-center h-full text-slate-400 gap-2">
-            <RefreshCw className="w-5 h-5 animate-spin text-brand-400" />
+          <div className="flex items-center justify-center h-full text-muted gap-2">
+            <RefreshCw className="w-5 h-5 animate-spin text-primary" />
             <span className="text-xs font-semibold">Loading conversation history...</span>
           </div>
         )}
 
         {!loadingHistory && messages.length === 0 && !streamingContent && (
           <div className="h-full flex flex-col items-center justify-center text-center max-w-md mx-auto space-y-4 py-8">
-            <div className="w-14 h-14 rounded-2xl bg-brand-500/10 border border-brand-500/20 flex items-center justify-center text-brand-400">
+            <div className="w-14 h-14 rounded-2xl bg-primary-light border border-primary/20 flex items-center justify-center text-primary">
               <Bot className="w-7 h-7" />
             </div>
             <div className="space-y-1.5">
-              <h3 className="text-lg font-bold text-white">How can {MASCOT_NAME} help?</h3>
-              <p className="text-xs text-slate-400 leading-relaxed">
+              <h3 className="text-lg font-bold text-heading">How can {MASCOT_NAME} help?</h3>
+              <p className="text-xs text-muted leading-relaxed">
                 Ask any question about your notes, formulas, or textbook chapters.
                 Answers cite exact document pages and refuse to fabricate facts.
               </p>
             </div>
 
             <div className="pt-2 w-full space-y-2">
-              <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400 text-left">
+              <p className="text-[11px] font-bold uppercase tracking-wider text-muted text-left">
                 Suggested questions:
               </p>
               {quickPrompts.map((prompt, i) => (
                 <button
                   key={i}
                   onClick={() => handleSendMessage(prompt)}
-                  className="w-full text-left text-xs p-3 rounded-xl bg-slate-900/70 border border-slate-800 hover:border-brand-500/40 text-slate-300 hover:text-white transition flex items-center justify-between group"
+                  className="w-full text-left text-xs p-3 rounded-xl bg-surface border border-line hover:border-primary text-body hover:text-heading transition flex items-center justify-between gap-2 group shadow-sm"
                 >
                   <span>{prompt}</span>
-                  <CornerDownLeft className="w-3.5 h-3.5 text-slate-400 group-hover:text-brand-400 shrink-0" />
+                  <CornerDownLeft className="w-3.5 h-3.5 text-muted group-hover:text-primary shrink-0" />
                 </button>
               ))}
             </div>
@@ -522,8 +522,8 @@ export const ChatView: React.FC<ChatViewProps> = ({ course }) => {
               <div
                 className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${
                   isUser
-                    ? "bg-slate-800 text-slate-300 border border-slate-700"
-                    : "bg-gradient-to-tr from-brand-500 to-indigo-600 text-white shadow-md shadow-brand-500/20"
+                    ? "bg-codeblock text-body border border-line"
+                    : "bg-primary text-white shadow-sm"
                 }`}
               >
                 {isUser ? <UserIcon className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
@@ -532,18 +532,18 @@ export const ChatView: React.FC<ChatViewProps> = ({ course }) => {
               <div
                 className={`max-w-[85%] rounded-2xl p-4 space-y-3 text-xs leading-relaxed ${
                   isUser
-                    ? "bg-brand-600 text-white rounded-tr-sm shadow-md"
-                    : "glass-card bg-slate-900/90 text-slate-200 border border-slate-800 rounded-tl-sm"
+                    ? "bg-primary text-white rounded-tr-sm shadow-sm"
+                    : "bg-surface text-body border border-line rounded-tl-sm shadow-sm"
                 }`}
               >
                 {/* Router Badge if multi-agent */}
                 {!isUser && msg.agent && (
-                  <div className="flex items-center gap-2 pb-1 border-b border-slate-800/60 text-[10px] text-slate-400">
-                    <span className="font-bold uppercase tracking-wider text-brand-400">
+                  <div className="flex items-center gap-2 pb-1 border-b border-line text-[10px] text-muted">
+                    <span className="font-bold uppercase tracking-wider text-primary">
                       {msg.agent}
                     </span>
                     {msg.route_source && (
-                      <span className="px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 text-[9px]">
+                      <span className="px-1.5 py-0.5 rounded bg-codeblock text-muted text-[9px] border border-line">
                         via {msg.route_source}
                       </span>
                     )}
@@ -566,7 +566,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ course }) => {
                   <div className="pt-2">
                     <button
                       onClick={() => handleSendMessage(msg.confirmation_chip!, "confirm")}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-brand-600 to-indigo-600 hover:from-brand-500 hover:to-indigo-500 text-white font-semibold text-xs shadow-md shadow-brand-500/20 transition cursor-pointer"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-primary hover:bg-primary-hover text-white font-semibold text-xs shadow-sm transition cursor-pointer"
                     >
                       <Sparkles className="w-3.5 h-3.5" />
                       <span>{msg.confirmation_chip}</span>
@@ -579,7 +579,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ course }) => {
                   <div className="pt-1">
                     <button
                       onClick={() => handleSendMessage(msg.follow_up_chip!)}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 hover:text-white text-xs font-medium transition cursor-pointer"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-subtle hover:bg-codeblock border border-line text-body hover:text-heading text-xs font-medium transition cursor-pointer"
                     >
                       <span>💡 {msg.follow_up_chip}</span>
                     </button>
@@ -588,8 +588,8 @@ export const ChatView: React.FC<ChatViewProps> = ({ course }) => {
 
                 {/* Refusal notification if context insufficient */}
                 {msg.is_sufficient === false && (
-                  <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-300 text-[11px] flex items-start gap-2">
-                    <Info className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />
+                  <div className="p-2.5 rounded-xl bg-warning-light border border-warning/25 text-warning text-[11px] flex items-start gap-2">
+                    <Info className="w-3.5 h-3.5 text-warning shrink-0 mt-0.5" />
                     <span>
                       Grounded Retrieval Note: The uploaded materials do not contain sufficient evidence to answer this query.
                     </span>
@@ -598,9 +598,9 @@ export const ChatView: React.FC<ChatViewProps> = ({ course }) => {
 
                 {/* Structured Sources Section with Clickable Excerpt Preview */}
                 {!isUser && msg.sources && msg.sources.length > 0 && (
-                  <div className="pt-3 border-t border-slate-800/80 space-y-2">
-                    <span className="text-[10px] uppercase font-bold text-slate-400 flex items-center gap-1.5 tracking-wider">
-                      <BookOpen className="w-3 h-3 text-brand-400" />
+                  <div className="pt-3 border-t border-line space-y-2">
+                    <span className="text-[10px] uppercase font-bold text-muted flex items-center gap-1.5 tracking-wider">
+                      <BookOpen className="w-3 h-3 text-primary" />
                       Sources:
                     </span>
                     <div className="flex flex-wrap gap-2">
@@ -615,10 +615,10 @@ export const ChatView: React.FC<ChatViewProps> = ({ course }) => {
                               excerpt: src.excerpt,
                             })
                           }
-                          className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-950/70 hover:bg-slate-900 border border-slate-800/90 hover:border-brand-500/40 text-[11px] font-mono text-slate-300 transition cursor-pointer"
+                          className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-subtle hover:bg-codeblock border border-line hover:border-primary/40 text-[11px] font-mono text-body transition cursor-pointer"
                         >
-                          <span className="text-brand-300 font-semibold">{src.document_name}</span>
-                          <span className="text-slate-400">Page {src.page}</span>
+                          <span className="text-primary font-semibold">{src.document_name}</span>
+                          <span className="text-muted">Page {src.page}</span>
                         </button>
                       ))}
                     </div>
@@ -627,9 +627,9 @@ export const ChatView: React.FC<ChatViewProps> = ({ course }) => {
 
                 {/* Fallback Citation Badges if structured sources not available */}
                 {!isUser && (!msg.sources || msg.sources.length === 0) && msg.citations && msg.citations.length > 0 && (
-                  <div className="pt-2 border-t border-slate-800/80 flex flex-wrap items-center gap-1.5">
-                    <span className="text-[10px] uppercase font-bold text-slate-400 flex items-center gap-1">
-                      <BookOpen className="w-3 h-3 text-brand-400" />
+                  <div className="pt-2 border-t border-line flex flex-wrap items-center gap-1.5">
+                    <span className="text-[10px] uppercase font-bold text-muted flex items-center gap-1">
+                      <BookOpen className="w-3 h-3 text-primary" />
                       Sources:
                     </span>
                     {msg.citations.map((cite, cIdx) => (
@@ -637,7 +637,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ course }) => {
                         key={cIdx}
                         type="button"
                         onClick={() => handleCitationClick(cite, msg.sources)}
-                        className="px-2 py-0.5 rounded-md bg-slate-800 hover:bg-slate-700 border border-slate-700/80 hover:border-brand-400/50 text-[10px] font-mono text-brand-300 transition cursor-pointer"
+                        className="px-2 py-0.5 rounded-md bg-primary-light hover:opacity-90 border border-primary/25 text-[10px] font-mono text-primary transition cursor-pointer"
                       >
                         {cite}
                       </button>
@@ -647,27 +647,27 @@ export const ChatView: React.FC<ChatViewProps> = ({ course }) => {
 
                 {/* Assistant message footer: speaker controls & tone tag */}
                 {!isUser && (
-                  <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between text-[10px]">
+                  <div className="pt-2 border-t border-line flex items-center justify-between text-[10px]">
                     <div className="flex items-center gap-1.5">
                       <button
                         type="button"
                         onClick={() => handleToggleMessageSpeech(idx, msg.clean_answer || msg.content)}
                         className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg transition font-medium cursor-pointer ${
                           speakingIdx === idx
-                            ? "bg-brand-500/20 text-brand-300 border border-brand-500/40"
-                            : "text-slate-400 hover:text-slate-200 hover:bg-slate-800"
+                            ? "bg-primary-light text-primary border border-primary/25"
+                            : "text-muted hover:text-heading hover:bg-subtle"
                         }`}
                         title={speakingIdx === idx ? (isSpeechPaused ? "Resume speech" : "Pause speech") : "Listen to answer"}
                         aria-label="Listen to answer"
                       >
                         {speakingIdx === idx && !isSpeechPaused ? (
                           <>
-                            <Pause className="w-3.5 h-3.5 text-brand-400 animate-pulse" />
+                            <Pause className="w-3.5 h-3.5 text-primary animate-pulse" />
                             <span>Pause</span>
                           </>
                         ) : (
                           <>
-                            <Volume2 className="w-3.5 h-3.5 text-brand-400" />
+                            <Volume2 className="w-3.5 h-3.5 text-primary" />
                             <span>{speakingIdx === idx ? "Resume" : "Listen"}</span>
                           </>
                         )}
@@ -677,18 +677,18 @@ export const ChatView: React.FC<ChatViewProps> = ({ course }) => {
                         <button
                           type="button"
                           onClick={handleStopSpeech}
-                          className="p-1 rounded-md text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition"
+                          className="p-1 rounded-md text-muted hover:text-error hover:bg-error-light transition"
                           title="Stop speaking"
                           aria-label="Stop speaking"
                         >
-                          <Square className="w-3 h-3 text-rose-400" />
+                          <Square className="w-3 h-3 text-error" />
                         </button>
                       )}
                     </div>
 
                     {msg.tone && (
-                      <div className="text-[10px] text-slate-500 text-right">
-                        Tone: <span className="capitalize text-slate-400">{msg.tone}</span>
+                      <div className="text-[10px] text-muted text-right">
+                        Tone: <span className="capitalize text-body">{msg.tone}</span>
                       </div>
                     )}
                   </div>
@@ -701,17 +701,17 @@ export const ChatView: React.FC<ChatViewProps> = ({ course }) => {
         {/* Live Streaming Message Bubble */}
         {sending && (
           <div className="flex items-start gap-3.5">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-brand-500 to-indigo-600 flex items-center justify-center text-white shrink-0 shadow-md shadow-brand-500/20">
+            <div className="w-8 h-8 rounded-xl bg-primary flex items-center justify-center text-white shrink-0 shadow-sm">
               <Bot className="w-4 h-4" />
             </div>
-            <div className="max-w-[85%] glass-card bg-slate-900/90 text-slate-200 border border-slate-800 rounded-2xl rounded-tl-sm p-4 space-y-3 text-xs leading-relaxed">
+            <div className="max-w-[85%] bg-surface text-body border border-line rounded-2xl rounded-tl-sm p-4 space-y-3 text-xs leading-relaxed shadow-sm">
               {streamingMeta.agent && (
-                <div className="flex items-center gap-2 pb-1 border-b border-slate-800/60 text-[10px] text-slate-400">
-                  <span className="font-bold uppercase tracking-wider text-brand-400">
+                <div className="flex items-center gap-2 pb-1 border-b border-line text-[10px] text-muted">
+                  <span className="font-bold uppercase tracking-wider text-primary">
                     {streamingMeta.agent}
                   </span>
                   {streamingMeta.route_source && (
-                    <span className="px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 text-[9px]">
+                    <span className="px-1.5 py-0.5 rounded bg-codeblock text-muted text-[9px] border border-line">
                       via {streamingMeta.route_source}
                     </span>
                   )}
@@ -721,11 +721,11 @@ export const ChatView: React.FC<ChatViewProps> = ({ course }) => {
               {streamingContent ? (
                 <div className="whitespace-pre-wrap font-sans leading-relaxed">
                   {streamingContent}
-                  <span className="inline-block w-1.5 h-3.5 bg-brand-400 animate-pulse ml-0.5 align-middle" />
+                  <span className="inline-block w-1.5 h-3.5 bg-primary animate-pulse ml-0.5 align-middle" />
                 </div>
               ) : (
-                <div className="flex items-center gap-2 text-slate-400">
-                  <RefreshCw className="w-4 h-4 text-brand-400 animate-spin" />
+                <div className="flex items-center gap-2 text-muted">
+                  <RefreshCw className="w-4 h-4 text-primary animate-spin" />
                   <span className="text-xs">
                     Searching course chunks and routing request...
                   </span>
@@ -737,7 +737,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ course }) => {
                 <div className="pt-2">
                   <button
                     onClick={() => handleSendMessage(streamingMeta.chip!.confirmation_chip!, "confirm")}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-brand-600 to-indigo-600 text-white font-semibold text-xs shadow-md shadow-brand-500/20"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-primary hover:bg-primary-hover text-white font-semibold text-xs shadow-sm"
                   >
                     <Sparkles className="w-3.5 h-3.5" />
                     <span>{streamingMeta.chip.confirmation_chip}</span>
@@ -753,27 +753,27 @@ export const ChatView: React.FC<ChatViewProps> = ({ course }) => {
 
       {/* Citation Excerpt Modal Popover */}
       {selectedCitation && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
-          <div className="glass-panel max-w-lg w-full rounded-2xl border border-slate-700 bg-slate-900/95 p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <div className="flex items-center gap-2 text-brand-300 font-semibold text-sm">
-                <BookOpen className="w-4 h-4 text-brand-400" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm animate-fadeIn">
+          <div className="max-w-lg w-full rounded-2xl border border-line bg-surface p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-line pb-3">
+              <div className="flex items-center gap-2 text-primary font-semibold text-sm">
+                <BookOpen className="w-4 h-4 text-primary" />
                 <span>
                   {selectedCitation.document_name} &bull; Page {selectedCitation.page}
                 </span>
               </div>
               <button
                 onClick={() => setSelectedCitation(null)}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition"
+                className="p-1.5 rounded-lg text-muted hover:text-heading hover:bg-subtle transition"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
-            <div className="p-4 rounded-xl bg-slate-950/80 border border-slate-800 text-xs text-slate-300 leading-relaxed font-mono">
+            <div className="p-4 rounded-xl bg-codeblock border border-line text-xs text-body leading-relaxed font-mono">
               {selectedCitation.excerpt ? (
                 <p className="italic">"{selectedCitation.excerpt}"</p>
               ) : (
-                <p className="text-slate-400 italic">
+                <p className="text-muted italic">
                   Citation grounded in page {selectedCitation.page} of uploaded document.
                 </p>
               )}
@@ -781,7 +781,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ course }) => {
             <div className="flex justify-end">
               <button
                 onClick={() => setSelectedCitation(null)}
-                className="px-4 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold transition"
+                className="px-4 py-1.5 rounded-xl bg-subtle hover:bg-codeblock text-heading border border-line text-xs font-semibold transition"
               >
                 Close
               </button>
@@ -792,13 +792,13 @@ export const ChatView: React.FC<ChatViewProps> = ({ course }) => {
 
       {/* Error Banner */}
       {error && (
-        <div className="px-6 py-3 bg-rose-500/10 border-t border-rose-500/20 text-rose-300 text-xs flex items-start gap-2.5">
-          <AlertCircle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+        <div className="px-6 py-3 bg-error-light border-t border-error/25 text-error text-xs flex items-start gap-2.5">
+          <AlertCircle className="w-4 h-4 text-error shrink-0 mt-0.5" />
           <div className="space-y-1">
             <p className="font-semibold">{error}</p>
             {error.toLowerCase().includes("api key") && (
-              <p className="text-slate-400 text-[11px] leading-relaxed">
-                Tip: Configure <code className="text-brand-300 font-mono">GROQ_API_KEY</code>, <code className="text-brand-300 font-mono">OPENROUTER_API_KEY</code>, or <code className="text-brand-300 font-mono">GOOGLE_API_KEY</code> in your root <code className="text-brand-300 font-mono">.env</code> file, then restart the development server.
+              <p className="text-muted text-[11px] leading-relaxed">
+                Tip: Configure <code className="text-primary font-mono">GROQ_API_KEY</code>, <code className="text-primary font-mono">OPENROUTER_API_KEY</code>, or <code className="text-primary font-mono">GOOGLE_API_KEY</code> in your root <code className="text-primary font-mono">.env</code> file, then restart the development server.
               </p>
             )}
           </div>
@@ -807,15 +807,15 @@ export const ChatView: React.FC<ChatViewProps> = ({ course }) => {
 
       {/* Speech Recognition Error Banner */}
       {speechRecError && (
-        <div className="px-6 py-2.5 bg-amber-500/10 border-t border-amber-500/20 text-amber-300 text-xs flex items-center justify-between">
+        <div className="px-6 py-2.5 bg-warning-light border-t border-warning/25 text-warning text-xs flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <AlertCircle className="w-4 h-4 text-amber-400 shrink-0" />
+            <AlertCircle className="w-4 h-4 text-warning shrink-0" />
             <span className="leading-tight">{speechRecError}</span>
           </div>
           <button
             type="button"
             onClick={resetTranscript}
-            className="text-[11px] underline hover:text-white font-medium ml-2"
+            className="text-[11px] underline hover:text-heading font-medium ml-2"
           >
             Dismiss
           </button>
@@ -824,9 +824,9 @@ export const ChatView: React.FC<ChatViewProps> = ({ course }) => {
 
       {/* Live Speech Recognition Listening Bar */}
       {isListening && (
-        <div className="px-6 py-2.5 bg-rose-500/10 border-t border-rose-500/20 text-rose-300 text-xs flex items-center justify-between animate-pulse">
+        <div className="px-6 py-2.5 bg-error-light border-t border-error/25 text-error text-xs flex items-center justify-between animate-pulse">
           <div className="flex items-center gap-2 min-w-0">
-            <span className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-ping" />
+            <span className="w-2.5 h-2.5 rounded-full bg-error animate-ping" />
             <span className="font-semibold truncate">
               Listening... Speak your question for {MASCOT_NAME}
             </span>
@@ -834,7 +834,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ course }) => {
           <button
             type="button"
             onClick={stopListening}
-            className="px-2.5 py-1 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 text-rose-200 text-[11px] font-bold transition shrink-0 ml-2"
+            className="px-2.5 py-1 rounded-lg bg-error/15 hover:bg-error/25 text-error text-[11px] font-bold transition shrink-0 ml-2"
           >
             Stop Listening
           </button>
@@ -842,7 +842,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ course }) => {
       )}
 
       {/* Input Box Footer */}
-      <div className="p-4 border-t border-slate-800 bg-slate-900/60 space-y-2">
+      <div className="p-4 border-t border-line bg-surface space-y-2">
         <form
           onSubmit={(e) => {
             e.preventDefault();
@@ -856,8 +856,8 @@ export const ChatView: React.FC<ChatViewProps> = ({ course }) => {
             onClick={isListening ? stopListening : startListening}
             className={`h-11 px-3.5 rounded-2xl border transition flex items-center gap-1.5 shrink-0 select-none ${
               isListening
-                ? "bg-rose-500/20 border-rose-500/50 text-rose-300 animate-pulse"
-                : "bg-slate-950/80 border-slate-800 text-slate-400 hover:text-white hover:border-slate-700"
+                ? "bg-error-light border-error/50 text-error animate-pulse"
+                : "bg-subtle border-line text-muted hover:text-heading hover:border-primary/40"
             }`}
             title={
               !isSpeechRecSupported
@@ -870,7 +870,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ course }) => {
           >
             {isListening ? (
               <>
-                <MicOff className="w-4 h-4 text-rose-400" />
+                <MicOff className="w-4 h-4 text-error" />
                 <span className="text-xs font-semibold hidden sm:inline">Listening</span>
               </>
             ) : (
@@ -889,21 +889,21 @@ export const ChatView: React.FC<ChatViewProps> = ({ course }) => {
               disabled={sending}
               placeholder={`Ask ${MASCOT_NAME} a question about your course materials... (Press Enter to send)`}
               rows={2}
-              className="w-full bg-slate-950/80 border border-slate-800 rounded-2xl px-4 py-3 text-xs text-white placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-brand-400 focus:border-brand-400 resize-none"
+              className="w-full bg-subtle border border-line rounded-2xl px-4 py-3 text-xs text-heading placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary focus:bg-surface resize-none transition"
             />
           </div>
 
           <button
             type="submit"
             disabled={sending || !inputMessage.trim()}
-            className="h-11 px-5 rounded-2xl bg-gradient-to-r from-brand-500 to-indigo-600 text-white font-bold text-xs hover:from-brand-600 hover:to-indigo-700 transition shadow-lg shadow-brand-500/25 flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
+            className="h-11 px-5 rounded-2xl bg-primary hover:bg-primary-hover text-white font-bold text-xs transition shadow-sm flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
           >
             <span>Ask</span>
             <Send className="w-3.5 h-3.5" />
           </button>
         </form>
 
-        <p className="text-[10px] text-slate-400 px-1 leading-normal">
+        <p className="text-[10px] text-muted px-1 leading-normal">
           Dictate or type questions. Voice recognition uses browser speech services; questions are strictly grounded in your course documents.
         </p>
       </div>

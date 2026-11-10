@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import { ThemeProvider } from "./contexts/ThemeContext";
 import { Navbar } from "./components/Navbar";
 import { LoginPage } from "./pages/LoginPage";
 import { DashboardPage } from "./pages/DashboardPage";
@@ -26,9 +27,9 @@ const MainContent: React.FC = () => {
 
   if (loading && !isPreview) {
     return (
-      <div className="min-h-screen bg-[#F7F8FC] flex flex-col items-center justify-center">
-        <Loader2 className="w-10 h-10 text-indigo-600 animate-spin mb-4" />
-        <p className="text-sm text-slate-500 font-medium">Initializing session...</p>
+      <div className="min-h-screen bg-app flex flex-col items-center justify-center">
+        <Loader2 className="w-10 h-10 text-primary animate-spin mb-4" />
+        <p className="text-sm text-muted font-medium">Initializing session...</p>
       </div>
     );
   }
@@ -42,7 +43,7 @@ const MainContent: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#F7F8FC] flex flex-col text-[#334155]">
+    <div className="min-h-screen bg-app flex flex-col text-body transition-colors duration-150">
       <Navbar
         onNavigateHome={() => {
           setSelectedCourse(null);
@@ -73,9 +74,11 @@ const MainContent: React.FC = () => {
 
 export const App: React.FC = () => {
   return (
-    <AuthProvider>
-      <MainContent />
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <MainContent />
+      </AuthProvider>
+    </ThemeProvider>
   );
 };
 

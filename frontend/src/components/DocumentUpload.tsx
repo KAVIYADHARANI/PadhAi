@@ -169,34 +169,34 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({
   const renderStatusBadge = (doc: Document) => {
     if (doc.status === "ready" && (doc.chunks_count ?? 0) > 0) {
       return (
-        <span className="flex items-center gap-1 text-[11px] font-semibold text-[#0D9488] bg-[#F0FDFA] border border-teal-200 px-2.5 py-0.5 rounded-pill">
+        <span className="flex items-center gap-1 text-[11px] font-semibold text-accent bg-accent-light border border-accent/25 px-2.5 py-0.5 rounded-pill">
           <CheckCircle2 className="w-3 h-3" /> Ready ({doc.chunks_count} chunks)
         </span>
       );
     }
     if (doc.status === "ready" && (doc.chunks_count ?? 0) === 0) {
       return (
-        <span className="flex items-center gap-1 text-[11px] font-semibold text-[#D97706] bg-[#FFFBEB] border border-amber-200 px-2.5 py-0.5 rounded-pill">
+        <span className="flex items-center gap-1 text-[11px] font-semibold text-warning bg-warning-light border border-warning/25 px-2.5 py-0.5 rounded-pill">
           <AlertCircle className="w-3 h-3" /> No Chunks
         </span>
       );
     }
     if (doc.status === "processing" || reprocessingId === doc.id) {
       return (
-        <span className="flex items-center gap-1 text-[11px] font-semibold text-[#4F46E5] bg-[#EEF2FF] border border-indigo-200 px-2.5 py-0.5 rounded-pill">
+        <span className="flex items-center gap-1 text-[11px] font-semibold text-primary bg-primary-light border border-primary/25 px-2.5 py-0.5 rounded-pill">
           <Loader2 className="w-3 h-3 animate-spin" /> Ingesting & Indexing
         </span>
       );
     }
     if (doc.status === "failed" || doc.status === "error") {
       return (
-        <span className="flex items-center gap-1 text-[11px] font-semibold text-[#E11D48] bg-[#FFF1F2] border border-rose-200 px-2.5 py-0.5 rounded-pill">
+        <span className="flex items-center gap-1 text-[11px] font-semibold text-error bg-error-light border border-error/25 px-2.5 py-0.5 rounded-pill">
           <AlertCircle className="w-3 h-3" /> Failed
         </span>
       );
     }
     return (
-      <span className="flex items-center gap-1 text-[11px] font-semibold text-[#D97706] bg-[#FFFBEB] border border-amber-200 px-2.5 py-0.5 rounded-pill">
+      <span className="flex items-center gap-1 text-[11px] font-semibold text-warning bg-warning-light border border-warning/25 px-2.5 py-0.5 rounded-pill">
         <Clock className="w-3 h-3 animate-pulse" /> Queued
       </span>
     );
@@ -211,10 +211,10 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({
         onDragOver={handleDrag}
         onDrop={handleDrop}
         onClick={() => fileInputRef.current?.click()}
-        className={`bg-white rounded-2xl p-8 text-center cursor-pointer border-2 border-dashed transition-all shadow-sm ${
+        className={`bg-surface rounded-2xl p-8 text-center cursor-pointer border-2 border-dashed transition-all shadow-sm ${
           dragActive
-            ? "border-[#4F46E5] bg-[#EEF2FF]/60 scale-[1.01]"
-            : "border-[#E2E8F0] hover:border-[#4F46E5] hover:bg-[#EEF2FF]/20"
+            ? "border-primary bg-primary-light/60 scale-[1.01]"
+            : "border-line hover:border-primary hover:bg-primary-light/25"
         }`}
       >
         <input
@@ -225,7 +225,7 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({
           className="hidden"
         />
 
-        <div className="w-14 h-14 mx-auto rounded-2xl bg-[#EEF2FF] border border-indigo-100 flex items-center justify-center text-[#4F46E5] mb-4">
+        <div className="w-14 h-14 mx-auto rounded-2xl bg-primary-light border border-primary/20 flex items-center justify-center text-primary mb-4">
           {uploading ? (
             <Loader2 className="w-7 h-7 animate-spin" />
           ) : (
@@ -233,16 +233,16 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({
           )}
         </div>
 
-        <h4 className="text-sm font-bold text-[#0F172A] mb-1">
+        <h4 className="text-sm font-bold text-heading mb-1">
           {uploading ? "Uploading & queuing document..." : "Upload course syllabus or study materials"}
         </h4>
-        <p className="text-xs text-[#64748B] max-w-sm mx-auto">
+        <p className="text-xs text-muted max-w-sm mx-auto">
           Drag and drop PDF textbooks, lecture slides, or markdown notes (up to 25MB).
         </p>
       </div>
 
       {error && (
-        <div className="p-3.5 rounded-xl bg-[#FFF1F2] border border-rose-200 text-[#E11D48] text-xs flex items-center gap-2">
+        <div className="p-3.5 rounded-xl bg-error-light border border-error/25 text-error text-xs flex items-center gap-2">
           <AlertCircle className="w-4 h-4 shrink-0" />
           <span>{error}</span>
         </div>
@@ -251,18 +251,18 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({
       {/* Uploaded Documents List */}
       <div>
         <div className="flex items-center justify-between mb-3">
-          <h4 className="text-xs font-bold text-[#0F172A] uppercase tracking-wider">
+          <h4 className="text-xs font-bold text-heading uppercase tracking-wider">
             Uploaded Materials ({documents.length})
           </h4>
         </div>
 
         {loadingDocs ? (
-          <div className="p-6 rounded-xl border border-[#E2E8F0] bg-white text-center text-xs text-[#64748B] flex items-center justify-center gap-2 shadow-sm">
-            <Loader2 className="w-4 h-4 animate-spin text-[#4F46E5]" />
+          <div className="p-6 rounded-xl border border-line bg-surface text-center text-xs text-muted flex items-center justify-center gap-2 shadow-sm">
+            <Loader2 className="w-4 h-4 animate-spin text-primary" />
             <span>Loading course materials...</span>
           </div>
         ) : documents.length === 0 ? (
-          <div className="p-6 rounded-xl border border-[#E2E8F0] bg-white text-center text-xs text-[#64748B] shadow-sm">
+          <div className="p-6 rounded-xl border border-line bg-surface text-center text-xs text-muted shadow-sm">
             No documents uploaded yet. Upload a PDF or notes file to get started.
           </div>
         ) : (
@@ -270,24 +270,24 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({
             {documents.map((doc) => (
               <div
                 key={doc.id}
-                className="bg-white rounded-xl p-4 flex items-center justify-between gap-3 border border-[#E2E8F0] shadow-sm hover:shadow-card-hover transition"
+                className="bg-surface rounded-xl p-4 flex items-center justify-between gap-3 border border-line shadow-sm hover:shadow-card-hover transition"
               >
                 <div className="flex items-center gap-3 min-w-0">
-                  <div className="w-9 h-9 rounded-lg bg-[#EEF2FF] border border-indigo-100 flex items-center justify-center shrink-0 text-[#4F46E5]">
+                  <div className="w-9 h-9 rounded-lg bg-primary-light border border-primary/20 flex items-center justify-center shrink-0 text-primary">
                     <FileText className="w-4 h-4" />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-xs font-semibold text-[#0F172A] truncate max-w-xs sm:max-w-md">
+                    <p className="text-xs font-semibold text-heading truncate max-w-xs sm:max-w-md">
                       {doc.filename || `Document #${doc.id}`}
                     </p>
-                    <p className="text-[11px] text-[#64748B]">
+                    <p className="text-[11px] text-muted">
                       {doc.size_bytes ? `${(doc.size_bytes / 1024).toFixed(1)} KB • ` : ""}
                       {doc.pages ? `${doc.pages} pages • ` : ""}
                       {doc.chunks_count !== undefined ? `${doc.chunks_count} chunks • ` : ""}
                       {new Date(doc.created_at).toLocaleDateString()}
                     </p>
                     {doc.error && (
-                      <p className="text-[11px] text-[#E11D48] mt-0.5 truncate max-w-xs sm:max-w-md">
+                      <p className="text-[11px] text-error mt-0.5 truncate max-w-xs sm:max-w-md">
                         {doc.error}
                       </p>
                     )}
@@ -300,7 +300,7 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({
                     onClick={() => handleReprocess(doc.id)}
                     disabled={reprocessingId === doc.id || doc.status === "processing"}
                     title="Reprocess document"
-                    className="p-1.5 rounded-lg text-[#64748B] hover:text-[#0F172A] hover:bg-[#F1F5F9] transition disabled:opacity-40 text-xs font-semibold min-h-[44px]"
+                    className="p-1.5 rounded-lg text-muted hover:text-heading hover:bg-codeblock transition disabled:opacity-40 text-xs font-semibold min-h-[44px]"
                   >
                     Reprocess
                   </button>

@@ -1,5 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 export default {
+  darkMode: "class",
   content: [
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
@@ -7,29 +8,32 @@ export default {
   theme: {
     extend: {
       colors: {
-        app: "#F7F8FC",
-        surface: "#FFFFFF",
-        heading: "#0F172A",
-        body: "#334155",
-        muted: "#64748B",
-        border: "#E2E8F0",
+        app: "rgb(var(--color-app) / <alpha-value>)",
+        surface: "rgb(var(--color-surface) / <alpha-value>)",
+        subtle: "rgb(var(--color-subtle) / <alpha-value>)",
+        codeblock: "rgb(var(--color-code) / <alpha-value>)",
+        heading: "rgb(var(--color-heading) / <alpha-value>)",
+        body: "rgb(var(--color-body) / <alpha-value>)",
+        muted: "rgb(var(--color-muted) / <alpha-value>)",
+        line: "rgb(var(--color-border) / <alpha-value>)",
+        border: "rgb(var(--color-border) / <alpha-value>)",
         primary: {
-          DEFAULT: "#4F46E5",
-          hover: "#4338CA",
-          light: "#EEF2FF",
+          DEFAULT: "rgb(var(--color-primary) / <alpha-value>)",
+          hover: "rgb(var(--color-primary-hover) / <alpha-value>)",
+          light: "rgb(var(--color-primary-tint) / <alpha-value>)",
         },
         accent: {
-          DEFAULT: "#0D9488",
-          hover: "#0F766E",
-          light: "#F0FDFA",
+          DEFAULT: "rgb(var(--color-accent) / <alpha-value>)",
+          hover: "rgb(var(--color-accent-hover) / <alpha-value>)",
+          light: "rgb(var(--color-accent-tint) / <alpha-value>)",
         },
         warning: {
-          DEFAULT: "#D97706",
-          light: "#FFFBEB",
+          DEFAULT: "rgb(var(--color-warning) / <alpha-value>)",
+          light: "rgb(var(--color-warning-tint) / <alpha-value>)",
         },
         error: {
-          DEFAULT: "#E11D48",
-          light: "#FFF1F2",
+          DEFAULT: "rgb(var(--color-error) / <alpha-value>)",
+          light: "rgb(var(--color-error-tint) / <alpha-value>)",
         },
         brand: {
           50: "#EEF2FF",

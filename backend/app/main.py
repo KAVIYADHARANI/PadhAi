@@ -1,7 +1,13 @@
 """FastAPI application entrypoint."""
 
-from fastapi import FastAPI
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
+
+from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import text
+from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.orm import Session
 
 from app.api import buddy as api_buddy
 from app.api import chat as api_chat
@@ -15,16 +21,39 @@ from app.api import quizzes as api_quizzes
 from app.api import roadmap as api_roadmap
 from app.api import sessions as api_sessions
 from app.core.config import settings
-from app.core.logging import setup_logging
+from app.core.logging import get_logger, setup_logging
 from app.core.observability import setup_observability
+from app.db.session import engine, get_db
 
 # Configure structured logging
 setup_logging()
+logger = get_logger(__name__)
+
+
+@asynccontextmanager
+async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
+    """Verify startup dependencies cleanly and dispose SQLAlchemy pool on shutdown."""
+    db_status = "disconnected"
+    try:
+        with engine.connect() as conn:
+            conn.execute(text("SELECT 1"))
+        db_status = "connected"
+    except SQLAlchemyError as exc:
+        logger.warning("Startup database connectivity check failed: %s", type(exc).__name__)
+
+    logger.info("Backend application started (database=%s)", db_status)
+    try:
+        yield
+    finally:
+        engine.dispose()
+        logger.info("Backend application stopped; database engine disposed")
+
 
 app = FastAPI(
     title=settings.PRODUCT_NAME,
     description="Adaptive Learning Platform API",
     version="0.1.0",
+    lifespan=lifespan,
 )
 
 # Initialize error monitoring hook
@@ -41,10 +70,18 @@ app.add_middleware(
 
 
 @app.get("/health", tags=["health"])
-def health_check() -> dict:
-    """Public healthcheck endpoint. No authentication required."""
+def health_check(db: Session = Depends(get_db)) -> dict:
+    """Public healthcheck endpoint. Confirms API availability and reports live database status."""
+    db_status = "disconnected"
+    try:
+        db.execute(text("SELECT 1"))
+        db_status = "connected"
+    except SQLAlchemyError as exc:
+        logger.warning("Health check database probe failed: %s", type(exc).__name__)
+
     return {
         "status": "ok",
+        "database": db_status,
         "product": settings.PRODUCT_NAME,
         "mascot": settings.MASCOT_NAME,
     }

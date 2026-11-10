@@ -166,8 +166,8 @@ export const QuizView: React.FC<QuizViewProps> = ({
   // Render 1: Loading Topics
   if (loadingTopics) {
     return (
-      <div className="flex flex-col items-center justify-center p-12 text-[#64748B] space-y-3">
-        <Loader2 className="w-8 h-8 text-[#4F46E5] animate-spin" />
+      <div className="flex flex-col items-center justify-center p-12 text-muted space-y-3">
+        <Loader2 className="w-8 h-8 text-primary animate-spin" />
         <p className="text-xs font-medium">Loading course syllabus topics...</p>
       </div>
     );
@@ -176,12 +176,12 @@ export const QuizView: React.FC<QuizViewProps> = ({
   // Render 2: No topics available yet
   if (topics.length === 0) {
     return (
-      <div className="bg-white border border-[#E2E8F0] shadow-card rounded-2xl p-8 text-center max-w-xl mx-auto space-y-4">
-        <div className="w-12 h-12 rounded-2xl bg-[#EEF2FF] border border-indigo-100 text-[#4F46E5] flex items-center justify-center mx-auto">
+      <div className="bg-surface border border-line shadow-card rounded-2xl p-8 text-center max-w-xl mx-auto space-y-4">
+        <div className="w-12 h-12 rounded-2xl bg-primary-light border border-primary/20 text-primary flex items-center justify-center mx-auto">
           <HelpCircle className="w-6 h-6" />
         </div>
-        <h3 className="text-lg font-bold text-[#0F172A]">No Topics Available Yet</h3>
-        <p className="text-xs text-[#64748B] leading-relaxed">
+        <h3 className="text-lg font-bold text-heading">No Topics Available Yet</h3>
+        <p className="text-xs text-muted leading-relaxed">
           Upload PDF textbooks or study materials in the Knowledge Base tab. {PRODUCT_NAME} will segment them
           into syllabus topics and prepare interactive practice quizzes for you.
         </p>
@@ -198,41 +198,41 @@ export const QuizView: React.FC<QuizViewProps> = ({
       history.length > 0 ? Math.round(history[history.length - 1].new_mastery_score * 100) : 0;
 
     return (
-      <div className="bg-white border border-[#E2E8F0] shadow-card rounded-2xl p-8 max-w-2xl mx-auto space-y-6 text-center animate-in fade-in duration-200">
-        <div className="w-16 h-16 rounded-2xl bg-[#EEF2FF] border border-indigo-100 text-[#4F46E5] flex items-center justify-center mx-auto">
+      <div className="bg-surface border border-line shadow-card rounded-2xl p-8 max-w-2xl mx-auto space-y-6 text-center animate-in fade-in duration-200">
+        <div className="w-16 h-16 rounded-2xl bg-primary-light border border-primary/20 text-primary flex items-center justify-center mx-auto">
           <Trophy className="w-8 h-8" />
         </div>
 
         <div>
-          <span className="text-xs font-bold text-[#4F46E5] uppercase tracking-wider">
+          <span className="text-xs font-bold text-primary uppercase tracking-wider">
             Quiz Completed
           </span>
-          <h2 className="text-2xl font-extrabold text-[#0F172A] mt-1">
+          <h2 className="text-2xl font-extrabold text-heading mt-1">
             {selectedTopic?.name ?? "Topic Assessment"}
           </h2>
         </div>
 
-        <div className="grid grid-cols-3 gap-4 bg-[#F8FAFC] p-4 rounded-xl border border-[#E2E8F0]">
+        <div className="grid grid-cols-3 gap-4 bg-subtle p-4 rounded-xl border border-line">
           <div>
-            <p className="text-[11px] text-[#64748B] font-semibold uppercase">Score</p>
-            <p className="text-2xl font-black text-[#0F172A]">
+            <p className="text-[11px] text-muted font-semibold uppercase">Score</p>
+            <p className="text-2xl font-black text-heading">
               {correctCount} / {totalCount}
             </p>
           </div>
           <div>
-            <p className="text-[11px] text-[#64748B] font-semibold uppercase">Accuracy</p>
-            <p className="text-2xl font-black text-[#0D9488]">{accuracy}%</p>
+            <p className="text-[11px] text-muted font-semibold uppercase">Accuracy</p>
+            <p className="text-2xl font-black text-accent">{accuracy}%</p>
           </div>
           <div>
-            <p className="text-[11px] text-[#64748B] font-semibold uppercase">Topic Mastery</p>
-            <p className="text-2xl font-black text-[#4F46E5]">{latestMastery}%</p>
+            <p className="text-[11px] text-muted font-semibold uppercase">Topic Mastery</p>
+            <p className="text-2xl font-black text-primary">{latestMastery}%</p>
           </div>
         </div>
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
           <button
             onClick={() => handleStartQuiz()}
-            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-btn bg-[#4F46E5] hover:bg-[#4338CA] text-white text-xs font-bold transition shadow-sm min-h-[44px]"
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-btn bg-primary hover:bg-primary-hover text-white text-xs font-bold transition shadow-sm min-h-[44px]"
           >
             <RotateCcw className="w-4 h-4" />
             <span>Practice Topic Again</span>
@@ -240,7 +240,7 @@ export const QuizView: React.FC<QuizViewProps> = ({
           {onViewProgress && (
             <button
               onClick={onViewProgress}
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-btn bg-white hover:bg-[#F8FAFC] text-[#334155] text-xs font-semibold transition border border-[#E2E8F0] min-h-[44px]"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-btn bg-surface hover:bg-subtle text-body text-xs font-semibold transition border border-line min-h-[44px]"
             >
               <span>View Course Mastery</span>
               <ArrowRight className="w-4 h-4" />
@@ -262,15 +262,15 @@ export const QuizView: React.FC<QuizViewProps> = ({
   // Render 4: Topic Selection Screen (before quiz start)
   if (questions.length === 0) {
     return (
-      <div className="bg-white border border-[#E2E8F0] shadow-card rounded-2xl p-6 sm:p-8 max-w-2xl mx-auto space-y-6 animate-in fade-in duration-200">
-        <div className="flex items-center justify-between">
+      <div className="bg-surface border border-line shadow-card rounded-2xl p-6 sm:p-8 max-w-2xl mx-auto space-y-6 animate-in fade-in duration-200">
+        <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-[#EEF2FF] border border-indigo-100 text-[#4F46E5] flex items-center justify-center">
+            <div className="w-10 h-10 rounded-xl bg-primary-light border border-primary/20 text-primary flex items-center justify-center shrink-0">
               <BookOpen className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-[#0F172A]">Select Topic for Practice Quiz</h2>
-              <p className="text-xs text-[#64748B]">
+              <h2 className="text-xl font-bold text-heading">Select Topic for Practice Quiz</h2>
+              <p className="text-xs text-muted">
                 Questions are strictly grounded in your course materials.
               </p>
             </div>
@@ -280,7 +280,7 @@ export const QuizView: React.FC<QuizViewProps> = ({
             onClick={handleReprocessTopics}
             disabled={reprocessingTopics}
             title="Re-extract syllabus topics from uploaded documents"
-            className="text-xs font-semibold text-[#64748B] hover:text-[#4F46E5] flex items-center gap-1.5 p-2 rounded-xl hover:bg-[#F1F5F9] transition disabled:opacity-50 min-h-[44px]"
+            className="text-xs font-semibold text-muted hover:text-primary flex items-center gap-1.5 p-2 rounded-xl hover:bg-codeblock transition disabled:opacity-50 min-h-[44px] shrink-0"
           >
             <RotateCcw className={`w-3.5 h-3.5 ${reprocessingTopics ? "animate-spin" : ""}`} />
             <span>Re-extract Topics</span>
@@ -288,22 +288,22 @@ export const QuizView: React.FC<QuizViewProps> = ({
         </div>
 
         {error && (
-          <div className="flex items-center gap-2.5 p-3.5 rounded-xl bg-[#FFF1F2] border border-rose-200 text-[#E11D48] text-xs">
+          <div className="flex items-center gap-2.5 p-3.5 rounded-xl bg-error-light border border-error/25 text-error text-xs">
             <AlertCircle className="w-4 h-4 shrink-0" />
             <span>{error}</span>
           </div>
         )}
 
         <div className="space-y-4">
-          <label className="text-xs font-semibold text-[#0F172A] block">Syllabus Curriculum Modules</label>
+          <label className="text-xs font-semibold text-heading block">Syllabus Curriculum Modules</label>
           <div className="space-y-4 max-h-[380px] overflow-y-auto pr-1">
             {Object.entries(groupedTopics).map(([moduleName, moduleTopics]) => (
               <div key={moduleName} className="space-y-2">
                 <div className="flex items-center gap-2 px-1">
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-[#4F46E5]">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-primary">
                     {moduleName}
                   </span>
-                  <div className="h-px bg-[#E2E8F0] flex-1" />
+                  <div className="h-px bg-line flex-1" />
                 </div>
 
                 <div className="grid grid-cols-1 gap-2.5">
@@ -318,30 +318,30 @@ export const QuizView: React.FC<QuizViewProps> = ({
                         onClick={() => setSelectedTopicId(t.id)}
                         className={`p-4 rounded-xl text-left text-xs transition border flex flex-col gap-2 min-h-[44px] ${
                           isSelected
-                            ? "bg-[#EEF2FF] border-[#4F46E5] text-[#0F172A] shadow-card ring-1 ring-[#4F46E5]"
-                            : "bg-white hover:bg-[#F8FAFC] hover:-translate-y-0.5 hover:shadow-card-hover border-[#E2E8F0] text-[#334155]"
+                            ? "bg-primary-light border-primary text-heading shadow-card ring-1 ring-primary"
+                            : "bg-surface hover:bg-subtle hover:-translate-y-0.5 hover:shadow-card-hover border-line text-body"
                         }`}
                       >
                         <div className="flex items-start justify-between w-full gap-2">
                           <span
-                            className="font-bold text-[#0F172A] text-sm leading-snug line-clamp-2"
+                            className="font-bold text-heading text-sm leading-snug line-clamp-2"
                             title={t.name}
                           >
                             {t.name}
                           </span>
                           {isSelected && (
-                            <CheckCircle2 className="w-4 h-4 text-[#4F46E5] shrink-0 mt-0.5" />
+                            <CheckCircle2 className="w-4 h-4 text-primary shrink-0 mt-0.5" />
                           )}
                         </div>
 
                         {t.learning_objective && (
-                          <p className="text-xs text-[#64748B] leading-relaxed font-normal">
+                          <p className="text-xs text-muted leading-relaxed font-normal">
                             {t.learning_objective}
                           </p>
                         )}
 
                         <div className="flex items-center gap-2 mt-0.5">
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-pill bg-[#F1F5F9] text-[#64748B] text-[11px] font-medium border border-[#E2E8F0]">
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-pill bg-codeblock text-muted text-[11px] font-medium border border-line">
                             {chunkText}{pagesText}
                           </span>
                         </div>
@@ -357,7 +357,7 @@ export const QuizView: React.FC<QuizViewProps> = ({
         <button
           onClick={() => handleStartQuiz()}
           disabled={!selectedTopicId || loadingQuiz}
-          className="w-full inline-flex items-center justify-center gap-2 py-3 rounded-btn bg-[#4F46E5] hover:bg-[#4338CA] disabled:opacity-50 text-white text-xs font-bold transition shadow-sm min-h-[44px]"
+          className="w-full inline-flex items-center justify-center gap-2 py-3 rounded-btn bg-primary hover:bg-primary-hover disabled:opacity-50 text-white text-xs font-bold transition shadow-sm min-h-[44px]"
         >
           {loadingQuiz ? (
             <>
@@ -377,35 +377,35 @@ export const QuizView: React.FC<QuizViewProps> = ({
 
   // Render 5: Active Quiz taking (one question at a time)
   return (
-    <div className="bg-white border border-[#E2E8F0] shadow-card rounded-2xl p-6 sm:p-8 max-w-3xl mx-auto space-y-6 animate-in fade-in duration-200">
+    <div className="bg-surface border border-line shadow-card rounded-2xl p-6 sm:p-8 max-w-3xl mx-auto space-y-6 animate-in fade-in duration-200">
       {/* Quiz Progress Header */}
-      <div className="flex items-center justify-between border-b border-[#E2E8F0] pb-4">
+      <div className="flex items-center justify-between border-b border-line pb-4">
         <div>
-          <span className="text-[11px] font-bold text-[#4F46E5] uppercase tracking-wider">
+          <span className="text-[11px] font-bold text-primary uppercase tracking-wider">
             {selectedTopic?.name}
           </span>
-          <h2 className="text-sm font-semibold text-[#0F172A]">
+          <h2 className="text-sm font-semibold text-heading">
             Question {currentIndex + 1} of {questions.length}
           </h2>
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="text-xs font-medium px-2.5 py-0.5 rounded-pill bg-[#F1F5F9] border border-[#E2E8F0] text-[#64748B]">
+          <span className="text-xs font-medium px-2.5 py-0.5 rounded-pill bg-codeblock border border-line text-muted">
             Difficulty {currentQ.difficulty.toFixed(1)}x
           </span>
         </div>
       </div>
 
       {error && (
-        <div className="flex items-center gap-2.5 p-3 rounded-xl bg-[#FFF1F2] border border-rose-200 text-[#E11D48] text-xs">
+        <div className="flex items-center gap-2.5 p-3 rounded-xl bg-error-light border border-error/25 text-error text-xs">
           <AlertCircle className="w-4 h-4 shrink-0" />
           <span>{error}</span>
         </div>
       )}
 
       {/* Question Stem - Neutral Language */}
-      <div className="bg-[#F8FAFC] p-5 rounded-xl border border-[#E2E8F0]">
-        <p className="text-base sm:text-lg font-semibold text-[#0F172A] leading-relaxed">
+      <div className="bg-subtle p-5 rounded-xl border border-line">
+        <p className="text-base sm:text-lg font-semibold text-heading leading-relaxed">
           {currentQ.stem}
         </p>
       </div>
@@ -419,18 +419,18 @@ export const QuizView: React.FC<QuizViewProps> = ({
           const isUserChoiceWrong = isSubmitted && isSelected && !currentResult.correct;
 
           let btnStyles =
-            "bg-white hover:bg-[#F8FAFC] hover:border-slate-300 border-[#E2E8F0] text-[#334155]";
+            "bg-surface hover:bg-subtle hover:border-primary/40 border-line text-body";
 
           if (isSubmitted) {
             if (isCorrectAnswer) {
-              btnStyles = "bg-[#F0FDFA] border-[#0D9488] text-[#0F172A] font-bold";
+              btnStyles = "bg-accent-light border-accent text-heading font-bold";
             } else if (isUserChoiceWrong) {
-              btnStyles = "bg-[#FFF1F2] border-[#E11D48] text-[#0F172A] font-bold";
+              btnStyles = "bg-error-light border-error text-heading font-bold";
             } else {
-              btnStyles = "bg-[#F8FAFC] border-[#E2E8F0] text-[#94A3B8]";
+              btnStyles = "bg-subtle border-line text-muted";
             }
           } else if (isSelected) {
-            btnStyles = "bg-[#EEF2FF] border-[#4F46E5] text-[#0F172A] font-semibold ring-1 ring-[#4F46E5]";
+            btnStyles = "bg-primary-light border-primary text-heading font-semibold ring-1 ring-primary";
           }
 
           return (
@@ -441,17 +441,17 @@ export const QuizView: React.FC<QuizViewProps> = ({
               className={`w-full flex items-center justify-between p-4 rounded-xl text-left text-xs transition border min-h-[44px] ${btnStyles}`}
             >
               <div className="flex items-center gap-3">
-                <span className="w-6 h-6 rounded-lg bg-[#F1F5F9] text-[#334155] font-bold flex items-center justify-center text-[11px] shrink-0 border border-[#E2E8F0]">
+                <span className="w-6 h-6 rounded-lg bg-codeblock text-body font-bold flex items-center justify-center text-[11px] shrink-0 border border-line">
                   {String.fromCharCode(65 + optIdx)}
                 </span>
                 <span className="leading-relaxed">{opt}</span>
               </div>
 
               {isSubmitted && isCorrectAnswer && (
-                <CheckCircle2 className="w-4 h-4 text-[#0D9488] shrink-0 ml-2" />
+                <CheckCircle2 className="w-4 h-4 text-accent shrink-0 ml-2" />
               )}
               {isSubmitted && isUserChoiceWrong && (
-                <XCircle className="w-4 h-4 text-[#E11D48] shrink-0 ml-2" />
+                <XCircle className="w-4 h-4 text-error shrink-0 ml-2" />
               )}
             </button>
           );
@@ -463,41 +463,41 @@ export const QuizView: React.FC<QuizViewProps> = ({
         <div
           className={`p-5 rounded-xl border text-xs space-y-3 animate-in fade-in duration-200 ${
             currentResult.correct
-              ? "bg-[#F0FDFA] border-teal-200 text-[#0F172A]"
-              : "bg-[#FFF1F2] border-rose-200 text-[#0F172A]"
+              ? "bg-accent-light border-accent/30 text-heading"
+              : "bg-error-light border-error/30 text-heading"
           }`}
         >
           <div className="flex items-center justify-between font-bold">
             <div className="flex items-center gap-2">
               {currentResult.correct ? (
                 <>
-                  <CheckCircle2 className="w-4 h-4 text-[#0D9488]" />
-                  <span className="text-[#0D9488]">Correct!</span>
+                  <CheckCircle2 className="w-4 h-4 text-accent" />
+                  <span className="text-accent">Correct!</span>
                 </>
               ) : (
                 <>
-                  <XCircle className="w-4 h-4 text-[#E11D48]" />
-                  <span className="text-[#E11D48]">Incorrect</span>
+                  <XCircle className="w-4 h-4 text-error" />
+                  <span className="text-error">Incorrect</span>
                 </>
               )}
             </div>
 
-            <span className="text-xs font-semibold text-[#64748B]">
+            <span className="text-xs font-semibold text-muted">
               New Topic Mastery: {Math.round(currentResult.new_mastery_score * 100)}%
             </span>
           </div>
 
-          <p className="text-[#334155] leading-relaxed font-normal">
+          <p className="text-body leading-relaxed font-normal">
             {currentResult.explanation}
           </p>
 
           {currentResult.source_chunk_ids.length > 0 && (
-            <div className="flex items-center gap-1.5 pt-1">
-              <span className="text-[10px] uppercase font-bold text-[#64748B]">Grounded in:</span>
+            <div className="flex items-center gap-1.5 pt-1 flex-wrap">
+              <span className="text-[10px] uppercase font-bold text-muted">Grounded in:</span>
               {currentResult.source_chunk_ids.map((cid) => (
                 <span
                   key={cid}
-                  className="px-2 py-0.5 rounded-pill bg-white text-[#334155] text-[11px] font-mono border border-[#E2E8F0]"
+                  className="px-2 py-0.5 rounded-pill bg-surface text-body text-[11px] font-mono border border-line"
                 >
                   chunk #{cid}
                 </span>
@@ -513,7 +513,7 @@ export const QuizView: React.FC<QuizViewProps> = ({
           <button
             onClick={handleSubmitAnswer}
             disabled={!selectedOption || submitting}
-            className="inline-flex items-center gap-2 px-6 py-2.5 rounded-btn bg-[#4F46E5] hover:bg-[#4338CA] disabled:opacity-50 text-white text-xs font-bold transition shadow-sm min-h-[44px]"
+            className="inline-flex items-center gap-2 px-6 py-2.5 rounded-btn bg-primary hover:bg-primary-hover disabled:opacity-50 text-white text-xs font-bold transition shadow-sm min-h-[44px]"
           >
             {submitting ? (
               <>
@@ -527,7 +527,7 @@ export const QuizView: React.FC<QuizViewProps> = ({
         ) : (
           <button
             onClick={handleNextQuestion}
-            className="inline-flex items-center gap-2 px-6 py-2.5 rounded-btn bg-[#4F46E5] hover:bg-[#4338CA] text-white text-xs font-bold transition shadow-sm min-h-[44px]"
+            className="inline-flex items-center gap-2 px-6 py-2.5 rounded-btn bg-primary hover:bg-primary-hover text-white text-xs font-bold transition shadow-sm min-h-[44px]"
           >
             <span>
               {currentIndex + 1 < questions.length ? "Next Question" : "Complete Quiz"}

@@ -50,32 +50,32 @@ export const CreateCourseModal: React.FC<CreateCourseModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-white w-full max-w-md rounded-2xl p-6 shadow-dropdown border border-[#E2E8F0] relative text-[#334155]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="bg-surface w-full max-w-md rounded-2xl p-6 shadow-dropdown border border-line relative text-body">
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 text-[#64748B] hover:text-[#0F172A] p-1 rounded-lg hover:bg-[#F1F5F9] transition-colors"
+          className="absolute top-4 right-4 text-muted hover:text-heading p-1 rounded-lg hover:bg-subtle transition-colors"
           aria-label="Close modal"
         >
           <X className="w-5 h-5" />
         </button>
 
         <div className="flex items-center gap-2.5 mb-4">
-          <div className="w-8 h-8 rounded-lg bg-[#EEF2FF] border border-indigo-100 flex items-center justify-center">
-            <Sparkles className="w-4 h-4 text-[#4F46E5]" />
+          <div className="w-8 h-8 rounded-lg bg-primary-light border border-primary/20 flex items-center justify-center">
+            <Sparkles className="w-4 h-4 text-primary" />
           </div>
-          <h2 className="text-xl font-bold text-[#0F172A]">Create New Course</h2>
+          <h2 className="text-xl font-bold text-heading">Create New Course</h2>
         </div>
 
         {error && (
-          <div className="mb-4 p-3 rounded-xl bg-[#FFF1F2] border border-rose-200 text-[#E11D48] text-xs">
+          <div className="mb-4 p-3 rounded-xl bg-error-light border border-error/25 text-error text-xs">
             {error}
           </div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs font-semibold text-[#0F172A] mb-1.5">
+            <label className="block text-xs font-semibold text-heading mb-1.5">
               Course Title
             </label>
             <input
@@ -84,13 +84,13 @@ export const CreateCourseModal: React.FC<CreateCourseModalProps> = ({
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="e.g. Operating Systems & Architecture"
-              className="w-full px-3.5 py-2.5 rounded-btn bg-[#F8FAFC] border border-[#E2E8F0] text-[#0F172A] placeholder-[#64748B] text-sm focus:outline-none focus:border-[#4F46E5] focus:bg-white transition"
+              className="w-full px-3.5 py-2.5 rounded-btn bg-subtle border border-line text-heading placeholder:text-muted text-sm focus:outline-none focus:border-primary focus:bg-surface transition"
             />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-[#0F172A] mb-1.5">
+              <label className="block text-xs font-semibold text-heading mb-1.5">
                 Target Days
               </label>
               <input
@@ -100,12 +100,12 @@ export const CreateCourseModal: React.FC<CreateCourseModalProps> = ({
                 required
                 value={goalDays}
                 onChange={(e) => setGoalDays(parseInt(e.target.value) || 1)}
-                className="w-full px-3.5 py-2.5 rounded-btn bg-[#F8FAFC] border border-[#E2E8F0] text-[#0F172A] text-sm focus:outline-none focus:border-[#4F46E5] focus:bg-white transition"
+                className="w-full px-3.5 py-2.5 rounded-btn bg-subtle border border-line text-heading text-sm focus:outline-none focus:border-primary focus:bg-surface transition"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-[#0F172A] mb-1.5">
+              <label className="block text-xs font-semibold text-heading mb-1.5">
                 Hours / Day
               </label>
               <input
@@ -116,13 +116,13 @@ export const CreateCourseModal: React.FC<CreateCourseModalProps> = ({
                 required
                 value={hoursPerDay}
                 onChange={(e) => setHoursPerDay(parseFloat(e.target.value) || 0.5)}
-                className="w-full px-3.5 py-2.5 rounded-btn bg-[#F8FAFC] border border-[#E2E8F0] text-[#0F172A] text-sm focus:outline-none focus:border-[#4F46E5] focus:bg-white transition"
+                className="w-full px-3.5 py-2.5 rounded-btn bg-subtle border border-line text-heading text-sm focus:outline-none focus:border-primary focus:bg-surface transition"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-[#0F172A] mb-1.5">
+            <label className="block text-xs font-semibold text-heading mb-1.5">
               Difficulty Level
             </label>
             <div className="grid grid-cols-3 gap-2">
@@ -133,8 +133,8 @@ export const CreateCourseModal: React.FC<CreateCourseModalProps> = ({
                   onClick={() => setLevel(lvl)}
                   className={`py-2 text-xs font-semibold capitalize rounded-btn border transition-all ${
                     level === lvl
-                      ? "bg-[#EEF2FF] text-[#4F46E5] border-[#4F46E5] shadow-sm"
-                      : "bg-[#F8FAFC] text-[#64748B] border-[#E2E8F0] hover:bg-[#F1F5F9]"
+                      ? "bg-primary-light text-primary border-primary shadow-sm"
+                      : "bg-subtle text-muted border-line hover:bg-codeblock"
                   }`}
                 >
                   {lvl}
@@ -143,19 +143,19 @@ export const CreateCourseModal: React.FC<CreateCourseModalProps> = ({
             </div>
           </div>
 
-          <div className="mt-6 pt-3 flex items-center justify-end gap-3 border-t border-[#E2E8F0]">
+          <div className="mt-6 pt-3 flex items-center justify-end gap-3 border-t border-line">
             <button
               type="button"
               onClick={onClose}
               disabled={submitting}
-              className="px-4 py-2 rounded-btn text-xs font-semibold text-[#64748B] hover:text-[#0F172A] bg-white border border-[#E2E8F0] hover:bg-[#F8FAFC] transition min-h-[44px]"
+              className="px-4 py-2 rounded-btn text-xs font-semibold text-muted hover:text-heading bg-surface border border-line hover:bg-subtle transition min-h-[44px]"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={submitting}
-              className="flex items-center gap-1.5 px-5 py-2 rounded-btn text-xs font-semibold text-white bg-[#4F46E5] hover:bg-[#4338CA] shadow-sm transition disabled:opacity-50 min-h-[44px]"
+              className="flex items-center gap-1.5 px-5 py-2 rounded-btn text-xs font-semibold text-white bg-primary hover:bg-primary-hover shadow-sm transition disabled:opacity-50 min-h-[44px]"
             >
               <Plus className="w-4 h-4" />
               <span>{submitting ? "Creating..." : "Create Course"}</span>

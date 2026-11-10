@@ -181,10 +181,10 @@ export const Buddy: React.FC<BuddyProps> = ({
       {isFloating && isCollapsed ? (
         <div
           onClick={() => setIsCollapsed(false)}
-          className="flex items-center gap-2.5 px-3.5 py-2 rounded-2xl bg-white border border-[#E2E8F0] shadow-dropdown cursor-pointer hover:border-[#4F46E5] transition group"
+          className="flex items-center gap-2.5 px-3.5 py-2 rounded-2xl bg-surface border border-line shadow-dropdown cursor-pointer hover:border-primary transition group"
           title={`Expand ${MASCOT_NAME} companion`}
         >
-          <div className="w-7 h-7 rounded-lg bg-[#EEF2FF] text-[#4F46E5] flex items-center justify-center relative shrink-0">
+          <div className="w-7 h-7 rounded-lg bg-primary-light text-primary flex items-center justify-center relative shrink-0">
             <Sparkles className="w-3.5 h-3.5" />
             <span
               className={`absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full ${
@@ -197,14 +197,14 @@ export const Buddy: React.FC<BuddyProps> = ({
             />
           </div>
           <div className="text-left leading-tight pr-1">
-            <p className="font-bold text-[#0F172A] text-[11px] truncate">{MASCOT_NAME}</p>
-            <p className="text-[10px] text-[#64748B] truncate">
+            <p className="font-bold text-heading text-[11px] truncate">{MASCOT_NAME}</p>
+            <p className="text-[10px] text-muted truncate">
               {snapshot.pomodoro_phase === "break" ? "Break" : "Study"}: {formatTime(snapshot.pomodoro_time_remaining_s)}
             </p>
           </div>
           <button
             type="button"
-            className="p-1 text-[#64748B] group-hover:text-[#0F172A] transition shrink-0"
+            className="p-1 text-muted group-hover:text-heading transition shrink-0"
             aria-label="Expand companion"
           >
             <Maximize2 className="w-3.5 h-3.5" />
@@ -217,7 +217,7 @@ export const Buddy: React.FC<BuddyProps> = ({
             <button
               type="button"
               onClick={() => setIsCollapsed(true)}
-              className="absolute -top-2.5 -right-2.5 p-1 rounded-full bg-white border border-[#E2E8F0] text-[#64748B] hover:text-[#0F172A] shadow-sm z-10 transition"
+              className="absolute -top-2.5 -right-2.5 p-1 rounded-full bg-surface border border-line text-muted hover:text-heading shadow-sm z-10 transition"
               title="Minimize companion"
               aria-label="Minimize companion"
             >
@@ -237,10 +237,10 @@ export const Buddy: React.FC<BuddyProps> = ({
                 if (e.key === "Enter" || e.key === " ") setIsCompanionChatOpen(true);
               }}
             >
-              <div className="relative bg-white border border-[#4F46E5]/40 hover:border-[#4F46E5] text-[#0F172A] text-xs px-3.5 py-2.5 rounded-2xl shadow-dropdown flex items-start gap-2 transition">
+              <div className="relative bg-surface border border-primary/40 hover:border-primary text-heading text-xs px-3.5 py-2.5 rounded-2xl shadow-dropdown flex items-start gap-2 transition">
                 <div className="flex-1">
                   <p className="leading-relaxed font-medium">{dialogueLine || "Ready to study!"}</p>
-                  <p className="text-[10px] text-[#4F46E5] font-semibold mt-1">Click to reply</p>
+                  <p className="text-[10px] text-primary font-semibold mt-1">Click to reply</p>
                 </div>
                 <button
                   type="button"
@@ -252,14 +252,14 @@ export const Buddy: React.FC<BuddyProps> = ({
                       reminderManager.dismiss();
                     }
                   }}
-                  className="p-1 text-[#64748B] hover:text-[#0F172A] shrink-0 -mr-1 -mt-1"
+                  className="p-1 text-muted hover:text-heading shrink-0 -mr-1 -mt-1"
                   title="Dismiss message"
                   aria-label="Dismiss message"
                 >
                   <X className="w-3.5 h-3.5" />
                 </button>
                 {/* Bubble arrow pointer */}
-                <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-white border-b border-r border-[#4F46E5]/40 rotate-45" />
+                <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-surface border-b border-r border-primary/40 rotate-45" />
               </div>
             </div>
           )}
@@ -275,7 +275,7 @@ export const Buddy: React.FC<BuddyProps> = ({
           />
 
           {/* Companion Control Badge */}
-          <div className="mt-2 flex items-center gap-1.5 bg-[#F8FAFC] border border-[#E2E8F0] px-3.5 py-1.5 rounded-full shadow-sm text-xs">
+          <div className="mt-2 flex items-center gap-1.5 bg-subtle border border-line px-3.5 py-1.5 rounded-full shadow-sm text-xs">
             <span
               className={`w-2 h-2 rounded-full ${
                 snapshot.pomodoro_phase === "break"
@@ -285,7 +285,7 @@ export const Buddy: React.FC<BuddyProps> = ({
                   : "bg-indigo-500"
               }`}
             />
-            <span className="font-semibold text-[#0F172A]">
+            <span className="font-semibold text-heading">
               {snapshot.pomodoro_phase === "break" ? "Break" : "Study"}: {formatTime(snapshot.pomodoro_time_remaining_s)}
             </span>
             <button
@@ -295,21 +295,21 @@ export const Buddy: React.FC<BuddyProps> = ({
                 setIsMuted(nextMuted);
                 speechService.setMuted(nextMuted);
               }}
-              className="ml-1 p-0.5 text-[#64748B] hover:text-[#0F172A] transition-colors"
+              className="ml-1 p-0.5 text-muted hover:text-heading transition-colors"
               title={isMuted ? "Unmute spoken reminders" : "Mute spoken reminders"}
             >
               {isMuted ? (
-                <VolumeX className="w-3.5 h-3.5 text-amber-500" />
+                <VolumeX className="w-3.5 h-3.5 text-warning" />
               ) : (
-                <Volume2 className="w-3.5 h-3.5 text-[#64748B]" />
+                <Volume2 className="w-3.5 h-3.5 text-muted" />
               )}
             </button>
             <button
               onClick={() => setShowQuickMenu(!showQuickMenu)}
-              className="p-0.5 text-[#64748B] hover:text-[#4F46E5] transition-colors"
+              className="p-0.5 text-muted hover:text-primary transition-colors"
               title="Companion menu"
             >
-              <Sparkles className="w-3.5 h-3.5 text-[#4F46E5]" />
+              <Sparkles className="w-3.5 h-3.5 text-primary" />
             </button>
           </div>
 
@@ -322,8 +322,8 @@ export const Buddy: React.FC<BuddyProps> = ({
 
       {/* Quick-Action Popup Menu */}
       {showQuickMenu && (
-        <div className="absolute bottom-12 right-0 z-30 w-52 bg-white border border-[#E2E8F0] rounded-xl shadow-dropdown p-1.5 space-y-0.5 text-xs text-[#334155] animate-in fade-in zoom-in-95">
-          <div className="px-2.5 py-1.5 text-[10px] font-semibold text-[#64748B] uppercase tracking-wider border-b border-[#F1F5F9]">
+        <div className="absolute bottom-12 right-0 z-30 w-52 bg-surface border border-line rounded-xl shadow-dropdown p-1.5 space-y-0.5 text-xs text-body animate-in fade-in zoom-in-95">
+          <div className="px-2.5 py-1.5 text-[10px] font-semibold text-muted uppercase tracking-wider border-b border-line">
             {MASCOT_NAME} Actions
           </div>
           <button
@@ -331,9 +331,9 @@ export const Buddy: React.FC<BuddyProps> = ({
               setShowQuickMenu(false);
               setIsCompanionChatOpen(true);
             }}
-            className="w-full text-left px-2.5 py-2 rounded-lg hover:bg-[#EEF2FF] flex items-center gap-2 transition-colors font-semibold text-[#4F46E5]"
+            className="w-full text-left px-2.5 py-2 rounded-lg hover:bg-primary-light flex items-center gap-2 transition-colors font-semibold text-primary"
           >
-            <MessageSquare className="w-3.5 h-3.5 text-[#4F46E5]" />
+            <MessageSquare className="w-3.5 h-3.5 text-primary" />
             <span>Chat with {MASCOT_NAME}</span>
           </button>
           <button
@@ -341,9 +341,9 @@ export const Buddy: React.FC<BuddyProps> = ({
               setShowQuickMenu(false);
               handleMascotTap();
             }}
-            className="w-full text-left px-2.5 py-2 rounded-lg hover:bg-[#F8FAFC] flex items-center gap-2 transition-colors text-[#334155]"
+            className="w-full text-left px-2.5 py-2 rounded-lg hover:bg-subtle flex items-center gap-2 transition-colors text-body"
           >
-            <Volume2 className="w-3.5 h-3.5 text-[#4F46E5]" />
+            <Volume2 className="w-3.5 h-3.5 text-primary" />
             <span>Chatter with me</span>
           </button>
           <button
@@ -351,9 +351,9 @@ export const Buddy: React.FC<BuddyProps> = ({
               setShowQuickMenu(false);
               requestBreak();
             }}
-            className="w-full text-left px-2.5 py-2 rounded-lg hover:bg-[#FFFBEB] flex items-center gap-2 transition-colors text-[#D97706]"
+            className="w-full text-left px-2.5 py-2 rounded-lg hover:bg-warning-light flex items-center gap-2 transition-colors text-warning"
           >
-            <Coffee className="w-3.5 h-3.5 text-[#D97706]" />
+            <Coffee className="w-3.5 h-3.5 text-warning" />
             <span>Take 5m break</span>
           </button>
           {onNavigateToQuiz && (
@@ -362,9 +362,9 @@ export const Buddy: React.FC<BuddyProps> = ({
                 setShowQuickMenu(false);
                 onNavigateToQuiz();
               }}
-              className="w-full text-left px-2.5 py-2 rounded-lg hover:bg-[#F0FDFA] flex items-center gap-2 transition-colors text-[#0D9488]"
+              className="w-full text-left px-2.5 py-2 rounded-lg hover:bg-accent-light flex items-center gap-2 transition-colors text-accent"
             >
-              <Play className="w-3.5 h-3.5 text-[#0D9488]" />
+              <Play className="w-3.5 h-3.5 text-accent" />
               <span>Quiz me now</span>
             </button>
           )}
@@ -374,9 +374,9 @@ export const Buddy: React.FC<BuddyProps> = ({
                 setShowQuickMenu(false);
                 onNavigateToChat();
               }}
-              className="w-full text-left px-2.5 py-2 rounded-lg hover:bg-[#F8FAFC] flex items-center gap-2 transition-colors text-[#334155]"
+              className="w-full text-left px-2.5 py-2 rounded-lg hover:bg-subtle flex items-center gap-2 transition-colors text-body"
             >
-              <MessageSquare className="w-3.5 h-3.5 text-[#4F46E5]" />
+              <MessageSquare className="w-3.5 h-3.5 text-primary" />
               <span>Ask course tutor</span>
             </button>
           )}
@@ -386,9 +386,9 @@ export const Buddy: React.FC<BuddyProps> = ({
                 setShowQuickMenu(false);
                 onNavigateToFlashcards();
               }}
-              className="w-full text-left px-2.5 py-2 rounded-lg hover:bg-[#EEF2FF] flex items-center gap-2 transition-colors text-[#4F46E5]"
+              className="w-full text-left px-2.5 py-2 rounded-lg hover:bg-primary-light flex items-center gap-2 transition-colors text-primary"
             >
-              <Layers className="w-3.5 h-3.5 text-[#4F46E5]" />
+              <Layers className="w-3.5 h-3.5 text-primary" />
               <span>Review flashcards</span>
             </button>
           )}
@@ -397,9 +397,9 @@ export const Buddy: React.FC<BuddyProps> = ({
               setShowQuickMenu(false);
               setShowSettings(true);
             }}
-            className="w-full text-left px-2.5 py-2 rounded-lg hover:bg-[#F8FAFC] flex items-center gap-2 transition-colors border-t border-[#F1F5F9] text-[#64748B] mt-1"
+            className="w-full text-left px-2.5 py-2 rounded-lg hover:bg-subtle flex items-center gap-2 transition-colors border-t border-line text-muted mt-1"
           >
-            <Settings className="w-3.5 h-3.5 text-[#64748B]" />
+            <Settings className="w-3.5 h-3.5 text-muted" />
             <span>Companion settings</span>
           </button>
         </div>
@@ -407,31 +407,31 @@ export const Buddy: React.FC<BuddyProps> = ({
 
       {/* Break Time Banner / Active Suggestion Modal */}
       {snapshot.active_suggestion && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in">
-          <div className="bg-white border border-[#E2E8F0] rounded-2xl p-6 max-w-sm w-full shadow-dropdown space-y-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm animate-in fade-in">
+          <div className="bg-surface border border-line rounded-2xl p-6 max-w-sm w-full shadow-dropdown space-y-4">
             <div className="flex items-start gap-3">
-              <div className="p-2.5 bg-[#EEF2FF] text-[#4F46E5] rounded-xl shrink-0">
+              <div className="p-2.5 bg-primary-light text-primary rounded-xl shrink-0">
                 <Coffee className="w-6 h-6" />
               </div>
               <div className="space-y-1">
-                <h3 className="font-semibold text-[#0F172A] text-sm">
+                <h3 className="font-semibold text-heading text-sm">
                   {snapshot.active_suggestion.title || "Review with Flashcards?"}
                 </h3>
-                <p className="text-xs text-[#334155] leading-relaxed">
+                <p className="text-xs text-body leading-relaxed">
                   {snapshot.active_suggestion.message}
                 </p>
               </div>
             </div>
 
-            <div className="space-y-2 pt-2 border-t border-[#E2E8F0]">
+            <div className="space-y-2 pt-2 border-t border-line">
               {snapshot.active_suggestion.choices.map((choice: BreakChoice, idx: number) => (
                 <button
                   key={idx}
                   onClick={() => handleBreakAction(choice.action)}
                   className={`w-full py-2.5 px-3 text-xs font-semibold rounded-btn transition-colors flex items-center justify-center gap-2 ${
                     choice.action === "accept" || choice.action === "flashcards"
-                      ? "bg-[#4F46E5] hover:bg-[#4338CA] text-white shadow-sm"
-                      : "bg-[#F8FAFC] hover:bg-[#F1F5F9] text-[#334155] border border-[#E2E8F0]"
+                      ? "bg-primary hover:bg-primary-hover text-white shadow-sm"
+                      : "bg-subtle hover:bg-codeblock text-body border border-line"
                   }`}
                 >
                   {(choice.action === "accept" || choice.action === "flashcards") && <Play className="w-3.5 h-3.5" />}
@@ -449,7 +449,7 @@ export const Buddy: React.FC<BuddyProps> = ({
         <div className="mt-2 text-center">
           <button
             onClick={() => endBreak()}
-            className="text-[11px] text-[#D97706] hover:text-amber-700 underline font-semibold"
+            className="text-[11px] text-warning hover:underline font-semibold"
           >
             End break early
           </button>
@@ -458,43 +458,43 @@ export const Buddy: React.FC<BuddyProps> = ({
 
       {/* Settings Modal */}
       {showSettings && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in">
-          <div className="bg-white border border-[#E2E8F0] rounded-2xl p-6 max-w-sm w-full shadow-dropdown space-y-4">
-            <div className="flex items-center justify-between border-b border-[#E2E8F0] pb-3">
-              <div className="flex items-center gap-2 text-[#0F172A] font-semibold text-sm">
-                <Settings className="w-4 h-4 text-[#4F46E5]" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm animate-in fade-in">
+          <div className="bg-surface border border-line rounded-2xl p-6 max-w-sm w-full shadow-dropdown space-y-4">
+            <div className="flex items-center justify-between border-b border-line pb-3">
+              <div className="flex items-center gap-2 text-heading font-semibold text-sm">
+                <Settings className="w-4 h-4 text-primary" />
                 <span>Companion Preferences</span>
               </div>
               <button
                 onClick={() => setShowSettings(false)}
-                className="text-[#64748B] hover:text-[#0F172A]"
+                className="text-muted hover:text-heading"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <div className="space-y-3.5 text-xs text-[#334155]">
+            <div className="space-y-3.5 text-xs text-body">
               <div>
-                <label className="block text-[11px] font-semibold text-[#0F172A] mb-1">
+                <label className="block text-[11px] font-semibold text-heading mb-1">
                   How should {MASCOT_NAME} address you?
                 </label>
                 <input
                   type="text"
                   value={addressTerm}
                   onChange={(e) => setAddressTerm(e.target.value)}
-                  className="w-full bg-[#F8FAFC] border border-[#E2E8F0] rounded-btn px-3 py-2 text-[#0F172A] text-xs focus:outline-none focus:border-[#4F46E5] focus:bg-white"
+                  className="w-full bg-subtle border border-line rounded-btn px-3 py-2 text-heading text-xs focus:outline-none focus:border-primary focus:bg-surface"
                   placeholder="e.g. boss, friend, champ"
                 />
               </div>
 
               <div>
-                <label className="block text-[11px] font-semibold text-[#0F172A] mb-1">
+                <label className="block text-[11px] font-semibold text-heading mb-1">
                   Persona Style & Tone
                 </label>
                 <select
                   value={personaMode}
                   onChange={(e) => setPersonaMode(e.target.value as any)}
-                  className="w-full bg-[#F8FAFC] border border-[#E2E8F0] rounded-btn px-3 py-2 text-[#0F172A] text-xs focus:outline-none focus:border-[#4F46E5] focus:bg-white"
+                  className="w-full bg-subtle border border-line rounded-btn px-3 py-2 text-heading text-xs focus:outline-none focus:border-primary focus:bg-surface"
                 >
                   <option value="balanced">Balanced (Friendly Tanglish)</option>
                   <option value="full">Full (Energetic Tanglish)</option>
@@ -503,24 +503,24 @@ export const Buddy: React.FC<BuddyProps> = ({
                 </select>
               </div>
 
-              <div className="p-3 bg-[#F8FAFC] rounded-xl border border-[#E2E8F0] text-[11px] text-[#64748B] flex items-start gap-2">
-                <HelpCircle className="w-4 h-4 text-[#4F46E5] shrink-0 mt-0.5" />
+              <div className="p-3 bg-subtle rounded-xl border border-line text-[11px] text-muted flex items-start gap-2">
+                <HelpCircle className="w-4 h-4 text-primary shrink-0 mt-0.5" />
                 <span>
                   Camera-based facial fatigue detection is disabled by default for privacy. All study timer rules run locally on browser activity.
                 </span>
               </div>
             </div>
 
-            <div className="pt-2 flex justify-end gap-2 border-t border-[#E2E8F0]">
+            <div className="pt-2 flex justify-end gap-2 border-t border-line">
               <button
                 onClick={() => setShowSettings(false)}
-                className="px-3 py-1.5 text-xs text-[#64748B] hover:text-[#0F172A] font-medium"
+                className="px-3 py-1.5 text-xs text-muted hover:text-heading font-medium"
               >
                 Cancel
               </button>
               <button
                 onClick={handleSaveSettings}
-                className="px-4 py-2 bg-[#4F46E5] hover:bg-[#4338CA] text-white rounded-btn text-xs font-semibold shadow-sm transition-colors"
+                className="px-4 py-2 bg-primary hover:bg-primary-hover text-white rounded-btn text-xs font-semibold shadow-sm transition-colors"
               >
                 Save Preferences
               </button>
@@ -531,7 +531,7 @@ export const Buddy: React.FC<BuddyProps> = ({
 
       {/* Interactive Companion Conversation Panel */}
       {isCompanionChatOpen && (
-        <div className="fixed inset-0 sm:inset-auto sm:bottom-6 sm:right-6 z-50 flex items-end sm:items-center justify-end p-2 sm:p-0 bg-slate-900/40 sm:bg-transparent backdrop-blur-sm sm:backdrop-blur-none animate-in fade-in">
+        <div className="fixed inset-0 sm:inset-auto sm:bottom-6 sm:right-6 z-50 flex items-end sm:items-center justify-end p-0 bg-slate-950/60 sm:bg-transparent backdrop-blur-sm sm:backdrop-blur-none animate-in fade-in">
           <CompanionChat
             courseId={courseId}
             currentLesson={currentLesson}

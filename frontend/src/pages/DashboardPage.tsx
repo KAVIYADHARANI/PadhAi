@@ -24,6 +24,7 @@ import {
 } from "recharts";
 import { Course, CreateCourseInput } from "../types";
 import { api } from "../services/api";
+import { useTheme } from "../contexts/ThemeContext";
 import { CourseCard } from "../components/CourseCard";
 import { CreateCourseModal } from "../components/CreateCourseModal";
 import { MascotPlaceholder } from "../components/MascotPlaceholder";
@@ -42,6 +43,24 @@ interface TrendPoint {
 export const DashboardPage: React.FC<DashboardPageProps> = ({
   onSelectCourse,
 }) => {
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
+
+  const chartGridColor = isDark ? "#1E293B" : "#F1F5F9";
+  const chartAxisColor = isDark ? "#475569" : "#94A3B8";
+  const chartTickColor = isDark ? "#94A3B8" : "#64748B";
+  const chartLabelColor = isDark ? "#CBD5E1" : "#334155";
+  const chartTooltipStyle = {
+    backgroundColor: isDark ? "#111827" : "#FFFFFF",
+    borderColor: isDark ? "#1E293B" : "#E2E8F0",
+    borderRadius: "0.75rem",
+    fontSize: "12px",
+    color: isDark ? "#F8FAFC" : "#0F172A",
+    boxShadow: isDark
+      ? "0 10px 25px rgba(0, 0, 0, 0.45)"
+      : "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
+  };
+
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -113,62 +132,62 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 animate-in fade-in duration-200">
       {/* Top Banner with Mascot Placeholder & Highlights */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 bg-white rounded-2xl p-6 sm:p-8 flex flex-col justify-between border border-[#E2E8F0] shadow-card relative overflow-hidden">
-          <div className="absolute -right-12 -bottom-12 w-64 h-64 bg-indigo-50/60 rounded-full blur-3xl pointer-events-none" />
+        <div className="lg:col-span-2 bg-surface rounded-2xl p-6 sm:p-8 flex flex-col justify-between border border-line shadow-card relative overflow-hidden">
+          <div className="absolute -right-12 -bottom-12 w-64 h-64 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
 
           <div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-bold uppercase tracking-wider text-[#4F46E5] bg-[#EEF2FF] border border-indigo-100 px-3 py-1 rounded-pill">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-xs font-bold uppercase tracking-wider text-primary bg-primary-light border border-primary/20 px-3 py-1 rounded-pill">
                 Learning Dashboard
               </span>
-              <span className="inline-flex items-center gap-1 text-[11px] font-bold text-[#0D9488] bg-[#F0FDFA] border border-teal-200 px-2.5 py-0.5 rounded-pill">
-                <Flame className="w-3.5 h-3.5 text-[#D97706]" />
+              <span className="inline-flex items-center gap-1 text-[11px] font-bold text-accent bg-accent-light border border-accent/25 px-2.5 py-0.5 rounded-pill">
+                <Flame className="w-3.5 h-3.5 text-warning" />
                 4-Day Streak (Grace Active)
               </span>
             </div>
-            <h1 className="mt-3 text-2xl sm:text-3xl font-extrabold text-[#0F172A] tracking-tight">
+            <h1 className="mt-3 text-2xl sm:text-3xl font-extrabold text-heading tracking-tight">
               Study Intelligence & Progress
             </h1>
-            <p className="mt-2 text-sm text-[#64748B] max-w-xl">
+            <p className="mt-2 text-sm text-muted max-w-xl">
               Track mastery metrics, fatigue levels, and review due cards across your courses.
             </p>
           </div>
 
-          <div className="mt-8 grid grid-cols-2 sm:grid-cols-4 gap-4 pt-6 border-t border-[#E2E8F0] min-w-0">
+          <div className="mt-8 grid grid-cols-2 sm:grid-cols-4 gap-4 pt-6 border-t border-line min-w-0">
             <div className="min-w-0">
-              <div className="flex items-center gap-1.5 text-xs text-[#64748B] mb-1">
-                <BookOpen className="w-3.5 h-3.5 text-[#4F46E5]" />
+              <div className="flex items-center gap-1.5 text-xs text-muted mb-1">
+                <BookOpen className="w-3.5 h-3.5 text-primary" />
                 <span>Courses</span>
               </div>
-              <p className="text-xl font-extrabold text-[#0F172A]">{courses.length}</p>
+              <p className="text-xl font-extrabold text-heading">{courses.length}</p>
             </div>
 
             <div>
-              <div className="flex items-center gap-1.5 text-xs text-[#64748B] mb-1">
-                <Clock className="w-3.5 h-3.5 text-[#4F46E5]" />
+              <div className="flex items-center gap-1.5 text-xs text-muted mb-1">
+                <Clock className="w-3.5 h-3.5 text-primary" />
                 <span>Planned</span>
               </div>
-              <p className="text-xl font-extrabold text-[#0F172A]">
+              <p className="text-xl font-extrabold text-heading">
                 {totalHoursPlanned.toFixed(0)}h
               </p>
             </div>
 
             <div>
-              <div className="flex items-center gap-1.5 text-xs text-[#64748B] mb-1">
-                <CreditCard className="w-3.5 h-3.5 text-[#D97706]" />
+              <div className="flex items-center gap-1.5 text-xs text-muted mb-1">
+                <CreditCard className="w-3.5 h-3.5 text-warning" />
                 <span>Due Cards</span>
               </div>
-              <p className="text-xl font-extrabold text-[#D97706]">
+              <p className="text-xl font-extrabold text-warning">
                 {dueCardsCount}
               </p>
             </div>
 
             <div>
-              <div className="flex items-center gap-1.5 text-xs text-[#64748B] mb-1">
-                <Target className="w-3.5 h-3.5 text-[#0D9488]" />
+              <div className="flex items-center gap-1.5 text-xs text-muted mb-1">
+                <Target className="w-3.5 h-3.5 text-accent" />
                 <span>Focus Avg</span>
               </div>
-              <p className="text-xl font-extrabold text-[#0D9488]">89%</p>
+              <p className="text-xl font-extrabold text-accent">89%</p>
             </div>
           </div>
         </div>
@@ -182,19 +201,19 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
       {/* Analytics & Trends Section (Recharts) */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 min-w-0">
         {/* Trend 1: Focus & Fatigue Trends */}
-        <div className="bg-white rounded-2xl p-6 border border-[#E2E8F0] shadow-card space-y-4">
+        <div className="bg-surface rounded-2xl p-6 border border-line shadow-card space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <TrendingUp className="w-4 h-4 text-[#4F46E5]" />
-              <h2 className="text-sm font-bold text-[#0F172A] tracking-tight">Focus & Fatigue Trends (7 Days)</h2>
+              <TrendingUp className="w-4 h-4 text-primary" />
+              <h2 className="text-sm font-bold text-heading tracking-tight">Focus & Fatigue Trends (7 Days)</h2>
             </div>
             <div className="flex items-center gap-3 text-xs">
-              <span className="flex items-center gap-1.5 text-[#4F46E5]">
-                <span className="w-2.5 h-2.5 rounded-full bg-[#4F46E5]" />
+              <span className="flex items-center gap-1.5 text-primary">
+                <span className="w-2.5 h-2.5 rounded-full bg-primary" />
                 Focus %
               </span>
-              <span className="flex items-center gap-1.5 text-[#E11D48]">
-                <span className="w-2.5 h-2.5 rounded-full bg-[#E11D48]" />
+              <span className="flex items-center gap-1.5 text-error">
+                <span className="w-2.5 h-2.5 rounded-full bg-error" />
                 Drowsy (m)
               </span>
             </div>
@@ -205,48 +224,63 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
               <AreaChart data={trendData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                 <defs>
                   <linearGradient id="focusGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#4F46E5" stopOpacity={0.25} />
-                    <stop offset="95%" stopColor="#4F46E5" stopOpacity={0} />
+                    <stop offset="5%" stopColor={isDark ? "#6366F1" : "#4F46E5"} stopOpacity={0.25} />
+                    <stop offset="95%" stopColor={isDark ? "#6366F1" : "#4F46E5"} stopOpacity={0} />
                   </linearGradient>
                   <linearGradient id="fatigueGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#E11D48" stopOpacity={0.2} />
-                    <stop offset="95%" stopColor="#E11D48" stopOpacity={0} />
+                    <stop offset="5%" stopColor={isDark ? "#FB7185" : "#E11D48"} stopOpacity={0.2} />
+                    <stop offset="95%" stopColor={isDark ? "#FB7185" : "#E11D48"} stopOpacity={0} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" />
-                <XAxis dataKey="day" stroke="#94A3B8" tick={{ fill: "#64748B", fontSize: 11 }} />
-                <YAxis stroke="#94A3B8" tick={{ fill: "#64748B", fontSize: 11 }} />
-                <Tooltip
-                  contentStyle={{ backgroundColor: "#FFFFFF", borderColor: "#E2E8F0", borderRadius: "0.75rem", fontSize: "12px", color: "#0F172A", boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)" }}
+                <CartesianGrid strokeDasharray="3 3" stroke={chartGridColor} />
+                <XAxis dataKey="day" stroke={chartAxisColor} tick={{ fill: chartTickColor, fontSize: 11 }} />
+                <YAxis stroke={chartAxisColor} tick={{ fill: chartTickColor, fontSize: 11 }} />
+                <Tooltip contentStyle={chartTooltipStyle} />
+                <Area
+                  type="monotone"
+                  dataKey="focus"
+                  stroke={isDark ? "#6366F1" : "#4F46E5"}
+                  strokeWidth={2}
+                  fillOpacity={1}
+                  fill="url(#focusGradient)"
+                  name="Focus Score"
                 />
-                <Area type="monotone" dataKey="focus" stroke="#4F46E5" strokeWidth={2} fillOpacity={1} fill="url(#focusGradient)" name="Focus Score" />
-                <Area type="monotone" dataKey="fatigue" stroke="#E11D48" strokeWidth={2} fillOpacity={1} fill="url(#fatigueGradient)" name="Fatigue Minutes" />
+                <Area
+                  type="monotone"
+                  dataKey="fatigue"
+                  stroke={isDark ? "#FB7185" : "#E11D48"}
+                  strokeWidth={2}
+                  fillOpacity={1}
+                  fill="url(#fatigueGradient)"
+                  name="Fatigue Minutes"
+                />
               </AreaChart>
             </ResponsiveContainer>
           </div>
         </div>
 
         {/* Trend 2: Topic Mastery Ranking */}
-        <div className="bg-white rounded-2xl p-6 border border-[#E2E8F0] shadow-card space-y-4">
+        <div className="bg-surface rounded-2xl p-6 border border-line shadow-card space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Zap className="w-4 h-4 text-[#0D9488]" />
-              <h2 className="text-sm font-bold text-[#0F172A] tracking-tight">Topic Mastery Breakdown</h2>
+              <Zap className="w-4 h-4 text-accent" />
+              <h2 className="text-sm font-bold text-heading tracking-tight">Topic Mastery Breakdown</h2>
             </div>
-            <span className="text-xs text-[#64748B]">SM-2 & Quiz Graded</span>
+            <span className="text-xs text-muted">SM-2 & Quiz Graded</span>
           </div>
 
           <div className="h-56 w-full" style={{ minHeight: "220px" }}>
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={masteryData} layout="vertical" margin={{ top: 5, right: 20, left: 20, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" horizontal={false} />
-                <XAxis type="number" domain={[0, 100]} stroke="#94A3B8" tick={{ fill: "#64748B", fontSize: 11 }} unit="%" />
-                <YAxis type="category" dataKey="topic" stroke="#94A3B8" tick={{ fill: "#334155", fontSize: 11 }} width={90} />
+                <CartesianGrid strokeDasharray="3 3" stroke={chartGridColor} horizontal={false} />
+                <XAxis type="number" domain={[0, 100]} stroke={chartAxisColor} tick={{ fill: chartTickColor, fontSize: 11 }} unit="%" />
+                <YAxis type="category" dataKey="topic" stroke={chartAxisColor} tick={{ fill: chartLabelColor, fontSize: 11 }} width={90} />
                 <Tooltip
-                  contentStyle={{ backgroundColor: "#FFFFFF", borderColor: "#E2E8F0", borderRadius: "0.75rem", fontSize: "12px", color: "#0F172A", boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)" }}
+                  contentStyle={chartTooltipStyle}
+                  cursor={{ fill: isDark ? "rgba(30, 41, 59, 0.5)" : "rgba(241, 245, 249, 0.7)" }}
                   formatter={(val: any) => [`${val}%`, "Mastery"]}
                 />
-                <Bar dataKey="mastery" fill="#0D9488" radius={[0, 6, 6, 0]} />
+                <Bar dataKey="mastery" fill={isDark ? "#14B8A6" : "#0D9488"} radius={[0, 6, 6, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -256,17 +290,17 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
       {/* Courses Section Header */}
       <div className="flex items-center justify-between pt-2">
         <div>
-          <h2 className="text-lg font-bold text-[#0F172A] tracking-tight">
+          <h2 className="text-lg font-bold text-heading tracking-tight">
             Your Courses
           </h2>
-          <p className="text-xs text-[#64748B]">
+          <p className="text-xs text-muted">
             Select a course to view uploaded documents and study progress.
           </p>
         </div>
 
         <button
           onClick={() => setIsModalOpen(true)}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-btn text-xs font-semibold text-white bg-[#4F46E5] hover:bg-[#4338CA] shadow-sm transition min-h-[44px]"
+          className="flex items-center gap-2 px-4 py-2.5 rounded-btn text-xs font-semibold text-white bg-primary hover:bg-primary-hover shadow-sm transition min-h-[44px]"
         >
           <Plus className="w-4 h-4" />
           <span>New Course</span>
@@ -275,14 +309,14 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
 
       {/* Course List / States */}
       {error && (
-        <div className="p-4 rounded-xl bg-[#FFF1F2] border border-rose-200 text-[#E11D48] text-xs flex items-center justify-between">
+        <div className="p-4 rounded-xl bg-error-light border border-error/25 text-error text-xs flex items-center justify-between">
           <div className="flex items-center gap-2">
             <AlertCircle className="w-4 h-4 shrink-0" />
             <span>{error}</span>
           </div>
           <button
             onClick={fetchDashboardData}
-            className="underline hover:text-[#0F172A] font-medium"
+            className="underline hover:text-heading font-medium"
           >
             Retry
           </button>
@@ -291,19 +325,19 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
 
       {loading ? (
         <div className="py-20 text-center flex flex-col items-center justify-center">
-          <Loader2 className="w-8 h-8 text-[#4F46E5] animate-spin mb-3" />
-          <p className="text-xs text-[#64748B] font-medium">Loading courses & analytics...</p>
+          <Loader2 className="w-8 h-8 text-primary animate-spin mb-3" />
+          <p className="text-xs text-muted font-medium">Loading courses & analytics...</p>
         </div>
       ) : courses.length === 0 ? (
-        <div className="bg-white rounded-2xl p-12 text-center border-2 border-dashed border-[#E2E8F0]">
-          <BookOpen className="w-12 h-12 text-[#64748B] mx-auto mb-3" />
-          <h3 className="text-base font-semibold text-[#0F172A]">No courses yet</h3>
-          <p className="text-xs text-[#64748B] max-w-sm mx-auto mt-1 mb-4">
+        <div className="bg-surface rounded-2xl p-12 text-center border-2 border-dashed border-line">
+          <BookOpen className="w-12 h-12 text-muted mx-auto mb-3" />
+          <h3 className="text-base font-semibold text-heading">No courses yet</h3>
+          <p className="text-xs text-muted max-w-sm mx-auto mt-1 mb-4">
             Create your first study course to upload study notes, generate a roadmap, and take AI-graded quizzes.
           </p>
           <button
             onClick={() => setIsModalOpen(true)}
-            className="px-4 py-2 bg-[#4F46E5] text-white rounded-btn text-xs font-semibold hover:bg-[#4338CA] transition shadow-sm min-h-[44px]"
+            className="px-4 py-2 bg-primary text-white rounded-btn text-xs font-semibold hover:bg-primary-hover transition shadow-sm min-h-[44px]"
           >
             Create Course
           </button>

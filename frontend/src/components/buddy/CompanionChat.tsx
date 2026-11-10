@@ -49,13 +49,13 @@ function renderMarkdownContent(content: string): React.ReactNode {
       const lang = firstLineEnd > 3 ? part.slice(3, firstLineEnd).trim() : "";
       const code = firstLineEnd !== -1 ? part.slice(firstLineEnd + 1, -3) : part.slice(3, -3);
       return (
-        <div key={pIdx} className="my-2 rounded-lg bg-[#F1F5F9] border border-[#E2E8F0] overflow-hidden text-xs">
+        <div key={pIdx} className="my-2 rounded-lg bg-codeblock border border-line overflow-hidden text-xs">
           {lang && (
-            <div className="px-3 py-1 bg-[#E2E8F0] text-[10px] font-mono text-[#64748B] uppercase">
+            <div className="px-3 py-1 bg-line/60 text-[10px] font-mono text-muted uppercase">
               {lang}
             </div>
           )}
-          <pre className="p-3 overflow-x-auto text-[#0F172A] font-mono text-[11px] leading-relaxed">
+          <pre className="p-3 overflow-x-auto text-heading font-mono text-[11px] leading-relaxed">
             <code>{code}</code>
           </pre>
         </div>
@@ -71,21 +71,21 @@ function renderMarkdownContent(content: string): React.ReactNode {
           // Headings
           if (line.startsWith("### ")) {
             return (
-              <h4 key={lIdx} className="font-bold text-[#0F172A] text-xs pt-1">
+              <h4 key={lIdx} className="font-bold text-heading text-xs pt-1">
                 {formatInline(line.slice(4))}
               </h4>
             );
           }
           if (line.startsWith("## ")) {
             return (
-              <h3 key={lIdx} className="font-bold text-[#0F172A] text-sm pt-1">
+              <h3 key={lIdx} className="font-bold text-heading text-sm pt-1">
                 {formatInline(line.slice(3))}
               </h3>
             );
           }
           if (line.startsWith("# ")) {
             return (
-              <h2 key={lIdx} className="font-bold text-[#0F172A] text-base pt-1">
+              <h2 key={lIdx} className="font-bold text-heading text-base pt-1">
                 {formatInline(line.slice(2))}
               </h2>
             );
@@ -95,7 +95,7 @@ function renderMarkdownContent(content: string): React.ReactNode {
           if (line.trim().startsWith("- ") || line.trim().startsWith("* ")) {
             return (
               <div key={lIdx} className="flex items-start gap-1.5 ml-2 text-xs">
-                <span className="text-[#4F46E5] font-bold">•</span>
+                <span className="text-primary font-bold">•</span>
                 <span className="flex-1">{formatInline(line.trim().slice(2))}</span>
               </div>
             );
@@ -106,7 +106,7 @@ function renderMarkdownContent(content: string): React.ReactNode {
           if (numMatch) {
             return (
               <div key={lIdx} className="flex items-start gap-1.5 ml-2 text-xs">
-                <span className="text-[#4F46E5] font-semibold">{numMatch[1]}.</span>
+                <span className="text-primary font-semibold">{numMatch[1]}.</span>
                 <span className="flex-1">{formatInline(numMatch[2])}</span>
               </div>
             );
@@ -130,7 +130,7 @@ function formatInline(str: string): React.ReactNode[] {
       return (
         <code
           key={tIdx}
-          className="px-1.5 py-0.5 rounded bg-[#F1F5F9] border border-[#E2E8F0] font-mono text-[11px] text-[#0F172A]"
+          className="px-1.5 py-0.5 rounded bg-codeblock border border-line font-mono text-[11px] text-heading"
         >
           {token.slice(1, -1)}
         </code>
@@ -138,7 +138,7 @@ function formatInline(str: string): React.ReactNode[] {
     }
     if (token.startsWith("**") && token.endsWith("**")) {
       return (
-        <strong key={tIdx} className="font-semibold text-[#0F172A]">
+        <strong key={tIdx} className="font-semibold text-heading">
           {token.slice(2, -2)}
         </strong>
       );
@@ -147,7 +147,7 @@ function formatInline(str: string): React.ReactNode[] {
       return (
         <span
           key={tIdx}
-          className="inline-flex items-center px-1.5 py-0.5 rounded-full bg-[#EEF2FF] text-[#4F46E5] border border-indigo-100 text-[10px] font-medium mx-0.5"
+          className="inline-flex items-center px-1.5 py-0.5 rounded-full bg-primary-light text-primary border border-primary/20 text-[10px] font-medium mx-0.5"
         >
           {token}
         </span>
@@ -447,34 +447,34 @@ export const CompanionChat: React.FC<CompanionChatProps> = ({
     <div
       role="dialog"
       aria-label={`${MASCOT_NAME} Study Companion`}
-      className={`flex flex-col bg-white border border-[#E2E8F0] shadow-panel overflow-hidden w-full max-w-full sm:w-[380px] h-[min(600px,80vh)] rounded-2xl select-text transition-all animate-in slide-in-from-bottom-3 duration-200 z-40 ${className}`}
+      className={`flex flex-col bg-surface border border-line shadow-panel overflow-hidden w-full sm:w-[380px] h-[85vh] sm:h-[min(600px,80vh)] rounded-t-2xl sm:rounded-2xl select-text transition-all animate-in slide-in-from-bottom-3 duration-200 z-40 ${className}`}
     >
       {/* Header */}
-      <div className="shrink-0 px-4 py-3 border-b border-[#E2E8F0] bg-white flex items-center justify-between">
-        <div className="flex items-center gap-2.5 min-w-0">
-          <div className="w-8 h-8 rounded-full bg-[#EEF2FF] border border-indigo-100 flex items-center justify-center shrink-0">
+      <div className="shrink-0 px-4 py-3 border-b border-line bg-surface flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2.5 min-w-0 flex-1">
+          <div className="w-8 h-8 rounded-full bg-primary-light border border-primary/20 flex items-center justify-center shrink-0">
             <PlaceholderMascot state={sending ? "studying" : "idle"} isTalking={sending} className="w-6 h-6" />
           </div>
-          <div className="min-w-0">
-            <div className="flex items-center gap-1.5">
-              <h3 className="text-xs font-bold text-[#0F172A] truncate">{MASCOT_NAME}</h3>
-              <span className="w-2 h-2 rounded-full bg-[#0D9488]" />
-              <span className="text-[10px] text-[#0D9488] font-semibold tracking-wide">
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-1.5 min-w-0">
+              <h3 className="text-xs font-bold text-heading truncate">{MASCOT_NAME}</h3>
+              <span className="w-2 h-2 rounded-full bg-accent shrink-0" />
+              <span className="text-[10px] text-accent font-semibold tracking-wide truncate">
                 Your study buddy
               </span>
             </div>
-            <p className="text-[10px] text-[#64748B] truncate">
+            <p className="text-[10px] text-muted truncate">
               {currentLesson?.lessonTitle ? currentLesson.lessonTitle : "Grounded Tutor"}
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1 shrink-0">
           {onMinimize && (
             <button
               type="button"
               onClick={onMinimize}
-              className="p-1.5 rounded-lg text-[#64748B] hover:text-[#0F172A] hover:bg-[#F1F5F9] transition"
+              className="p-1.5 rounded-lg text-muted hover:text-heading hover:bg-codeblock transition"
               title="Minimize companion"
               aria-label="Minimize companion"
             >
@@ -484,7 +484,7 @@ export const CompanionChat: React.FC<CompanionChatProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 rounded-lg text-[#64748B] hover:text-[#0F172A] hover:bg-[#F1F5F9] transition"
+            className="p-1.5 rounded-lg text-muted hover:text-heading hover:bg-codeblock transition"
             title="Close companion"
             aria-label="Close companion"
           >
@@ -495,24 +495,24 @@ export const CompanionChat: React.FC<CompanionChatProps> = ({
 
       {/* Messages Scroll Area */}
       <div
-        className="flex-1 overflow-y-auto overflow-x-hidden p-4 space-y-3 min-w-0 text-xs bg-[#F7F8FC]"
+        className="flex-1 overflow-y-auto overflow-x-hidden p-4 space-y-3 min-w-0 text-xs bg-app"
         aria-live="polite"
       >
         {loadingHistory && (
-          <div className="flex items-center justify-center h-full text-[#64748B] gap-2">
-            <RefreshCw className="w-4 h-4 animate-spin text-[#4F46E5]" />
+          <div className="flex items-center justify-center h-full text-muted gap-2">
+            <RefreshCw className="w-4 h-4 animate-spin text-primary" />
             <span className="text-xs font-medium">Loading conversation...</span>
           </div>
         )}
 
         {!loadingHistory && messages.length === 0 && (
-          <div className="h-full flex flex-col items-center justify-center text-center p-4 space-y-3 text-[#64748B]">
-            <div className="w-12 h-12 rounded-2xl bg-[#EEF2FF] border border-indigo-100 flex items-center justify-center text-[#4F46E5]">
+          <div className="h-full flex flex-col items-center justify-center text-center p-4 space-y-3 text-muted">
+            <div className="w-12 h-12 rounded-2xl bg-primary-light border border-primary/20 flex items-center justify-center text-primary">
               <Sparkles className="w-6 h-6" />
             </div>
             <div className="space-y-1">
-              <p className="font-bold text-[#0F172A] text-sm">Hi, I'm {MASCOT_NAME}!</p>
-              <p className="text-xs text-[#64748B] max-w-xs leading-relaxed">
+              <p className="font-bold text-heading text-sm">Hi, I'm {MASCOT_NAME}!</p>
+              <p className="text-xs text-muted max-w-xs leading-relaxed">
                 Your friendly study companion. What would you like to work on right now?
               </p>
             </div>
@@ -522,28 +522,28 @@ export const CompanionChat: React.FC<CompanionChatProps> = ({
               <button
                 type="button"
                 onClick={() => handleQuickReply("explain")}
-                className="w-full text-left px-3 py-2 rounded-xl bg-white border border-[#E2E8F0] hover:border-[#4F46E5] hover:bg-[#EEF2FF] text-[#334155] text-xs font-medium transition shadow-sm flex items-center gap-2 group"
+                className="w-full text-left px-3 py-2 rounded-xl bg-surface border border-line hover:border-primary hover:bg-primary-light text-body text-xs font-medium transition shadow-sm flex items-center gap-2 group"
               >
-                <HelpCircle className="w-3.5 h-3.5 text-[#4F46E5] shrink-0" />
-                <span className="truncate group-hover:text-[#4F46E5]">Explain this topic simply</span>
+                <HelpCircle className="w-3.5 h-3.5 text-primary shrink-0" />
+                <span className="truncate group-hover:text-primary">Explain this topic simply</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => handleQuickReply("quiz")}
-                className="w-full text-left px-3 py-2 rounded-xl bg-white border border-[#E2E8F0] hover:border-[#4F46E5] hover:bg-[#EEF2FF] text-[#334155] text-xs font-medium transition shadow-sm flex items-center gap-2 group"
+                className="w-full text-left px-3 py-2 rounded-xl bg-surface border border-line hover:border-primary hover:bg-primary-light text-body text-xs font-medium transition shadow-sm flex items-center gap-2 group"
               >
-                <Play className="w-3.5 h-3.5 text-[#0D9488] shrink-0" />
-                <span className="truncate group-hover:text-[#4F46E5]">Quiz me</span>
+                <Play className="w-3.5 h-3.5 text-accent shrink-0" />
+                <span className="truncate group-hover:text-primary">Quiz me</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => handleQuickReply("flashcards")}
-                className="w-full text-left px-3 py-2 rounded-xl bg-white border border-[#E2E8F0] hover:border-[#4F46E5] hover:bg-[#EEF2FF] text-[#334155] text-xs font-medium transition shadow-sm flex items-center gap-2 group"
+                className="w-full text-left px-3 py-2 rounded-xl bg-surface border border-line hover:border-primary hover:bg-primary-light text-body text-xs font-medium transition shadow-sm flex items-center gap-2 group"
               >
-                <Layers className="w-3.5 h-3.5 text-[#D97706] shrink-0" />
-                <span className="truncate group-hover:text-[#4F46E5]">Make flashcards</span>
+                <Layers className="w-3.5 h-3.5 text-warning shrink-0" />
+                <span className="truncate group-hover:text-primary">Make flashcards</span>
               </button>
             </div>
           </div>
@@ -570,7 +570,7 @@ export const CompanionChat: React.FC<CompanionChatProps> = ({
               className={`flex items-end gap-2 ${isUser ? "justify-end" : "justify-start"} min-w-0`}
             >
               {!isUser && (
-                <div className="w-6 h-6 rounded-full bg-[#EEF2FF] border border-indigo-100 flex items-center justify-center shrink-0 mb-1">
+                <div className="w-6 h-6 rounded-full bg-primary-light border border-primary/20 flex items-center justify-center shrink-0 mb-1">
                   <PlaceholderMascot state="idle" className="w-4 h-4" />
                 </div>
               )}
@@ -578,8 +578,8 @@ export const CompanionChat: React.FC<CompanionChatProps> = ({
               <div
                 className={`max-w-[85%] p-3 rounded-[12px] leading-relaxed space-y-1.5 min-w-0 overflow-x-hidden ${
                   isUser
-                    ? "bg-[#4F46E5] text-white rounded-br-none shadow-sm"
-                    : "bg-white text-[#334155] border border-[#E2E8F0] rounded-bl-none shadow-sm"
+                    ? "bg-primary text-white rounded-br-none shadow-sm"
+                    : "bg-surface text-body border border-line rounded-bl-none shadow-sm"
                 }`}
               >
                 <div className="overflow-wrap-anywhere break-words min-w-0">
@@ -592,15 +592,15 @@ export const CompanionChat: React.FC<CompanionChatProps> = ({
 
                 {/* Citations */}
                 {!isUser && msg.citations && msg.citations.length > 0 && (
-                  <div className="pt-1.5 border-t border-[#E2E8F0] flex flex-wrap items-center gap-1">
-                    <span className="text-[10px] uppercase font-bold text-[#64748B] flex items-center gap-0.5">
-                      <BookOpen className="w-2.5 h-2.5 text-[#4F46E5]" />
+                  <div className="pt-1.5 border-t border-line flex flex-wrap items-center gap-1">
+                    <span className="text-[10px] uppercase font-bold text-muted flex items-center gap-0.5">
+                      <BookOpen className="w-2.5 h-2.5 text-primary" />
                       Sources:
                     </span>
                     {msg.citations.map((cite, cIdx) => (
                       <span
                         key={cIdx}
-                        className="px-1.5 py-0.5 rounded bg-[#EEF2FF] border border-indigo-100 text-[10px] font-medium text-[#4F46E5]"
+                        className="px-1.5 py-0.5 rounded bg-primary-light border border-primary/20 text-[10px] font-medium text-primary"
                       >
                         {cite}
                       </span>
@@ -610,27 +610,27 @@ export const CompanionChat: React.FC<CompanionChatProps> = ({
 
                 {/* Speaker Controls */}
                 {!isUser && (
-                  <div className="pt-1 flex items-center justify-between text-[10px] text-[#64748B] border-t border-[#F1F5F9]">
+                  <div className="pt-1 flex items-center justify-between text-[10px] text-muted border-t border-line/60">
                     <div className="flex items-center gap-1.5">
                       <button
                         type="button"
                         onClick={() => handleToggleSpeech(idx, rawText)}
                         className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md transition cursor-pointer ${
                           speakingIdx === idx
-                            ? "bg-[#EEF2FF] text-[#4F46E5] border border-indigo-200"
-                            : "hover:bg-[#F1F5F9] hover:text-[#0F172A]"
+                            ? "bg-primary-light text-primary border border-primary/25"
+                            : "hover:bg-codeblock hover:text-heading"
                         }`}
                         title={speakingIdx === idx ? (isSpeechPaused ? "Resume speech" : "Pause speech") : "Listen to answer"}
                         aria-label="Listen to answer"
                       >
                         {speakingIdx === idx && !isSpeechPaused ? (
                           <>
-                            <Pause className="w-3 h-3 text-[#4F46E5] animate-pulse" />
+                            <Pause className="w-3 h-3 text-primary animate-pulse" />
                             <span>Pause</span>
                           </>
                         ) : (
                           <>
-                            <Volume2 className="w-3 h-3 text-[#4F46E5]" />
+                            <Volume2 className="w-3 h-3 text-primary" />
                             <span>{speakingIdx === idx ? "Resume" : "Listen"}</span>
                           </>
                         )}
@@ -640,17 +640,17 @@ export const CompanionChat: React.FC<CompanionChatProps> = ({
                         <button
                           type="button"
                           onClick={handleStopSpeech}
-                          className="p-1 rounded text-[#64748B] hover:text-[#E11D48] hover:bg-[#FFF1F2]"
+                          className="p-1 rounded text-muted hover:text-error hover:bg-error-light"
                           title="Stop speaking"
                           aria-label="Stop speaking"
                         >
-                          <Square className="w-2.5 h-2.5 text-[#E11D48]" />
+                          <Square className="w-2.5 h-2.5 text-error" />
                         </button>
                       )}
                     </div>
 
                     {msg.tone && (
-                      <span className="text-[9px] text-[#64748B] capitalize">
+                      <span className="text-[9px] text-muted capitalize">
                         {msg.tone}
                       </span>
                     )}
@@ -664,15 +664,15 @@ export const CompanionChat: React.FC<CompanionChatProps> = ({
         {/* Typing indicator */}
         {sending && (
           <div className="flex items-end gap-2 justify-start min-w-0">
-            <div className="w-6 h-6 rounded-full bg-[#EEF2FF] border border-indigo-100 flex items-center justify-center shrink-0 mb-1">
+            <div className="w-6 h-6 rounded-full bg-primary-light border border-primary/20 flex items-center justify-center shrink-0 mb-1">
               <PlaceholderMascot state="studying" className="w-4 h-4" />
             </div>
-            <div className="bg-white border border-[#E2E8F0] px-3.5 py-2.5 rounded-[12px] rounded-bl-none shadow-sm flex items-center gap-2">
-              <span className="text-[11px] font-medium text-[#64748B]">{MASCOT_NAME} is thinking</span>
+            <div className="bg-surface border border-line px-3.5 py-2.5 rounded-[12px] rounded-bl-none shadow-sm flex items-center gap-2">
+              <span className="text-[11px] font-medium text-muted">{MASCOT_NAME} is thinking</span>
               <div className="flex items-center gap-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#4F46E5] animate-bounce" style={{ animationDelay: "0ms" }} />
-                <span className="w-1.5 h-1.5 rounded-full bg-[#4F46E5] animate-bounce" style={{ animationDelay: "150ms" }} />
-                <span className="w-1.5 h-1.5 rounded-full bg-[#4F46E5] animate-bounce" style={{ animationDelay: "300ms" }} />
+                <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce" style={{ animationDelay: "0ms" }} />
+                <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce" style={{ animationDelay: "150ms" }} />
+                <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce" style={{ animationDelay: "300ms" }} />
               </div>
             </div>
           </div>
@@ -682,11 +682,11 @@ export const CompanionChat: React.FC<CompanionChatProps> = ({
       </div>
 
       {/* Proactive Quick Reply Action Chips Bar */}
-      <div className="shrink-0 px-3 py-2 border-t border-[#E2E8F0] bg-white overflow-x-auto flex items-center gap-1.5 scrollbar-none">
+      <div className="shrink-0 px-3 py-2 border-t border-line bg-surface overflow-x-auto flex items-center gap-1.5 scrollbar-none">
         <button
           type="button"
           onClick={() => handleQuickReply("break")}
-          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-pill bg-[#FFFBEB] hover:bg-[#FEF3C7] border border-amber-200 text-[#D97706] text-[11px] font-semibold transition shrink-0 cursor-pointer"
+          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-pill bg-warning-light hover:opacity-90 border border-warning/25 text-warning text-[11px] font-semibold transition shrink-0 cursor-pointer"
         >
           <Coffee className="w-3 h-3" />
           <span>Let's take a break</span>
@@ -695,7 +695,7 @@ export const CompanionChat: React.FC<CompanionChatProps> = ({
         <button
           type="button"
           onClick={() => handleQuickReply("continue")}
-          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-pill bg-[#F0FDFA] hover:bg-[#CCFBF1] border border-teal-200 text-[#0D9488] text-[11px] font-semibold transition shrink-0 cursor-pointer"
+          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-pill bg-accent-light hover:opacity-90 border border-accent/25 text-accent text-[11px] font-semibold transition shrink-0 cursor-pointer"
         >
           <Play className="w-3 h-3" />
           <span>Continue studying</span>
@@ -704,7 +704,7 @@ export const CompanionChat: React.FC<CompanionChatProps> = ({
         <button
           type="button"
           onClick={() => handleQuickReply("explain")}
-          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-pill bg-[#EEF2FF] hover:bg-[#E0E7FF] border border-indigo-200 text-[#4F46E5] text-[11px] font-semibold transition shrink-0 cursor-pointer"
+          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-pill bg-primary-light hover:opacity-90 border border-primary/25 text-primary text-[11px] font-semibold transition shrink-0 cursor-pointer"
         >
           <HelpCircle className="w-3 h-3" />
           <span>Explain this topic</span>
@@ -713,7 +713,7 @@ export const CompanionChat: React.FC<CompanionChatProps> = ({
         <button
           type="button"
           onClick={() => handleQuickReply("sleepy")}
-          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-pill bg-[#FFF1F2] hover:bg-[#FFE4E6] border border-rose-200 text-[#E11D48] text-[11px] font-semibold transition shrink-0 cursor-pointer"
+          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-pill bg-error-light hover:opacity-90 border border-error/25 text-error text-[11px] font-semibold transition shrink-0 cursor-pointer"
         >
           <Coffee className="w-3 h-3" />
           <span>I'm feeling sleepy</span>
@@ -722,15 +722,15 @@ export const CompanionChat: React.FC<CompanionChatProps> = ({
 
       {/* Error Banner with Retry */}
       {error && (
-        <div className="shrink-0 px-4 py-2 bg-[#FFF1F2] border-t border-rose-200 text-[#E11D48] text-[11px] flex items-center justify-between">
+        <div className="shrink-0 px-4 py-2 bg-error-light border-t border-error/25 text-error text-[11px] flex items-center justify-between">
           <div className="flex items-center gap-1.5 min-w-0">
-            <AlertCircle className="w-3.5 h-3.5 text-[#E11D48] shrink-0" />
+            <AlertCircle className="w-3.5 h-3.5 text-error shrink-0" />
             <span className="truncate">{error}</span>
           </div>
           <button
             type="button"
             onClick={() => handleSendMessage()}
-            className="text-[10px] underline font-bold hover:text-rose-900 shrink-0 ml-2"
+            className="text-[10px] underline font-bold hover:text-heading shrink-0 ml-2"
           >
             Retry
           </button>
@@ -739,12 +739,12 @@ export const CompanionChat: React.FC<CompanionChatProps> = ({
 
       {/* Speech Recognition Error Banner */}
       {speechRecError && (
-        <div className="shrink-0 px-4 py-2 bg-[#FFFBEB] border-t border-amber-200 text-[#D97706] text-[11px] flex items-center justify-between">
+        <div className="shrink-0 px-4 py-2 bg-warning-light border-t border-warning/25 text-warning text-[11px] flex items-center justify-between">
           <span className="truncate">{speechRecError}</span>
           <button
             type="button"
             onClick={resetTranscript}
-            className="text-[10px] underline font-bold hover:text-amber-900 shrink-0 ml-2"
+            className="text-[10px] underline font-bold hover:text-heading shrink-0 ml-2"
           >
             Dismiss
           </button>
@@ -753,15 +753,15 @@ export const CompanionChat: React.FC<CompanionChatProps> = ({
 
       {/* Active Listening Indicator */}
       {isListening && (
-        <div className="shrink-0 px-4 py-1.5 bg-[#FFF1F2] border-t border-rose-200 text-[#E11D48] text-[11px] flex items-center justify-between animate-pulse">
+        <div className="shrink-0 px-4 py-1.5 bg-error-light border-t border-error/25 text-error text-[11px] flex items-center justify-between animate-pulse">
           <div className="flex items-center gap-1.5 min-w-0">
-            <span className="w-2 h-2 rounded-full bg-[#E11D48] animate-ping" />
+            <span className="w-2 h-2 rounded-full bg-error animate-ping" />
             <span className="font-semibold truncate">Listening... Speak your question</span>
           </div>
           <button
             type="button"
             onClick={stopListening}
-            className="text-[10px] font-bold underline hover:text-rose-900 ml-2"
+            className="text-[10px] font-bold underline hover:text-heading ml-2"
           >
             Stop
           </button>
@@ -774,15 +774,15 @@ export const CompanionChat: React.FC<CompanionChatProps> = ({
           e.preventDefault();
           handleSendMessage();
         }}
-        className="shrink-0 p-3 border-t border-[#E2E8F0] bg-white flex items-center gap-2"
+        className="shrink-0 p-3 border-t border-line bg-surface flex items-center gap-2"
       >
         <button
           type="button"
           onClick={isListening ? stopListening : startListening}
           className={`p-2.5 rounded-btn border transition flex items-center justify-center shrink-0 min-h-[44px] min-w-[44px] ${
             isListening
-              ? "bg-[#FFF1F2] border-rose-300 text-[#E11D48] animate-pulse"
-              : "bg-[#F8FAFC] border-[#E2E8F0] text-[#64748B] hover:text-[#0F172A] hover:bg-[#F1F5F9]"
+              ? "bg-error-light border-error/40 text-error animate-pulse"
+              : "bg-subtle border-line text-muted hover:text-heading hover:bg-codeblock"
           }`}
           title={
             !isSpeechRecSupported
@@ -794,7 +794,7 @@ export const CompanionChat: React.FC<CompanionChatProps> = ({
           aria-label={isListening ? "Stop microphone" : "Start microphone"}
         >
           {isListening ? (
-            <MicOff className="w-4 h-4 text-[#E11D48]" />
+            <MicOff className="w-4 h-4 text-error" />
           ) : (
             <Mic className="w-4 h-4" />
           )}
@@ -812,8 +812,8 @@ export const CompanionChat: React.FC<CompanionChatProps> = ({
           }}
           disabled={sending}
           rows={1}
-          placeholder={`Reply to ${MASCOT_NAME}... (Enter to send)`}
-          className="flex-1 bg-[#F8FAFC] border border-[#E2E8F0] rounded-btn px-3 py-2 text-xs text-[#0F172A] placeholder-[#64748B] focus:outline-none focus:border-[#4F46E5] focus:bg-white resize-none max-h-20"
+          placeholder={`Reply to ${MASCOT_NAME}...`}
+          className="flex-1 bg-subtle border border-line rounded-btn px-3 py-2.5 min-h-[44px] text-xs text-heading placeholder:text-muted focus:outline-none focus:border-primary focus:bg-surface resize-none max-h-20 leading-snug"
         />
 
         <button
@@ -823,7 +823,7 @@ export const CompanionChat: React.FC<CompanionChatProps> = ({
             handleSendMessage();
           }}
           disabled={sending || !inputMessage.trim()}
-          className="p-2.5 rounded-btn bg-[#4F46E5] hover:bg-[#4338CA] text-white font-bold transition disabled:opacity-40 disabled:cursor-not-allowed shrink-0 min-h-[44px] min-w-[44px] flex items-center justify-center shadow-sm"
+          className="p-2.5 rounded-btn bg-primary hover:bg-primary-hover text-white font-bold transition disabled:opacity-40 disabled:cursor-not-allowed shrink-0 min-h-[44px] min-w-[44px] flex items-center justify-center shadow-sm"
           title="Send message"
           aria-label="Send message"
         >
