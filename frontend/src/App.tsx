@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import { ThemeProvider } from "./contexts/ThemeContext";
 import { Navbar } from "./components/Navbar";
 import { LoginPage } from "./pages/LoginPage";
 import { DashboardPage } from "./pages/DashboardPage";
@@ -10,19 +11,30 @@ import { Loader2 } from "lucide-react";
 
 const MainContent: React.FC = () => {
   const { user, loading } = useAuth();
-  const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
+  const isPreview = typeof window !== "undefined" && window.location.search.includes("preview=course");
+  const previewCourse: Course = {
+    id: 1,
+    user_id: 1,
+    name: "Data Warehousing & Analytics",
+    goal_days: 14,
+    hours_per_day: 2,
+    level: "intermediate",
+    created_at: "2026-11-01T10:00:00Z",
+  };
+
+  const [selectedCourse, setSelectedCourse] = useState<Course | null>(isPreview ? previewCourse : null);
   const [view, setView] = useState<"dashboard" | "privacy">("dashboard");
 
-  if (loading) {
+  if (loading && !isPreview) {
     return (
-      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center">
-        <Loader2 className="w-10 h-10 text-brand-500 animate-spin mb-4" />
-        <p className="text-xs text-slate-400 font-medium">Initializing session...</p>
+      <div className="min-h-screen bg-app flex flex-col items-center justify-center">
+        <Loader2 className="w-10 h-10 text-primary animate-spin mb-4" />
+        <p className="text-sm text-muted font-medium">Initializing session...</p>
       </div>
     );
   }
 
-  if (!user) {
+  if (!user && !isPreview) {
     return <LoginPage />;
   }
 
@@ -31,7 +43,7 @@ const MainContent: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 flex flex-col text-slate-100">
+    <div className="min-h-screen bg-app flex flex-col text-body transition-colors duration-150">
       <Navbar
         onNavigateHome={() => {
           setSelectedCourse(null);
@@ -62,9 +74,11 @@ const MainContent: React.FC = () => {
 
 export const App: React.FC = () => {
   return (
-    <AuthProvider>
-      <MainContent />
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <MainContent />
+      </AuthProvider>
+    </ThemeProvider>
   );
 };
 

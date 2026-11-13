@@ -27,7 +27,6 @@ if (-not $rootDir) { $rootDir = Get-Location }
 $backendDir = Join-Path $rootDir "backend"
 $frontendDir = Join-Path $rootDir "frontend"
 $backendVenvPy = Join-Path $backendDir ".venv\Scripts\python.exe"
-$backendVenvUvicorn = Join-Path $backendDir ".venv\Scripts\uvicorn.exe"
 
 Write-Host "============================================================" -ForegroundColor Cyan
 Write-Host "            Starting Development Environment                " -ForegroundColor Cyan
@@ -36,7 +35,7 @@ Write-Host "============================================================" -Foreg
 # 1. Pre-flight Checks
 if (-not (Test-Path $backendVenvPy)) {
     Write-Warning "Backend virtual environment not found at: $backendVenvPy"
-    Write-Warning "Please create it using: cd backend; uv venv; uv pip install -e ."
+    Write-Warning "Please create it using: cd backend; uv venv --python 3.11; uv pip install -e '.[dev]'"
 }
 
 if (-not (Test-Path (Join-Path $frontendDir "node_modules"))) {
@@ -136,6 +135,7 @@ if (Get-Command docker -ErrorAction SilentlyContinue) {
             # Automatically apply database migrations
             if (Test-Path $backendVenvPy) {
                 Write-Host "Applying database migrations (Alembic upgrade head)..." -ForegroundColor Cyan
+                Push-Location $backendDir
                 try {
                     & $backendVenvPy -m alembic upgrade head
                     if ($LASTEXITCODE -eq 0) {
@@ -145,6 +145,8 @@ if (Get-Command docker -ErrorAction SilentlyContinue) {
                     }
                 } catch {
                     Write-Warning "Failed to run Alembic migration: $($_.Exception.Message)"
+                } finally {
+                    Pop-Location
                 }
             }
         } else {
@@ -154,18 +156,23 @@ if (Get-Command docker -ErrorAction SilentlyContinue) {
         Write-Warning "Docker daemon is not reachable. Ensure Docker Desktop is running."
     }
 } else {
-    Write-Warning "Docker is not found in PATH. Ensure PostgreSQL with pgvector is accessible on localhost:5432."
+    Write-Warning "Docker is not found in PATH. Ensure PostgreSQL with pgvector is accessible (see DATABASE_URL in .env)."
 }
 
 
 # 2. Execution Mode
+if (-not (Test-Path $backendVenvPy)) {
+    Write-Error "Cannot launch backend: Python executable missing at $backendVenvPy"
+    exit 1
+}
+
 if ($Background) {
     Write-Host "`nStarting Backend as background job..." -ForegroundColor Yellow
     $backendJob = Start-Job -ScriptBlock {
-        param($bDir, $uExe)
+        param($bDir, $pyExe)
         Set-Location $bDir
-        & $uExe app.main:app --reload --host 127.0.0.1 --port 8000
-    } -ArgumentList $backendDir, $backendVenvUvicorn
+        & $pyExe -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+    } -ArgumentList $backendDir, $backendVenvPy
 
     Write-Host "Starting Frontend as background job..." -ForegroundColor Yellow
     $frontendJob = Start-Job -ScriptBlock {
@@ -181,7 +188,7 @@ if ($Background) {
     Write-Host "To stop both:   Stop-Job -Id $($backendJob.Id), $($frontendJob.Id); Remove-Job -Id $($backendJob.Id), $($frontendJob.Id)"
 } else {
     Write-Host "`nLaunching Backend in dedicated window..." -ForegroundColor Green
-    $backendCmd = "Set-Location '$backendDir'; & '$backendVenvUvicorn' app.main:app --reload --host 127.0.0.1 --port 8000"
+    $backendCmd = "Set-Location '$backendDir'; & '$backendVenvPy' -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000"
     Start-Process powershell -ArgumentList "-NoExit", "-Command", "$backendCmd"
 
     Write-Host "Launching Frontend in dedicated window..." -ForegroundColor Green

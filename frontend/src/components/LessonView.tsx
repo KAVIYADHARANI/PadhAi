@@ -290,7 +290,7 @@ export const LessonView: React.FC<LessonViewProps> = ({
           sources: replyRes.sources,
         },
       ]);
-    } catch (err) {
+    } catch {
       setChatMessages((prev) => [
         ...prev,
         {
@@ -319,22 +319,22 @@ export const LessonView: React.FC<LessonViewProps> = ({
   const overallPercent = progress?.completed ? 100 : sectionPercent + exercisePercent + quizPercent;
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6 animate-fadeIn text-slate-100">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6 animate-fadeIn text-body">
       {/* Top Breadcrumb & Navigation Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-800/80">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-line">
         <button
           onClick={onBackToRoadmap}
-          className="inline-flex items-center gap-2 text-xs font-semibold text-slate-400 hover:text-white transition group w-fit"
+          className="inline-flex items-center gap-2 text-xs font-semibold text-muted hover:text-heading transition group w-fit min-h-[44px]"
         >
           <ArrowLeft className="w-4 h-4 transform group-hover:-translate-x-1 transition-transform" />
           <span>Back to Study Roadmap</span>
         </button>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
           <button
             onClick={handleRegenerateLesson}
             disabled={generating}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-900 border border-slate-800 text-slate-300 hover:text-white hover:border-slate-700 transition disabled:opacity-50"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-surface border border-line text-body hover:text-heading hover:bg-subtle transition disabled:opacity-50 min-h-[44px]"
             title="Regenerate lesson notes and update research"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${generating ? "animate-spin" : ""}`} />
@@ -343,10 +343,10 @@ export const LessonView: React.FC<LessonViewProps> = ({
 
           <button
             onClick={handleToggleLessonComplete}
-            className={`flex items-center gap-1.5 px-4 py-1.5 rounded-xl text-xs font-bold transition border ${
+            className={`flex items-center gap-1.5 px-4 py-1.5 rounded-xl text-xs font-bold transition border min-h-[44px] ${
               progress?.completed
-                ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/30"
-                : "bg-brand-500/20 text-brand-300 border-brand-500/30 hover:bg-brand-500/30"
+                ? "bg-accent-light text-accent border-accent/30"
+                : "bg-primary text-white border-primary hover:bg-primary-hover"
             }`}
           >
             <CheckCircle2 className="w-4 h-4" />
@@ -356,66 +356,65 @@ export const LessonView: React.FC<LessonViewProps> = ({
       </div>
 
       {/* Hero Banner: Lesson Details & Progress */}
-      <div className="glass-panel rounded-3xl p-6 sm:p-8 border border-slate-800 relative overflow-hidden">
+      <div className="bg-surface rounded-3xl p-6 sm:p-8 border border-line shadow-sm relative overflow-hidden space-y-6">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
           <div className="space-y-3">
             <div className="flex items-center gap-2.5 flex-wrap">
-              <span className="text-[10px] font-extrabold uppercase px-3 py-1 rounded-full bg-brand-500/15 text-brand-300 border border-brand-500/30">
+              <span className="text-[10px] font-extrabold uppercase px-3 py-1 rounded-full bg-primary-light text-primary border border-primary/25">
                 Day {roadmapItem.day}
               </span>
-              <span className="text-xs font-semibold text-slate-400">
+              <span className="text-xs font-semibold text-muted">
                 {roadmapItem.topic_name}
               </span>
-              <span className="text-slate-600">•</span>
-              <div className="flex items-center gap-1 text-xs text-slate-400">
-                <Clock className="w-3.5 h-3.5 text-brand-400" />
+              <span className="text-muted">•</span>
+              <div className="flex items-center gap-1 text-xs text-muted">
+                <Clock className="w-3.5 h-3.5 text-primary" />
                 <span>~{task?.estimated_minutes || 30} mins allocated</span>
               </div>
             </div>
 
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-heading tracking-tight">
               {lesson?.title || taskTitle}
             </h1>
 
-            <p className="text-xs sm:text-sm text-slate-300 max-w-3xl leading-relaxed">
+            <p className="text-xs sm:text-sm text-body max-w-3xl leading-relaxed">
               {lesson?.content.introduction ||
                 "Deep-dive interactive study lesson with structured notes, verified resources, and practical exercises."}
             </p>
           </div>
 
           {/* Progress Card */}
-          <div className="bg-slate-900/80 p-4 rounded-2xl border border-slate-800 shrink-0 w-full lg:w-64 space-y-2">
+          <div className="bg-subtle p-4 rounded-2xl border border-line shrink-0 w-full lg:w-64 space-y-2">
             <div className="flex items-center justify-between text-xs">
-              <span className="font-semibold text-slate-400">Lesson Mastery</span>
-              <span className="font-extrabold text-brand-300">{overallPercent}%</span>
+              <span className="font-semibold text-muted">Lesson Mastery</span>
+              <span className="font-extrabold text-primary">{overallPercent}%</span>
             </div>
-            <div className="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
+            <div className="w-full bg-codeblock rounded-full h-2 overflow-hidden">
               <div
-                className="bg-gradient-to-r from-brand-500 to-emerald-400 h-2 rounded-full transition-all duration-500"
+                className="bg-gradient-to-r from-[#4F46E5] to-[#0D9488] h-2 rounded-full transition-all duration-500"
                 style={{ width: `${overallPercent}%` }}
               />
             </div>
-            <div className="flex items-center justify-between text-[10px] text-slate-400 pt-1">
+            <div className="flex items-center justify-between text-[10px] text-muted pt-1">
               <span>{completedSectionsCount}/{totalSections} Sections</span>
               <span>{progress?.quiz_completed ? "Quiz Passed" : "Quiz Pending"}</span>
             </div>
           </div>
         </div>
 
-        {/* Learning Objectives Pills */}
+        {/* Learning Objectives pills */}
         {roadmapItem.learning_objectives && roadmapItem.learning_objectives.length > 0 && (
-          <div className="mt-6 pt-5 border-t border-slate-800/80">
-            <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2 flex items-center gap-1.5">
-              <Target className="w-3.5 h-3.5 text-brand-400" />
+          <div className="space-y-2 pt-2 border-t border-line">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-muted">
               Target Learning Objectives
             </p>
             <div className="flex flex-wrap gap-2">
               {roadmapItem.learning_objectives.map((obj, i) => (
                 <span
                   key={i}
-                  className="text-xs px-3 py-1 rounded-xl bg-slate-900/60 border border-slate-800 text-slate-300 flex items-center gap-1.5"
+                  className="text-xs px-3 py-1 rounded-xl bg-subtle border border-line text-body flex items-center gap-1.5"
                 >
-                  <span className="w-1.5 h-1.5 rounded-full bg-brand-400 shrink-0" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
                   <span>{obj}</span>
                 </span>
               ))}
@@ -425,7 +424,7 @@ export const LessonView: React.FC<LessonViewProps> = ({
       </div>
 
       {/* Navigation Tabs */}
-      <div className="flex items-center gap-2 border-b border-slate-800 pb-1 overflow-x-auto no-scrollbar">
+      <div className="flex items-center gap-2 border-b border-line pb-1 overflow-x-auto scrollbar-none">
         {[
           { key: "notes", label: "Study Notes", icon: BookOpen },
           { key: "examples", label: "Worked Examples", icon: Lightbulb },
@@ -442,16 +441,16 @@ export const LessonView: React.FC<LessonViewProps> = ({
             <button
               key={tab.key}
               onClick={() => setActiveTab(tab.key as TabType)}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition border shrink-0 ${
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition border shrink-0 min-h-[44px] ${
                 isActive
-                  ? "bg-brand-500/15 border-brand-500/30 text-white"
-                  : "bg-transparent border-transparent text-slate-400 hover:text-slate-200"
+                  ? "bg-primary-light border-primary/30 text-primary"
+                  : "bg-transparent border-transparent text-muted hover:text-heading hover:bg-subtle"
               }`}
             >
               <Icon className="w-4 h-4" />
               <span>{tab.label}</span>
               {typeof tab.count === "number" && tab.count > 0 && (
-                <span className="text-[10px] px-1.5 py-0.2 rounded-md bg-slate-800 text-slate-300 font-semibold">
+                <span className="text-[10px] px-1.5 py-0.2 rounded-md bg-codeblock text-body border border-line font-semibold">
                   {tab.count}
                 </span>
               )}
@@ -462,15 +461,15 @@ export const LessonView: React.FC<LessonViewProps> = ({
 
       {/* Loading & Generating Banner */}
       {(loading || generating) && (
-        <div className="glass-panel p-10 rounded-3xl border border-slate-800 flex flex-col items-center justify-center space-y-4">
-          <div className="w-12 h-12 rounded-2xl bg-brand-500/20 border border-brand-500/30 flex items-center justify-center animate-spin">
-            <Sparkles className="w-6 h-6 text-brand-400" />
+        <div className="bg-surface p-10 rounded-3xl border border-line flex flex-col items-center justify-center space-y-4 shadow-sm">
+          <div className="w-12 h-12 rounded-2xl bg-primary-light border border-primary/25 flex items-center justify-center animate-spin">
+            <Sparkles className="w-6 h-6 text-primary" />
           </div>
           <div className="text-center space-y-1">
-            <h3 className="text-base font-bold text-white">
+            <h3 className="text-base font-bold text-heading">
               {generating ? "Generating Grounded Study Lesson..." : "Loading Lesson..."}
             </h3>
-            <p className="text-xs text-slate-400 max-w-sm">
+            <p className="text-xs text-muted max-w-sm">
               Retrieving your course materials, discovering real tutorials, and structuring step-by-step explanations.
             </p>
           </div>
@@ -479,14 +478,14 @@ export const LessonView: React.FC<LessonViewProps> = ({
 
       {/* Error state */}
       {error && !loading && (
-        <div className="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs flex items-center justify-between">
+        <div className="p-4 rounded-2xl bg-error-light border border-error/25 text-error text-xs flex items-center justify-between">
           <div className="flex items-center gap-2">
             <AlertCircle className="w-4 h-4 shrink-0" />
             <span>{error}</span>
           </div>
           <button
             onClick={loadLessonData}
-            className="px-3 py-1 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 text-rose-200 font-semibold"
+            className="px-3 py-1 rounded-xl bg-surface border border-error/30 hover:bg-subtle text-error font-semibold"
           >
             Retry
           </button>
@@ -498,12 +497,12 @@ export const LessonView: React.FC<LessonViewProps> = ({
         <div className="space-y-6">
           {/* Prerequisites callout */}
           {lesson.content.prerequisites && lesson.content.prerequisites.length > 0 && (
-            <div className="p-4 rounded-2xl bg-slate-900/60 border border-slate-800 text-xs space-y-1.5">
-              <p className="font-bold text-brand-300 uppercase tracking-wider text-[11px] flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5 text-brand-400" />
+            <div className="p-4 rounded-2xl bg-subtle border border-line text-xs space-y-1.5">
+              <p className="font-bold text-primary uppercase tracking-wider text-[11px] flex items-center gap-1.5">
+                <Sparkles className="w-3.5 h-3.5 text-primary" />
                 Assumed Prerequisites
               </p>
-              <ul className="list-disc list-inside space-y-1 text-slate-300">
+              <ul className="list-disc list-inside space-y-1 text-body">
                 {lesson.content.prerequisites.map((p, idx) => (
                   <li key={idx}>{p}</li>
                 ))}
@@ -519,16 +518,16 @@ export const LessonView: React.FC<LessonViewProps> = ({
               return (
                 <div
                   key={section.id || idx}
-                  className={`glass-panel rounded-2xl p-6 border transition-all duration-300 space-y-4 ${
-                    isDone ? "border-emerald-500/20 bg-emerald-500/5" : "border-slate-800"
+                  className={`bg-surface rounded-2xl p-6 border transition-all duration-300 space-y-4 shadow-sm ${
+                    isDone ? "border-accent/35 bg-accent-light/25" : "border-line"
                   }`}
                 >
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-800/80">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-line">
                     <div className="flex items-center gap-3">
-                      <span className="w-6 h-6 rounded-lg bg-slate-800 border border-slate-700 flex items-center justify-center text-xs font-bold text-brand-300">
+                      <span className="w-6 h-6 rounded-lg bg-primary-light border border-primary/20 flex items-center justify-center text-xs font-bold text-primary shrink-0">
                         {idx + 1}
                       </span>
-                      <h2 className="text-base sm:text-lg font-bold text-white">
+                      <h2 className="text-base sm:text-lg font-bold text-heading">
                         {section.title}
                       </h2>
                     </div>
@@ -537,8 +536,8 @@ export const LessonView: React.FC<LessonViewProps> = ({
                       onClick={() => handleToggleSectionComplete(section.id)}
                       className={`px-3 py-1 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition border w-fit ${
                         isDone
-                          ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/30"
-                          : "bg-slate-900 text-slate-400 border-slate-800 hover:text-white"
+                          ? "bg-accent-light text-accent border-accent/25"
+                          : "bg-subtle text-muted border-line hover:text-heading"
                       }`}
                     >
                       <CheckCircle2 className="w-3.5 h-3.5" />
@@ -547,24 +546,24 @@ export const LessonView: React.FC<LessonViewProps> = ({
                   </div>
 
                   {/* Section Content */}
-                  <div className="text-xs sm:text-sm text-slate-300 leading-relaxed whitespace-pre-line space-y-3">
+                  <div className="text-xs sm:text-sm text-body leading-relaxed whitespace-pre-line space-y-3">
                     {section.content}
                   </div>
 
                   {/* Code snippet if present */}
                   {section.code_snippet && (
-                    <div className="rounded-xl overflow-hidden border border-slate-800 bg-slate-950/80">
-                      <div className="flex items-center justify-between px-3 py-1.5 bg-slate-900 border-b border-slate-800 text-[10px] text-slate-400">
+                    <div className="rounded-xl overflow-hidden border border-line bg-codeblock">
+                      <div className="flex items-center justify-between px-3 py-1.5 bg-subtle border-b border-line text-[10px] text-muted">
                         <span className="font-mono">Code Snippet / Formula</span>
                         <button
                           onClick={() => handleCopyCode(section.code_snippet!, section.id)}
-                          className="flex items-center gap-1 hover:text-white"
+                          className="flex items-center gap-1 hover:text-heading"
                         >
                           <Copy className="w-3 h-3" />
                           <span>{copiedIndex === section.id ? "Copied!" : "Copy"}</span>
                         </button>
                       </div>
-                      <pre className="p-3 text-xs font-mono text-emerald-300 overflow-x-auto">
+                      <pre className="p-3 text-xs font-mono text-emerald-700 dark:text-emerald-300 overflow-x-auto">
                         {section.code_snippet}
                       </pre>
                     </div>
@@ -576,7 +575,7 @@ export const LessonView: React.FC<LessonViewProps> = ({
                       {section.key_concepts.map((kc, i) => (
                         <span
                           key={i}
-                          className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-slate-800/80 border border-slate-700/60 text-slate-300"
+                          className="text-[10px] font-semibold px-2.5 py-0.5 rounded-md bg-subtle border border-line text-body"
                         >
                           {kc}
                         </span>
@@ -586,10 +585,10 @@ export const LessonView: React.FC<LessonViewProps> = ({
 
                   {/* Citations */}
                   {section.source_citations && section.source_citations.length > 0 && (
-                    <div className="pt-2 text-[11px] text-slate-400 flex items-center gap-2">
-                      <span className="font-semibold text-slate-500">Source:</span>
+                    <div className="pt-2 text-[11px] text-muted flex items-center gap-2 flex-wrap">
+                      <span className="font-semibold text-muted">Source:</span>
                       {section.source_citations.map((c, i) => (
-                        <span key={i} className="text-brand-400 font-mono">
+                        <span key={i} className="text-primary font-mono">
                           {c}
                         </span>
                       ))}
@@ -602,19 +601,19 @@ export const LessonView: React.FC<LessonViewProps> = ({
 
           {/* Key Terminology & Definitions */}
           {lesson.content.key_terms && lesson.content.key_terms.length > 0 && (
-            <div className="glass-panel rounded-2xl p-6 border border-slate-800 space-y-4">
-              <h3 className="text-sm font-bold uppercase tracking-wider text-white flex items-center gap-2">
-                <BookOpen className="w-4 h-4 text-brand-400" />
+            <div className="bg-surface rounded-2xl p-6 border border-line space-y-4 shadow-sm">
+              <h3 className="text-sm font-bold uppercase tracking-wider text-heading flex items-center gap-2">
+                <BookOpen className="w-4 h-4 text-primary" />
                 Key Terminology & Definitions
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {lesson.content.key_terms.map((item, idx) => (
                   <div
                     key={idx}
-                    className="p-3.5 rounded-xl bg-slate-900/60 border border-slate-800 space-y-1"
+                    className="p-3.5 rounded-xl bg-subtle border border-line space-y-1"
                   >
-                    <p className="text-xs font-bold text-brand-300 font-mono">{item.term}</p>
-                    <p className="text-xs text-slate-300 leading-relaxed">{item.definition}</p>
+                    <p className="text-xs font-bold text-primary font-mono">{item.term}</p>
+                    <p className="text-xs text-body leading-relaxed">{item.definition}</p>
                   </div>
                 ))}
               </div>
@@ -623,32 +622,32 @@ export const LessonView: React.FC<LessonViewProps> = ({
 
           {/* Common Misconceptions */}
           {lesson.content.misconceptions && lesson.content.misconceptions.length > 0 && (
-            <div className="glass-panel rounded-2xl p-6 border border-slate-800 space-y-4">
-              <h3 className="text-sm font-bold uppercase tracking-wider text-white flex items-center gap-2">
-                <AlertCircle className="w-4 h-4 text-amber-400" />
+            <div className="bg-surface rounded-2xl p-6 border border-line space-y-4 shadow-sm">
+              <h3 className="text-sm font-bold uppercase tracking-wider text-heading flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 text-warning" />
                 Common Pitfalls & Misconceptions
               </h3>
               <div className="space-y-3">
                 {lesson.content.misconceptions.map((m, idx) => (
                   <div
                     key={idx}
-                    className="p-4 rounded-xl bg-slate-900/60 border border-slate-800 space-y-2 text-xs"
+                    className="p-4 rounded-xl bg-subtle border border-line space-y-2 text-xs"
                   >
-                    <div className="flex items-start gap-2 text-rose-300">
+                    <div className="flex items-start gap-2 text-error">
                       <XCircle className="w-4 h-4 shrink-0 mt-0.5" />
                       <div>
                         <span className="font-bold">Misconception: </span>
                         <span>{m.misconception}</span>
                       </div>
                     </div>
-                    <div className="flex items-start gap-2 text-emerald-300">
+                    <div className="flex items-start gap-2 text-accent">
                       <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" />
                       <div>
                         <span className="font-bold">Correction: </span>
                         <span>{m.correction}</span>
                       </div>
                     </div>
-                    <p className="text-slate-400 pl-6 leading-relaxed">{m.explanation}</p>
+                    <p className="text-muted pl-6 leading-relaxed">{m.explanation}</p>
                   </div>
                 ))}
               </div>
@@ -656,18 +655,18 @@ export const LessonView: React.FC<LessonViewProps> = ({
           )}
 
           {/* Lesson Summary & Takeaways */}
-          <div className="glass-panel rounded-2xl p-6 border border-slate-800 space-y-4">
-            <h3 className="text-sm font-bold uppercase tracking-wider text-white flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+          <div className="bg-surface rounded-2xl p-6 border border-line space-y-4 shadow-sm">
+            <h3 className="text-sm font-bold uppercase tracking-wider text-heading flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-accent" />
               Lesson Summary & Takeaways
             </h3>
-            <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+            <p className="text-xs sm:text-sm text-body leading-relaxed">
               {lesson.content.summary}
             </p>
             <ul className="space-y-1.5 pt-2">
               {lesson.content.takeaways.map((t, idx) => (
-                <li key={idx} className="text-xs text-slate-300 flex items-start gap-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 mt-1.5 shrink-0" />
+                <li key={idx} className="text-xs text-body flex items-start gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-accent mt-1.5 shrink-0" />
                   <span>{t}</span>
                 </li>
               ))}
@@ -676,15 +675,15 @@ export const LessonView: React.FC<LessonViewProps> = ({
 
           {/* Sources Provenance Drawer */}
           {lesson.sources && lesson.sources.length > 0 && (
-            <div className="p-4 rounded-2xl bg-slate-900/50 border border-slate-800 text-xs space-y-2">
-              <p className="font-bold text-slate-400 text-[11px] uppercase tracking-wider">
+            <div className="p-4 rounded-2xl bg-subtle border border-line text-xs space-y-2">
+              <p className="font-bold text-muted text-[11px] uppercase tracking-wider">
                 Grounded Course Document Sources
               </p>
               <div className="flex flex-wrap gap-2">
                 {lesson.sources.map((s, idx) => (
                   <span
                     key={idx}
-                    className="text-[11px] px-2.5 py-1 rounded-lg bg-slate-800/80 border border-slate-700/80 text-slate-300"
+                    className="text-[11px] px-2.5 py-1 rounded-lg bg-surface border border-line text-body"
                   >
                     {s.document_name} • Page {s.page}
                   </span>
@@ -701,40 +700,40 @@ export const LessonView: React.FC<LessonViewProps> = ({
           {lesson.content.worked_examples.map((example, idx) => (
             <div
               key={idx}
-              className="glass-panel rounded-2xl p-6 border border-slate-800 space-y-4"
+              className="bg-surface rounded-2xl p-6 border border-line space-y-4 shadow-sm"
             >
-              <div className="flex items-center gap-2 pb-2 border-b border-slate-800">
-                <Lightbulb className="w-4 h-4 text-brand-400" />
-                <h3 className="text-base font-bold text-white">Example {idx + 1}</h3>
+              <div className="flex items-center gap-2 pb-2 border-b border-line">
+                <Lightbulb className="w-4 h-4 text-primary" />
+                <h3 className="text-base font-bold text-heading">Example {idx + 1}</h3>
               </div>
 
-              <div className="p-4 rounded-xl bg-slate-900/70 border border-slate-800 text-xs sm:text-sm text-slate-200">
-                <p className="font-semibold text-slate-400 text-[11px] uppercase mb-1">
+              <div className="p-4 rounded-xl bg-subtle border border-line text-xs sm:text-sm text-heading">
+                <p className="font-semibold text-muted text-[11px] uppercase mb-1">
                   Problem Statement
                 </p>
                 <p>{example.problem}</p>
               </div>
 
               <div className="space-y-2 text-xs sm:text-sm">
-                <p className="font-semibold text-slate-400 text-[11px] uppercase">
+                <p className="font-semibold text-muted text-[11px] uppercase">
                   Step-by-Step Solution
                 </p>
                 <div className="space-y-2">
                   {example.step_by_step_solution.map((step, sIdx) => (
                     <div
                       key={sIdx}
-                      className="flex items-start gap-3 p-3 rounded-xl bg-slate-900/40 border border-slate-800/80"
+                      className="flex items-start gap-3 p-3 rounded-xl bg-subtle border border-line"
                     >
-                      <span className="w-5 h-5 rounded-full bg-brand-500/20 text-brand-300 border border-brand-500/30 flex items-center justify-center text-[10px] font-bold shrink-0">
+                      <span className="w-5 h-5 rounded-full bg-primary-light text-primary border border-primary/25 flex items-center justify-center text-[10px] font-bold shrink-0">
                         {sIdx + 1}
                       </span>
-                      <span className="text-slate-300 leading-relaxed">{step}</span>
+                      <span className="text-body leading-relaxed">{step}</span>
                     </div>
                   ))}
                 </div>
               </div>
 
-              <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-300">
+              <div className="p-3 rounded-xl bg-accent-light border border-accent/25 text-xs text-accent">
                 <span className="font-bold">Why this works: </span>
                 <span>{example.explanation}</span>
               </div>
@@ -746,7 +745,7 @@ export const LessonView: React.FC<LessonViewProps> = ({
       {/* Tab 3: Curated Web Resources */}
       {!loading && !generating && lesson && activeTab === "resources" && (
         <div className="space-y-4">
-          <p className="text-xs text-slate-400">
+          <p className="text-xs text-muted">
             Authoritative documentation, official references, and technical articles curated for this lesson.
           </p>
 
@@ -754,28 +753,28 @@ export const LessonView: React.FC<LessonViewProps> = ({
             {lesson.web_resources.map((res, idx) => (
               <div
                 key={idx}
-                className="glass-panel rounded-2xl p-5 border border-slate-800 hover:border-slate-700 transition flex flex-col justify-between space-y-4"
+                className="bg-surface rounded-2xl p-5 border border-line hover:border-primary/40 transition flex flex-col justify-between space-y-4 shadow-sm"
               >
                 <div className="space-y-2">
                   <div className="flex items-center justify-between gap-2">
-                    <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-md bg-brand-500/20 text-brand-300 border border-brand-500/30">
+                    <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-md bg-primary-light text-primary border border-primary/25">
                       {res.domain}
                     </span>
-                    <span className="text-[10px] text-slate-400 font-semibold uppercase">
+                    <span className="text-[10px] text-muted font-semibold uppercase">
                       {res.level}
                     </span>
                   </div>
 
-                  <h3 className="text-sm font-bold text-white line-clamp-2">{res.title}</h3>
+                  <h3 className="text-sm font-bold text-heading line-clamp-2">{res.title}</h3>
 
-                  <p className="text-xs text-slate-300 leading-relaxed line-clamp-3">
+                  <p className="text-xs text-body leading-relaxed line-clamp-3">
                     {res.snippet}
                   </p>
                 </div>
 
-                <div className="space-y-3 pt-3 border-t border-slate-800/80">
-                  <div className="text-[11px] text-slate-400">
-                    <span className="text-brand-400 font-semibold">Objective: </span>
+                <div className="space-y-3 pt-3 border-t border-line">
+                  <div className="text-[11px] text-muted">
+                    <span className="text-primary font-semibold">Objective: </span>
                     <span>{res.learning_objective}</span>
                   </div>
 
@@ -783,7 +782,7 @@ export const LessonView: React.FC<LessonViewProps> = ({
                     href={res.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center justify-center gap-1.5 w-full py-2 rounded-xl text-xs font-bold bg-slate-900 border border-slate-700 hover:border-slate-600 text-white transition"
+                    className="flex items-center justify-center gap-1.5 w-full py-2 rounded-xl text-xs font-bold bg-subtle border border-line hover:border-primary text-heading transition"
                   >
                     <span>Read Documentation</span>
                     <ExternalLink className="w-3.5 h-3.5" />
@@ -798,8 +797,8 @@ export const LessonView: React.FC<LessonViewProps> = ({
       {/* Tab 4: YouTube Video Tutorials */}
       {!loading && !generating && lesson && activeTab === "videos" && (
         <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <p className="text-xs text-slate-400">
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <p className="text-xs text-muted">
               Verified video tutorials and visual walkthroughs covering this lesson.
             </p>
             <a
@@ -808,7 +807,7 @@ export const LessonView: React.FC<LessonViewProps> = ({
               )}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-xs font-semibold text-brand-400 hover:underline flex items-center gap-1"
+              className="text-xs font-semibold text-primary hover:underline flex items-center gap-1"
             >
               <span>Search YouTube Directly</span>
               <ExternalLink className="w-3 h-3" />
@@ -816,11 +815,11 @@ export const LessonView: React.FC<LessonViewProps> = ({
           </div>
 
           {lesson.youtube_resources.length === 0 ? (
-            <div className="glass-panel p-8 rounded-2xl border border-slate-800 text-center space-y-3">
-              <Video className="w-8 h-8 text-slate-500 mx-auto" />
-              <p className="text-sm font-bold text-white">No Direct API Videos Configured</p>
-              <p className="text-xs text-slate-400 max-w-md mx-auto">
-                To enable automatic in-app video embeds, add your YouTube Data API v3 key in <code className="text-brand-300">.env</code>. You can still search verified tutorials directly:
+            <div className="bg-surface p-8 rounded-2xl border border-line text-center space-y-3 shadow-sm">
+              <Video className="w-8 h-8 text-muted mx-auto" />
+              <p className="text-sm font-bold text-heading">No Direct API Videos Configured</p>
+              <p className="text-xs text-muted max-w-md mx-auto">
+                To enable automatic in-app video embeds, add your YouTube Data API v3 key in <code className="text-primary">.env</code>. You can still search verified tutorials directly:
               </p>
               <a
                 href={`https://www.youtube.com/results?search_query=${encodeURIComponent(
@@ -828,7 +827,7 @@ export const LessonView: React.FC<LessonViewProps> = ({
                 )}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-brand-500 text-white hover:bg-brand-600 transition"
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-primary text-white hover:bg-primary-hover transition"
               >
                 <span>Find Tutorials on YouTube</span>
                 <ExternalLink className="w-3.5 h-3.5" />
@@ -839,7 +838,7 @@ export const LessonView: React.FC<LessonViewProps> = ({
               {lesson.youtube_resources.map((video, idx) => (
                 <div
                   key={idx}
-                  className="glass-panel rounded-2xl overflow-hidden border border-slate-800 hover:border-slate-700 transition flex flex-col justify-between"
+                  className="bg-surface rounded-2xl overflow-hidden border border-line hover:border-primary/40 transition flex flex-col justify-between shadow-sm"
                 >
                   <div className="relative group cursor-pointer" onClick={() => setActiveVideoId(video.video_id)}>
                     <img
@@ -848,7 +847,7 @@ export const LessonView: React.FC<LessonViewProps> = ({
                       className="w-full h-40 object-cover group-hover:scale-105 transition-transform duration-300"
                     />
                     <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-80 group-hover:opacity-100 transition">
-                      <div className="w-12 h-12 rounded-full bg-brand-500/90 text-white flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                      <div className="w-12 h-12 rounded-full bg-primary text-white flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
                         <Play className="w-5 h-5 ml-0.5 fill-current" />
                       </div>
                     </div>
@@ -859,18 +858,18 @@ export const LessonView: React.FC<LessonViewProps> = ({
 
                   <div className="p-4 space-y-2 flex-1 flex flex-col justify-between">
                     <div className="space-y-1">
-                      <p className="text-[11px] font-semibold text-slate-400">{video.channel_name}</p>
-                      <h3 className="text-xs sm:text-sm font-bold text-white line-clamp-2">
+                      <p className="text-[11px] font-semibold text-muted">{video.channel_name}</p>
+                      <h3 className="text-xs sm:text-sm font-bold text-heading line-clamp-2">
                         {video.title}
                       </h3>
-                      <p className="text-[11px] text-slate-400 line-clamp-2">
+                      <p className="text-[11px] text-muted line-clamp-2">
                         {video.relevance_reason}
                       </p>
                     </div>
 
                     <button
                       onClick={() => setActiveVideoId(video.video_id)}
-                      className="w-full py-1.5 rounded-xl text-xs font-bold bg-slate-900 border border-slate-800 hover:border-slate-700 text-slate-200 transition mt-2"
+                      className="w-full py-1.5 rounded-xl text-xs font-bold bg-subtle border border-line hover:border-primary text-heading transition mt-2"
                     >
                       Watch Tutorial
                     </button>
@@ -882,13 +881,13 @@ export const LessonView: React.FC<LessonViewProps> = ({
 
           {/* Video Modal Player */}
           {activeVideoId && (
-            <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-              <div className="w-full max-w-4xl bg-slate-900 rounded-3xl overflow-hidden border border-slate-800 shadow-2xl space-y-4 p-4">
+            <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
+              <div className="w-full max-w-4xl bg-surface rounded-3xl overflow-hidden border border-line shadow-2xl space-y-4 p-4">
                 <div className="flex items-center justify-between px-2">
-                  <h3 className="text-sm font-bold text-white">Video Tutorial Player</h3>
+                  <h3 className="text-sm font-bold text-heading">Video Tutorial Player</h3>
                   <button
                     onClick={() => setActiveVideoId(null)}
-                    className="p-1.5 rounded-xl hover:bg-slate-800 text-slate-400 hover:text-white"
+                    className="p-1.5 rounded-xl hover:bg-subtle text-muted hover:text-heading"
                   >
                     <XCircle className="w-5 h-5" />
                   </button>
@@ -911,7 +910,7 @@ export const LessonView: React.FC<LessonViewProps> = ({
       {/* Tab 5: Practical Practice Exercises */}
       {!loading && !generating && lesson && activeTab === "exercises" && (
         <div className="space-y-4">
-          <p className="text-xs text-slate-400">
+          <p className="text-xs text-muted">
             Apply your knowledge with tailored practical exercises. Reveal progressive hints as needed.
           </p>
 
@@ -924,15 +923,15 @@ export const LessonView: React.FC<LessonViewProps> = ({
               return (
                 <div
                   key={exercise.id || idx}
-                  className="glass-panel rounded-2xl p-6 border border-slate-800 space-y-4"
+                  className="bg-surface rounded-2xl p-6 border border-line space-y-4 shadow-sm"
                 >
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-800">
-                    <div className="flex items-center gap-2">
-                      <Code2 className="w-4 h-4 text-brand-400" />
-                      <h3 className="text-sm sm:text-base font-bold text-white">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-line">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <Code2 className="w-4 h-4 text-primary" />
+                      <h3 className="text-sm sm:text-base font-bold text-heading">
                         Exercise {idx + 1}: {exercise.exercise_type.toUpperCase()}
                       </h3>
-                      <span className="text-[10px] px-2 py-0.5 rounded font-semibold bg-slate-800 text-slate-300">
+                      <span className="text-[10px] px-2 py-0.5 rounded font-semibold bg-codeblock text-body border border-line">
                         {exercise.difficulty}
                       </span>
                     </div>
@@ -941,8 +940,8 @@ export const LessonView: React.FC<LessonViewProps> = ({
                       onClick={() => handleMarkExerciseComplete(exercise.id)}
                       className={`px-3 py-1 rounded-xl text-xs font-semibold border flex items-center gap-1.5 transition ${
                         isAttempted
-                          ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/30"
-                          : "bg-slate-900 text-slate-300 border-slate-800 hover:text-white"
+                          ? "bg-accent-light text-accent border-accent/25"
+                          : "bg-subtle text-body border-line hover:text-heading"
                       }`}
                     >
                       <CheckCircle2 className="w-3.5 h-3.5" />
@@ -950,17 +949,17 @@ export const LessonView: React.FC<LessonViewProps> = ({
                     </button>
                   </div>
 
-                  <p className="text-xs sm:text-sm text-slate-200 leading-relaxed font-medium">
+                  <p className="text-xs sm:text-sm text-heading leading-relaxed font-medium">
                     {exercise.prompt}
                   </p>
 
                   {/* Progressive Hints */}
                   <div className="space-y-2 pt-2">
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 flex-wrap">
                       {currentHints < exercise.hints.length && (
                         <button
                           onClick={() => handleRevealHint(exercise.id, exercise.hints.length)}
-                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-900 border border-slate-800 text-brand-400 hover:bg-slate-800 transition"
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-primary-light border border-primary/25 text-primary hover:opacity-90 transition"
                         >
                           <Lightbulb className="w-3.5 h-3.5" />
                           <span>Get Hint {currentHints + 1} of {exercise.hints.length}</span>
@@ -969,7 +968,7 @@ export const LessonView: React.FC<LessonViewProps> = ({
 
                       <button
                         onClick={() => handleToggleSolution(exercise.id)}
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-900 border border-slate-800 text-slate-300 hover:text-white transition"
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-subtle border border-line text-body hover:text-heading transition"
                       >
                         <Eye className="w-3.5 h-3.5" />
                         <span>{showSolution ? "Hide Solution" : "Reveal Solution"}</span>
@@ -980,9 +979,9 @@ export const LessonView: React.FC<LessonViewProps> = ({
                     {exercise.hints.slice(0, currentHints).map((hint, hIdx) => (
                       <div
                         key={hIdx}
-                        className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-200 flex items-start gap-2"
+                        className="p-3 rounded-xl bg-warning-light border border-warning/25 text-xs text-warning flex items-start gap-2"
                       >
-                        <Lightbulb className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                        <Lightbulb className="w-4 h-4 text-warning shrink-0 mt-0.5" />
                         <div>
                           <span className="font-bold">Hint {hIdx + 1}: </span>
                           <span>{hint}</span>
@@ -992,12 +991,12 @@ export const LessonView: React.FC<LessonViewProps> = ({
 
                     {/* Render Solution */}
                     {showSolution && (
-                      <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 space-y-2 text-xs text-emerald-200">
+                      <div className="p-4 rounded-xl bg-accent-light border border-accent/25 space-y-2 text-xs text-accent">
                         <p className="font-bold">Official Solution:</p>
-                        <pre className="font-mono bg-black/40 p-3 rounded-lg overflow-x-auto whitespace-pre-wrap">
+                        <pre className="font-mono bg-codeblock text-heading border border-line p-3 rounded-lg overflow-x-auto whitespace-pre-wrap">
                           {exercise.solution}
                         </pre>
-                        <p className="text-emerald-300 text-[11px]">{exercise.explanation}</p>
+                        <p className="text-[11px] opacity-90">{exercise.explanation}</p>
                       </div>
                     )}
                   </div>
@@ -1013,14 +1012,14 @@ export const LessonView: React.FC<LessonViewProps> = ({
         <div className="space-y-6">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-base font-bold text-white">Lesson Knowledge Check</h2>
-              <p className="text-xs text-slate-400">
+              <h2 className="text-base font-bold text-heading">Lesson Knowledge Check</h2>
+              <p className="text-xs text-muted">
                 Answer these questions to assess your understanding of the lesson objectives.
               </p>
             </div>
 
             {progress?.quiz_score !== null && progress?.quiz_score !== undefined && (
-              <div className="px-3 py-1 rounded-xl bg-brand-500/20 border border-brand-500/30 text-xs font-bold text-brand-300">
+              <div className="px-3 py-1 rounded-xl bg-primary-light border border-primary/25 text-xs font-bold text-primary">
                 Score: {progress.quiz_score}%
               </div>
             )}
@@ -1034,9 +1033,9 @@ export const LessonView: React.FC<LessonViewProps> = ({
               return (
                 <div
                   key={q.id || idx}
-                  className="glass-panel rounded-2xl p-6 border border-slate-800 space-y-4"
+                  className="bg-surface rounded-2xl p-6 border border-line space-y-4 shadow-sm"
                 >
-                  <p className="text-xs sm:text-sm font-semibold text-white">
+                  <p className="text-xs sm:text-sm font-semibold text-heading">
                     {idx + 1}. {q.question}
                   </p>
 
@@ -1044,16 +1043,16 @@ export const LessonView: React.FC<LessonViewProps> = ({
                     {q.options.map((opt, oIdx) => {
                       const isOptionSelected = selected === opt;
                       let optionStyle =
-                        "bg-slate-900/60 border-slate-800 hover:border-slate-700 text-slate-200";
+                        "bg-subtle border-line hover:border-primary/40 text-body";
 
                       if (quizSubmitted) {
                         if (opt === q.answer) {
-                          optionStyle = "bg-emerald-500/20 border-emerald-500/40 text-emerald-200";
+                          optionStyle = "bg-accent-light border-accent text-heading font-semibold";
                         } else if (isOptionSelected && !isCorrect) {
-                          optionStyle = "bg-rose-500/20 border-rose-500/40 text-rose-200";
+                          optionStyle = "bg-error-light border-error text-heading font-semibold";
                         }
                       } else if (isOptionSelected) {
-                        optionStyle = "bg-brand-500/20 border-brand-500/40 text-brand-200";
+                        optionStyle = "bg-primary-light border-primary text-heading font-semibold";
                       }
 
                       return (
@@ -1064,7 +1063,7 @@ export const LessonView: React.FC<LessonViewProps> = ({
                         >
                           <span>{opt}</span>
                           {quizSubmitted && opt === q.answer && (
-                            <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                            <CheckCircle2 className="w-4 h-4 text-accent shrink-0" />
                           )}
                         </button>
                       );
@@ -1074,14 +1073,14 @@ export const LessonView: React.FC<LessonViewProps> = ({
                   {/* Feedback on submit */}
                   {quizSubmitted && (
                     <div
-                      className={`p-3 rounded-xl text-xs ${
+                      className={`p-3 rounded-xl text-xs border ${
                         isCorrect
-                          ? "bg-emerald-500/10 border border-emerald-500/20 text-emerald-300"
-                          : "bg-rose-500/10 border border-rose-500/20 text-rose-300"
+                          ? "bg-accent-light border-accent/25 text-accent"
+                          : "bg-error-light border-error/25 text-error"
                       }`}
                     >
                       <p className="font-bold">{isCorrect ? "Correct!" : "Not quite."}</p>
-                      <p className="text-[11px] mt-0.5">{q.explanation}</p>
+                      <p className="text-[11px] mt-0.5 opacity-95">{q.explanation}</p>
                     </div>
                   )}
                 </div>
@@ -1093,7 +1092,7 @@ export const LessonView: React.FC<LessonViewProps> = ({
             <button
               onClick={handleSubmitQuiz}
               disabled={Object.keys(quizAnswers).length === 0}
-              className="w-full py-3 rounded-xl font-bold text-xs bg-brand-500 hover:bg-brand-600 text-white transition disabled:opacity-50"
+              className="w-full py-3 rounded-xl font-bold text-xs bg-primary hover:bg-primary-hover text-white transition disabled:opacity-50"
             >
               Submit Knowledge Check
             </button>
@@ -1103,7 +1102,7 @@ export const LessonView: React.FC<LessonViewProps> = ({
                 setQuizSubmitted(false);
                 setQuizAnswers({});
               }}
-              className="w-full py-3 rounded-xl font-bold text-xs bg-slate-900 border border-slate-800 hover:bg-slate-800 text-slate-200 transition"
+              className="w-full py-3 rounded-xl font-bold text-xs bg-subtle border border-line hover:bg-codeblock text-heading transition"
             >
               Retry Knowledge Check
             </button>
@@ -1113,12 +1112,12 @@ export const LessonView: React.FC<LessonViewProps> = ({
 
       {/* Tab 7: Ask Companion Tutor (Lesson Aware) */}
       {!loading && !generating && lesson && activeTab === "tutor" && (
-        <div className="glass-panel rounded-3xl p-6 border border-slate-800 space-y-4">
-          <div className="flex items-center gap-2 pb-3 border-b border-slate-800">
-            <Sparkles className="w-4 h-4 text-brand-400" />
+        <div className="bg-surface rounded-3xl p-6 border border-line space-y-4 shadow-sm">
+          <div className="flex items-center gap-2 pb-3 border-b border-line">
+            <Sparkles className="w-4 h-4 text-primary" />
             <div>
-              <h2 className="text-sm font-bold text-white">Ask {MASCOT_NAME} for this Lesson</h2>
-              <p className="text-[11px] text-slate-400">
+              <h2 className="text-sm font-bold text-heading">Ask {MASCOT_NAME} for this Lesson</h2>
+              <p className="text-[11px] text-muted">
                 Grounded in your course documents, lesson notes, and current study goals.
               </p>
             </div>
@@ -1136,7 +1135,7 @@ export const LessonView: React.FC<LessonViewProps> = ({
               <button
                 key={idx}
                 onClick={() => handleSendTutorChat(chip)}
-                className="text-[11px] px-3 py-1.5 rounded-xl bg-slate-900/80 border border-slate-800 text-slate-300 hover:text-white hover:border-slate-700 transition"
+                className="text-[11px] px-3 py-1.5 rounded-xl bg-subtle border border-line text-body hover:text-heading hover:border-primary/40 transition"
               >
                 {chip}
               </button>
@@ -1144,11 +1143,11 @@ export const LessonView: React.FC<LessonViewProps> = ({
           </div>
 
           {/* Chat Messages Log */}
-          <div className="min-h-[240px] max-h-[380px] overflow-y-auto space-y-3 p-3 rounded-2xl bg-slate-950/60 border border-slate-800/80">
+          <div className="min-h-[240px] max-h-[380px] overflow-y-auto space-y-3 p-3 rounded-2xl bg-subtle border border-line">
             {chatMessages.length === 0 ? (
-              <div className="h-48 flex flex-col items-center justify-center text-center text-xs text-slate-400 space-y-1">
-                <MessageSquare className="w-8 h-8 text-slate-600 mb-1" />
-                <p className="font-semibold text-slate-300">Ready to help you understand {lesson.title}</p>
+              <div className="h-48 flex flex-col items-center justify-center text-center text-xs text-muted space-y-1">
+                <MessageSquare className="w-8 h-8 text-muted/60 mb-1" />
+                <p className="font-semibold text-heading">Ready to help you understand {lesson.title}</p>
                 <p>Click a suggestion above or ask any question about this lesson.</p>
               </div>
             ) : (
@@ -1162,14 +1161,14 @@ export const LessonView: React.FC<LessonViewProps> = ({
                   <div
                     className={`max-w-[85%] p-3.5 rounded-2xl text-xs sm:text-sm leading-relaxed ${
                       msg.role === "user"
-                        ? "bg-brand-600 text-white rounded-br-none"
-                        : "bg-slate-900 border border-slate-800 text-slate-200 rounded-bl-none"
+                        ? "bg-primary text-white rounded-br-none"
+                        : "bg-surface border border-line text-body rounded-bl-none shadow-sm"
                     }`}
                   >
                     <p className="whitespace-pre-line">{msg.content}</p>
 
                     {msg.sources && msg.sources.length > 0 && (
-                      <div className="mt-2 pt-2 border-t border-slate-800 text-[10px] text-brand-300">
+                      <div className="mt-2 pt-2 border-t border-line text-[10px] text-primary">
                         <span>Grounded in: </span>
                         {msg.sources.map((s, sIdx) => (
                           <span key={sIdx} className="font-mono">
@@ -1184,8 +1183,8 @@ export const LessonView: React.FC<LessonViewProps> = ({
             )}
 
             {chatLoading && (
-              <div className="flex items-center gap-2 text-xs text-slate-400 p-2">
-                <div className="w-2 h-2 rounded-full bg-brand-400 animate-ping" />
+              <div className="flex items-center gap-2 text-xs text-muted p-2">
+                <div className="w-2 h-2 rounded-full bg-primary animate-ping" />
                 <span>{MASCOT_NAME} is thinking...</span>
               </div>
             )}
@@ -1205,12 +1204,12 @@ export const LessonView: React.FC<LessonViewProps> = ({
               onChange={(e) => setChatInput(e.target.value)}
               placeholder={`Ask a question about ${lesson.title}...`}
               disabled={chatLoading}
-              className="flex-1 px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-800 text-xs sm:text-sm text-white placeholder-slate-500 focus:outline-none focus:border-brand-500"
+              className="flex-1 px-4 py-2.5 rounded-xl bg-subtle border border-line text-xs sm:text-sm text-heading placeholder:text-muted focus:outline-none focus:border-primary focus:bg-surface transition"
             />
             <button
               type="submit"
               disabled={!chatInput.trim() || chatLoading}
-              className="px-4 py-2.5 rounded-xl bg-brand-500 hover:bg-brand-600 text-white transition disabled:opacity-50"
+              className="px-4 py-2.5 rounded-xl bg-primary hover:bg-primary-hover text-white transition disabled:opacity-50"
             >
               <Send className="w-4 h-4" />
             </button>
@@ -1220,18 +1219,18 @@ export const LessonView: React.FC<LessonViewProps> = ({
 
       {/* Tab 8: Reflection & Completion */}
       {!loading && !generating && lesson && activeTab === "reflection" && (
-        <div className="glass-panel rounded-3xl p-6 sm:p-8 border border-slate-800 space-y-6">
+        <div className="bg-surface rounded-3xl p-6 sm:p-8 border border-line space-y-6 shadow-sm">
           <div className="space-y-1">
-            <h2 className="text-base sm:text-lg font-bold text-white">
+            <h2 className="text-base sm:text-lg font-bold text-heading">
               Lesson Reflection & Self-Assessment
             </h2>
-            <p className="text-xs text-slate-400">
+            <p className="text-xs text-muted">
               Summarizing what you learned in your own words solidifies long-term memory retention.
             </p>
           </div>
 
           <div className="space-y-2">
-            <label className="text-xs font-semibold text-slate-300">
+            <label className="text-xs font-semibold text-body">
               What was the most important concept or insight you learned today?
             </label>
             <textarea
@@ -1239,23 +1238,23 @@ export const LessonView: React.FC<LessonViewProps> = ({
               value={reflectionText}
               onChange={(e) => setReflectionText(e.target.value)}
               placeholder="e.g., In-order traversal of a BST always yields sorted keys because left subtree is always smaller than the root..."
-              className="w-full p-4 rounded-2xl bg-slate-900 border border-slate-800 text-xs sm:text-sm text-white placeholder-slate-500 focus:outline-none focus:border-brand-500"
+              className="w-full p-4 rounded-2xl bg-subtle border border-line text-xs sm:text-sm text-heading placeholder:text-muted focus:outline-none focus:border-primary focus:bg-surface transition"
             />
             <div className="flex justify-end">
               <button
                 onClick={handleSaveReflection}
                 disabled={savingReflection}
-                className="px-4 py-2 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-white transition"
+                className="px-4 py-2 rounded-xl text-xs font-bold bg-subtle hover:bg-codeblock text-heading border border-line transition"
               >
                 {savingReflection ? "Saving..." : "Save Reflection"}
               </button>
             </div>
           </div>
 
-          <div className="p-5 rounded-2xl bg-slate-900/60 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="p-5 rounded-2xl bg-subtle border border-line flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="space-y-1">
-              <h3 className="text-sm font-bold text-white">Complete Lesson Milestone</h3>
-              <p className="text-xs text-slate-400">
+              <h3 className="text-sm font-bold text-heading">Complete Lesson Milestone</h3>
+              <p className="text-xs text-muted">
                 Marking this lesson complete updates your course roadmap and topic mastery progress.
               </p>
             </div>
@@ -1264,8 +1263,8 @@ export const LessonView: React.FC<LessonViewProps> = ({
               onClick={handleToggleLessonComplete}
               className={`px-5 py-2.5 rounded-xl text-xs font-bold transition border flex items-center justify-center gap-2 ${
                 progress?.completed
-                  ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/30"
-                  : "bg-brand-500 text-white border-transparent hover:bg-brand-600"
+                  ? "bg-accent-light text-accent border-accent/25"
+                  : "bg-primary text-white border-transparent hover:bg-primary-hover"
               }`}
             >
               <CheckCircle2 className="w-4 h-4" />

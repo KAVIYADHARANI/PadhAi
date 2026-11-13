@@ -29,10 +29,18 @@ logger = logging.getLogger(__name__)
 def is_unwanted_topic_name(name: str) -> bool:
     """Checks if a proposed topic name is a raw command, code snippet, or invalid fragment."""
     name_clean = name.strip().lower()
+
+    # Rule: Topics must not be empty or longer than 80 characters
+    if len(name_clean) < 3 or len(name_clean) > 80:
+        return True
+
+    # Rule: Filter command, shell, and prompt prefix tokens
     command_prefixes = (
         "pip ",
+        "pip3 ",
         "npm ",
         "yarn ",
+        "pnpm ",
         "git ",
         "cd ",
         "mkdir ",
@@ -46,15 +54,39 @@ def is_unwanted_topic_name(name: str) -> bool:
         "cat ",
         "ls ",
         "touch ",
+        "save as ",
+        "save as:",
+        "save to ",
+        "import ",
+        "from ",
+        "$ ",
+        ">>> ",
+        "load: ",
+        "save: ",
+        "extract: ",
+        "export: ",
+        "run: ",
+        "exec: ",
+        "bash: ",
+        "sh: ",
+        "node ",
+        "uvicorn ",
+        "pytest ",
+        "source ",
+        "echo ",
     )
-    if any(name_clean.startswith(p) for p in command_prefixes):
+    if any(name_clean.startswith(p) for p in command_prefixes) or name_clean.startswith(("$", ">>>")):
         return True
 
+    # Rule: Filter prohibited substrings, script file names, and code syntax
     prohibited_substrings = (
         "pip install",
         "npm install",
         "apt-get install",
         "git clone",
+        "save as ",
+        "python -",
+        "python3 -",
         "run dev",
         "def ",
         "class ",
@@ -63,6 +95,20 @@ def is_unwanted_topic_name(name: str) -> bool:
         "const ",
         "let ",
         "return ",
+        "load:",
+        "save:",
+        "extract:",
+        ".py",
+        ".sh",
+        ".ts",
+        ".js",
+        "()",
+        "{}",
+        "[]",
+        "=>",
+        "==",
+        "!=",
+        ";",
     )
     if any(tok in name_clean for tok in prohibited_substrings):
         return True
@@ -75,7 +121,8 @@ def is_unwanted_topic_name(name: str) -> bool:
     if re.match(r"^\d+(\.\d+)*$", name_clean):
         return True
 
-    if len(name_clean) < 3 or len(name_clean) > 120:
+    words = name_clean.split()
+    if len(words) > 12:
         return True
 
     return False
@@ -174,15 +221,16 @@ async def group_chunks_into_topics(
         "You are an expert curriculum designer and educator. Your goal is to synthesize raw textbook "
         "and course document chunks into a structured, high-quality syllabus.\n"
         "CRITICAL RULES:\n"
-        "1. Concept Names Only: Topics must be meaningful, professional learning concepts "
-        "(e.g., 'Relational Schema Design', 'Cloud Service Models', 'Virtualization Architecture').\n"
-        "2. Prohibited Standalone Topics: NEVER use shell commands ('pip install', 'npm run', 'git clone'), "
-        "file paths, procedural commands, code snippets ('def main():'), or arbitrary sentence fragments as topic names. "
-        "Group practical steps and code examples under their parent theoretical concept.\n"
-        "3. Group into Modules: Provide a concise 'module_name' (e.g. 'Module 1: Foundations', 'Module 2: Core Architecture').\n"
-        "4. Learning Objectives: Provide an actionable 'learning_objective' for each topic.\n"
-        "5. Deduplication: Merge redundant or overlapping chunks under the same topic concept.\n"
-        "6. Every chunk index from 0 to N-1 must map to at least one topic."
+        "1. Concise Conceptual Titles: Topics MUST be concise, professional conceptual titles "
+        "(3 to 8 words, e.g., 'Data Loading Techniques', 'Data Profiling with pandas', 'Relational Schema Design', 'Cloud Service Models'). "
+        "Never exceed 80 characters.\n"
+        "2. Strict Rejection of Commands & Code: NEVER use shell commands ('pip install...', 'python -i...', '$ ...', '>>> ...'), "
+        "file paths ('save as shop.py...'), procedural step prefixes ('LOAD: write to a database table'), or code snippets as topic names. "
+        "Group practical code steps and commands under their parent theoretical concept.\n"
+        "3. Meaningful Module Headings: Group topics under descriptive, meaningful subject module headings "
+        "(e.g., 'Data Warehousing', 'ETL Architecture', 'Cloud Services', 'Foundations') instead of a single generic 'General Concepts'.\n"
+        "4. Actionable Learning Objectives: Provide a specific, educational 'learning_objective' for each topic.\n"
+        "5. Coverage: Every single chunk index from 0 to N-1 must map to at least one topic."
     )
 
     chat_messages = [
@@ -349,19 +397,23 @@ def _build_fallback_topic_grouping(chunks: Sequence[Chunk]) -> TopicGroupingResp
     heading_to_indices: dict[str, list[int]] = {}
 
     for i, c in enumerate(chunks):
-        heading = (c.heading_path or "General Concepts").split(">")[-1].strip()
-        if is_unwanted_topic_name(heading):
-            heading = "General Concepts"
-        if not heading:
-            heading = "General Concepts"
-        heading_to_indices.setdefault(heading, []).append(i)
+        heading = (c.heading_path or "Foundations").split(">")[-1].strip()
+        # Clean heading from code tokens or step prefixes (e.g., 'LOAD: write to table' -> 'Data Loading')
+        clean_heading = re.sub(
+            r"^(load|save|extract|step\s*\d+)\s*:\s*", "", heading, flags=re.IGNORECASE
+        ).strip()
+        if is_unwanted_topic_name(clean_heading):
+            clean_heading = "Foundational Principles"
+        if not clean_heading:
+            clean_heading = "Foundational Principles"
+        heading_to_indices.setdefault(clean_heading, []).append(i)
 
     specs: list[TopicSpec] = []
     for heading, indices in heading_to_indices.items():
         specs.append(
             TopicSpec(
                 name=heading,
-                module_name="Module 1: Course Overview",
+                module_name="Core Curriculum & Foundations",
                 parent_name=None,
                 description=f"Core concepts and principles related to {heading}.",
                 learning_objective=f"Master key fundamentals and applications of {heading}.",
@@ -372,8 +424,8 @@ def _build_fallback_topic_grouping(chunks: Sequence[Chunk]) -> TopicGroupingResp
     if not specs:
         specs.append(
             TopicSpec(
-                name="General Concepts",
-                module_name="Module 1: Foundations",
+                name="Foundational Principles",
+                module_name="Core Curriculum & Foundations",
                 parent_name=None,
                 description="Core concepts and principles.",
                 learning_objective="Master key fundamentals.",

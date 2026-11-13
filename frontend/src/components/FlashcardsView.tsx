@@ -24,12 +24,12 @@ interface FlashcardsViewProps {
 type ViewMode = "review" | "browse";
 
 const QUALITY_RATINGS = [
-  { grade: 0, label: "Blackout", desc: "No idea", color: "bg-red-500/20 text-red-300 border-red-500/30 hover:bg-red-500/30" },
-  { grade: 1, label: "Incorrect", desc: "Remembered after", color: "bg-orange-500/20 text-orange-300 border-orange-500/30 hover:bg-orange-500/30" },
-  { grade: 2, label: "Hard", desc: "Significant effort", color: "bg-amber-500/20 text-amber-300 border-amber-500/30 hover:bg-amber-500/30" },
-  { grade: 3, label: "Good", desc: "Recalled with effort", color: "bg-emerald-500/20 text-emerald-300 border-emerald-500/30 hover:bg-emerald-500/30" },
-  { grade: 4, label: "Easy", desc: "Brief hesitation", color: "bg-cyan-500/20 text-cyan-300 border-cyan-500/30 hover:bg-cyan-500/30" },
-  { grade: 5, label: "Perfect", desc: "Instant recall", color: "bg-brand-500/20 text-brand-300 border-brand-500/30 hover:bg-brand-500/30" },
+  { grade: 0, label: "Blackout", desc: "No idea", color: "bg-error-light text-error border-error/25 hover:opacity-90" },
+  { grade: 1, label: "Incorrect", desc: "Remembered after", color: "bg-warning-light text-warning border-warning/25 hover:opacity-90" },
+  { grade: 2, label: "Hard", desc: "Significant effort", color: "bg-warning-light text-warning border-warning/25 hover:opacity-90" },
+  { grade: 3, label: "Good", desc: "Recalled with effort", color: "bg-accent-light text-accent border-accent/25 hover:opacity-90" },
+  { grade: 4, label: "Easy", desc: "Brief hesitation", color: "bg-primary-light text-primary border-primary/25 hover:opacity-90" },
+  { grade: 5, label: "Perfect", desc: "Instant recall", color: "bg-primary text-white border-primary hover:bg-primary-hover" },
 ];
 
 export const FlashcardsView: React.FC<FlashcardsViewProps> = ({
@@ -148,37 +148,37 @@ export const FlashcardsView: React.FC<FlashcardsViewProps> = ({
   const activeCard = dueCards[currentCardIndex];
 
   return (
-    <div className="space-y-6 animate-fadeIn">
+    <div className="space-y-6 animate-in fade-in duration-200">
       {/* Top Header & Mode Switcher */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-800">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-line">
         <div>
-          <h2 className="text-xl font-bold text-white flex items-center gap-2.5">
-            <Layers className="w-5 h-5 text-brand-400" />
+          <h2 className="text-xl font-bold text-heading flex items-center gap-2.5">
+            <Layers className="w-5 h-5 text-primary" />
             <span>Spaced Repetition Flashcards</span>
           </h2>
-          <p className="text-xs text-slate-400 mt-0.5">
+          <p className="text-xs text-muted mt-0.5">
             Powered by the SM-2 learning algorithm for optimal active recall and retention.
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
-          <div className="bg-slate-900/80 p-1 rounded-xl border border-slate-800 flex items-center">
+        <div className="flex items-center gap-3 flex-wrap">
+          <div className="bg-codeblock p-1 rounded-xl border border-line flex items-center">
             <button
               onClick={() => setMode("review")}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition min-h-[36px] ${
                 mode === "review"
-                  ? "bg-brand-500 text-white shadow-sm"
-                  : "text-slate-400 hover:text-white"
+                  ? "bg-surface text-primary shadow-sm"
+                  : "text-muted hover:text-heading"
               }`}
             >
               Review Due ({dueCount})
             </button>
             <button
               onClick={() => setMode("browse")}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition min-h-[36px] ${
                 mode === "browse"
-                  ? "bg-brand-500 text-white shadow-sm"
-                  : "text-slate-400 hover:text-white"
+                  ? "bg-surface text-primary shadow-sm"
+                  : "text-muted hover:text-heading"
               }`}
             >
               Browse All ({totalCount})
@@ -188,7 +188,7 @@ export const FlashcardsView: React.FC<FlashcardsViewProps> = ({
           <button
             onClick={handleGenerate}
             disabled={generating}
-            className="flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold bg-brand-500/20 text-brand-300 border border-brand-500/30 hover:bg-brand-500/30 transition disabled:opacity-50"
+            className="flex items-center gap-2 px-3.5 py-2 rounded-btn text-xs font-bold bg-primary text-white hover:bg-primary-hover transition disabled:opacity-50 min-h-[44px] shadow-sm"
           >
             {generating ? (
               <RefreshCw className="w-3.5 h-3.5 animate-spin" />
@@ -202,14 +202,14 @@ export const FlashcardsView: React.FC<FlashcardsViewProps> = ({
 
       {/* Messages */}
       {error && (
-        <div className="p-3.5 rounded-xl bg-red-500/10 border border-red-500/20 text-red-300 text-xs flex items-center gap-2">
+        <div className="p-3.5 rounded-xl bg-error-light border border-error/25 text-error text-xs flex items-center gap-2">
           <AlertCircle className="w-4 h-4 shrink-0" />
           <span>{error}</span>
         </div>
       )}
 
       {successMessage && (
-        <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 text-xs flex items-center gap-2">
+        <div className="p-3.5 rounded-xl bg-accent-light border border-accent/25 text-accent text-xs flex items-center gap-2">
           <CheckCircle2 className="w-4 h-4 shrink-0" />
           <span>{successMessage}</span>
         </div>
@@ -217,13 +217,13 @@ export const FlashcardsView: React.FC<FlashcardsViewProps> = ({
 
       {/* Topic Filter Row */}
       <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs">
-        <span className="text-slate-500 font-medium shrink-0">Topic:</span>
+        <span className="text-muted font-medium shrink-0">Topic:</span>
         <button
           onClick={() => setSelectedTopicId(null)}
-          className={`px-3 py-1 rounded-lg border shrink-0 transition ${
+          className={`px-3 py-1 rounded-pill border shrink-0 transition text-xs ${
             selectedTopicId === null
-              ? "bg-brand-500/20 border-brand-500/40 text-brand-300 font-semibold"
-              : "bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200"
+              ? "bg-primary-light border-primary text-primary font-semibold"
+              : "bg-surface border-line text-muted hover:text-heading"
           }`}
         >
           All Topics
@@ -232,10 +232,10 @@ export const FlashcardsView: React.FC<FlashcardsViewProps> = ({
           <button
             key={t.id}
             onClick={() => setSelectedTopicId(t.id)}
-            className={`px-3 py-1 rounded-lg border shrink-0 transition ${
+            className={`px-3 py-1 rounded-pill border shrink-0 transition text-xs ${
               selectedTopicId === t.id
-                ? "bg-brand-500/20 border-brand-500/40 text-brand-300 font-semibold"
-                : "bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200"
+                ? "bg-primary-light border-primary text-primary font-semibold"
+                : "bg-surface border-line text-muted hover:text-heading"
             }`}
           >
             {t.name}
@@ -245,8 +245,8 @@ export const FlashcardsView: React.FC<FlashcardsViewProps> = ({
 
       {/* Loading State */}
       {loading ? (
-        <div className="p-12 text-center text-slate-400 space-y-3">
-          <RefreshCw className="w-6 h-6 animate-spin mx-auto text-brand-400" />
+        <div className="p-12 text-center text-muted space-y-3">
+          <RefreshCw className="w-6 h-6 animate-spin mx-auto text-primary" />
           <p className="text-xs">Loading flashcard deck...</p>
         </div>
       ) : mode === "review" ? (
@@ -255,20 +255,20 @@ export const FlashcardsView: React.FC<FlashcardsViewProps> = ({
           {dueCards.length > 0 && activeCard ? (
             <div className="max-w-2xl mx-auto space-y-4">
               {/* Progress counter */}
-              <div className="flex items-center justify-between text-xs text-slate-400">
-                <span className="font-semibold text-slate-300">
+              <div className="flex items-center justify-between text-xs text-muted">
+                <span className="font-semibold text-heading">
                   Card {currentCardIndex + 1} of {dueCards.length} Due
                 </span>
-                <span className="flex items-center gap-1 text-brand-400">
+                <span className="flex items-center gap-1 text-primary">
                   <Clock className="w-3.5 h-3.5" />
                   <span>Interval: {activeCard.interval_days}d · Reps: {activeCard.reps}</span>
                 </span>
               </div>
 
               {/* Progress bar */}
-              <div className="h-1.5 w-full bg-slate-900 rounded-full overflow-hidden border border-slate-800">
+              <div className="h-1.5 w-full bg-codeblock rounded-full overflow-hidden">
                 <div
-                  className="h-full bg-gradient-to-r from-brand-500 to-cyan-500 transition-all duration-300"
+                  className="h-full bg-gradient-to-r from-[#4F46E5] to-[#0D9488] transition-all duration-300"
                   style={{
                     width: `${((currentCardIndex + 1) / dueCards.length) * 100}%`,
                   }}
@@ -278,33 +278,33 @@ export const FlashcardsView: React.FC<FlashcardsViewProps> = ({
               {/* The Flashcard (Interactive Flip) */}
               <div
                 onClick={() => setIsFlipped((prev) => !prev)}
-                className="cursor-pointer group relative min-h-[300px] glass-panel rounded-3xl p-8 border border-slate-800 hover:border-brand-500/40 transition-all duration-300 flex flex-col justify-between shadow-xl"
+                className="cursor-pointer group relative min-h-[300px] bg-surface rounded-2xl p-8 border border-line hover:border-primary transition-all duration-300 flex flex-col justify-between shadow-card hover:shadow-card-hover"
               >
-                <div className="flex items-center justify-between text-xs text-slate-500 pb-4 border-b border-slate-800/60">
-                  <span className="uppercase tracking-wider font-bold text-[10px] text-brand-400">
+                <div className="flex items-center justify-between text-xs text-muted pb-4 border-b border-line">
+                  <span className="uppercase tracking-wider font-bold text-[10px] text-primary">
                     {isFlipped ? "Answer / Explanation" : "Active Recall Question"}
                   </span>
-                  <span className="text-[11px] text-slate-400 group-hover:text-brand-300 transition">
+                  <span className="text-[11px] text-muted group-hover:text-primary transition">
                     Click card to {isFlipped ? "see question" : "reveal answer"}
                   </span>
                 </div>
 
                 <div className="my-auto py-6">
-                  <p className="text-lg sm:text-xl font-medium text-white leading-relaxed text-center">
+                  <p className="text-lg sm:text-xl font-medium text-heading leading-relaxed text-center">
                     {isFlipped ? activeCard.back : activeCard.front}
                   </p>
                 </div>
 
-                <div className="pt-4 border-t border-slate-800/60 flex items-center justify-between text-[11px] text-slate-500">
+                <div className="pt-4 border-t border-line flex items-center justify-between text-[11px] text-muted">
                   <span>Ease Factor: {activeCard.ease_factor.toFixed(2)}</span>
-                  <span>Press Space or Click to Flip</span>
+                  <span>Click to Flip</span>
                 </div>
               </div>
 
               {/* SM-2 Rating Controls (Shown after flip) */}
               {isFlipped ? (
-                <div className="space-y-2 animate-fadeIn">
-                  <p className="text-center text-xs font-semibold text-slate-400">
+                <div className="space-y-2 animate-in fade-in duration-200">
+                  <p className="text-center text-xs font-semibold text-muted">
                     Rate how easily you recalled this answer:
                   </p>
                   <div className="grid grid-cols-2 sm:grid-cols-6 gap-2">
@@ -313,10 +313,10 @@ export const FlashcardsView: React.FC<FlashcardsViewProps> = ({
                         key={r.grade}
                         onClick={() => handleReviewRating(r.grade)}
                         disabled={isSubmittingReview}
-                        className={`p-3 rounded-2xl border text-center transition flex flex-col items-center justify-center gap-1 ${r.color}`}
+                        className={`p-3 rounded-xl border text-center transition flex flex-col items-center justify-center gap-1 min-h-[50px] ${r.color}`}
                       >
                         <span className="text-xs font-bold">{r.label}</span>
-                        <span className="text-[10px] opacity-75">{r.desc}</span>
+                        <span className="text-[10px] opacity-80">{r.desc}</span>
                       </button>
                     ))}
                   </div>
@@ -325,7 +325,7 @@ export const FlashcardsView: React.FC<FlashcardsViewProps> = ({
                 <div className="text-center">
                   <button
                     onClick={() => setIsFlipped(true)}
-                    className="px-6 py-2.5 rounded-xl bg-slate-900 border border-slate-800 text-xs font-bold text-slate-200 hover:text-white hover:border-brand-500/40 transition"
+                    className="px-6 py-2.5 rounded-btn bg-primary hover:bg-primary-hover text-xs font-bold text-white transition shadow-sm min-h-[44px]"
                   >
                     Reveal Answer
                   </button>
@@ -334,17 +334,17 @@ export const FlashcardsView: React.FC<FlashcardsViewProps> = ({
             </div>
           ) : (
             /* Empty or Completed State */
-            <div className="glass-panel rounded-3xl p-10 text-center max-w-xl mx-auto border border-slate-800 space-y-4">
-              <div className="w-14 h-14 rounded-2xl bg-brand-500/10 border border-brand-500/20 text-brand-400 flex items-center justify-center mx-auto">
+            <div className="bg-surface rounded-2xl p-10 text-center max-w-xl mx-auto border border-line shadow-card space-y-4">
+              <div className="w-14 h-14 rounded-2xl bg-accent-light border border-accent/25 text-accent flex items-center justify-center mx-auto">
                 <CheckCircle2 className="w-8 h-8" />
               </div>
-              <h3 className="text-lg font-bold text-white">All caught up on reviews!</h3>
-              <p className="text-xs text-slate-400 leading-relaxed">
+              <h3 className="text-lg font-bold text-heading">All caught up on reviews!</h3>
+              <p className="text-xs text-muted leading-relaxed">
                 You have reviewed all due cards for this course. {MASCOT_NAME} recommends testing your recall
                 with a practice quiz or generating new flashcards for upcoming roadmap tasks.
               </p>
               {sessionCompletedCount > 0 && (
-                <div className="p-3 bg-slate-900/60 rounded-xl border border-slate-800 text-xs text-brand-300 font-semibold inline-block">
+                <div className="p-3 bg-primary-light rounded-xl border border-primary/20 text-xs text-primary font-semibold inline-block">
                   Cards completed this session: {sessionCompletedCount}
                 </div>
               )}
@@ -352,7 +352,7 @@ export const FlashcardsView: React.FC<FlashcardsViewProps> = ({
                 <button
                   onClick={handleGenerate}
                   disabled={generating}
-                  className="px-4 py-2.5 rounded-xl bg-brand-500 text-white font-bold text-xs hover:bg-brand-600 transition flex items-center gap-2 shadow-lg shadow-brand-500/25"
+                  className="px-4 py-2.5 rounded-btn bg-primary text-white font-bold text-xs hover:bg-primary-hover transition flex items-center gap-2 shadow-sm min-h-[44px]"
                 >
                   <Plus className="w-4 h-4" />
                   <span>Generate New Cards</span>
@@ -360,9 +360,9 @@ export const FlashcardsView: React.FC<FlashcardsViewProps> = ({
                 {onNavigateToQuiz && (
                   <button
                     onClick={onNavigateToQuiz}
-                    className="px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 font-bold text-xs hover:text-white transition flex items-center gap-2"
+                    className="px-4 py-2.5 rounded-btn bg-surface border border-line text-body font-bold text-xs hover:bg-subtle transition flex items-center gap-2 min-h-[44px]"
                   >
-                    <Zap className="w-4 h-4 text-amber-400" />
+                    <Zap className="w-4 h-4 text-warning" />
                     <span>Take a Quiz</span>
                   </button>
                 )}
@@ -380,35 +380,35 @@ export const FlashcardsView: React.FC<FlashcardsViewProps> = ({
                 return (
                   <div
                     key={card.id}
-                    className="glass-card rounded-2xl p-5 border border-slate-800/80 flex flex-col justify-between space-y-4"
+                    className="bg-surface rounded-xl p-5 border border-line shadow-sm hover:shadow-card-hover transition flex flex-col justify-between space-y-4"
                   >
                     <div className="space-y-2">
                       <div className="flex items-center justify-between text-[11px]">
                         <span
-                          className={`px-2 py-0.5 rounded-full font-bold uppercase tracking-wider text-[10px] ${
+                          className={`px-2.5 py-0.5 rounded-pill font-bold uppercase tracking-wider text-[10px] ${
                             isDue
-                              ? "bg-amber-500/10 text-amber-300 border border-amber-500/20"
-                              : "bg-slate-800 text-slate-400"
+                              ? "bg-warning-light text-warning border border-warning/25"
+                              : "bg-codeblock text-muted"
                           }`}
                         >
                           {isDue ? "Due Now" : `Due ${new Date(card.due_date).toLocaleDateString()}`}
                         </span>
                         <button
                           onClick={() => handleDeleteCard(card.id)}
-                          className="text-slate-500 hover:text-red-400 transition p-1"
+                          className="text-muted hover:text-error transition p-1"
                           title="Delete card"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
                       </div>
 
-                      <p className="text-sm font-semibold text-white">{card.front}</p>
-                      <p className="text-xs text-slate-400 line-clamp-3 leading-relaxed">
+                      <p className="text-sm font-semibold text-heading">{card.front}</p>
+                      <p className="text-xs text-muted line-clamp-3 leading-relaxed">
                         {card.back}
                       </p>
                     </div>
 
-                    <div className="pt-3 border-t border-slate-800/60 flex items-center justify-between text-[10px] text-slate-500">
+                    <div className="pt-3 border-t border-line flex items-center justify-between text-[11px] text-muted">
                       <span>Reps: {card.reps} · Interval: {card.interval_days}d</span>
                       <span>Ease: {card.ease_factor.toFixed(2)}</span>
                     </div>
@@ -417,8 +417,8 @@ export const FlashcardsView: React.FC<FlashcardsViewProps> = ({
               })}
             </div>
           ) : (
-            <div className="p-8 glass-panel rounded-2xl text-center text-slate-400 border border-slate-800">
-              <BookOpen className="w-8 h-8 mx-auto text-slate-600 mb-2" />
+            <div className="p-8 bg-surface rounded-xl text-center text-muted border border-line shadow-sm">
+              <BookOpen className="w-8 h-8 mx-auto text-muted mb-2" />
               <p className="text-xs">No flashcards found for this topic filter.</p>
             </div>
           )}

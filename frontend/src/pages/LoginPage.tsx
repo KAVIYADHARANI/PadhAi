@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { BookOpen, LogIn, UserPlus, AlertCircle, Sparkles } from "lucide-react";
 import { PRODUCT_NAME, TAGLINE, TAGLINE_TA } from "../brand";
 import { useAuth } from "../contexts/AuthContext";
+import { ThemeToggle } from "../components/ThemeToggle";
 
 export const LoginPage: React.FC = () => {
   const { loginWithEmail, registerWithEmail, loginWithGoogle } = useAuth();
@@ -62,37 +63,42 @@ export const LoginPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-b from-slate-950 via-indigo-950/20 to-slate-950 relative overflow-hidden">
-      {/* Background glow orbs */}
-      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-brand-600/10 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-600/10 rounded-full blur-3xl pointer-events-none" />
+    <div className="min-h-screen flex items-center justify-center p-4 bg-app relative overflow-hidden transition-colors duration-150">
+      {/* Top-right theme toggle */}
+      <div className="fixed top-4 right-4 z-20">
+        <ThemeToggle showLabel />
+      </div>
 
-      <div className="w-full max-w-md relative z-10">
+      {/* Background soft glow orbs */}
+      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/10 dark:bg-primary/20 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-accent/10 dark:bg-accent/15 rounded-full blur-3xl pointer-events-none" />
+
+      <div className="w-full max-w-md relative z-10 animate-in fade-in duration-200">
         {/* Brand header */}
         <div className="text-center mb-8">
-          <div className="inline-flex w-16 h-16 rounded-2xl bg-gradient-to-tr from-brand-600 via-indigo-500 to-purple-500 items-center justify-center shadow-xl shadow-brand-500/20 mb-4">
-            <BookOpen className="w-8 h-8 text-white" />
+          <div className="inline-flex w-16 h-16 rounded-2xl bg-primary-light border border-primary/20 items-center justify-center shadow-card mb-4">
+            <BookOpen className="w-8 h-8 text-primary" />
           </div>
-          <h1 className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-white via-slate-100 to-slate-300 bg-clip-text text-transparent">
+          <h1 className="text-3xl font-extrabold tracking-tight text-heading">
             {PRODUCT_NAME}
           </h1>
-          <p className="mt-1 text-sm text-slate-400 font-medium">{TAGLINE}</p>
-          <p className="mt-1 text-xs text-brand-400/90 italic font-medium">"{TAGLINE_TA}"</p>
+          <p className="mt-1 text-sm text-muted font-medium">{TAGLINE}</p>
+          <p className="mt-1 text-xs text-primary italic font-medium">"{TAGLINE_TA}"</p>
         </div>
 
         {/* Card */}
-        <div className="glass-panel rounded-3xl p-6 sm:p-8 shadow-2xl border border-slate-800/80">
-          <div className="flex rounded-xl bg-slate-900/80 p-1 mb-6 border border-slate-800">
+        <div className="bg-surface rounded-2xl p-6 sm:p-8 shadow-card border border-line">
+          <div className="flex rounded-xl bg-codeblock p-1 mb-6 border border-line">
             <button
               type="button"
               onClick={() => {
                 setIsRegister(false);
                 setError(null);
               }}
-              className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-all ${
+              className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-all min-h-[36px] ${
                 !isRegister
-                  ? "bg-brand-600 text-white shadow-md shadow-brand-500/20"
-                  : "text-slate-400 hover:text-white"
+                  ? "bg-surface text-primary shadow-sm"
+                  : "text-muted hover:text-heading"
               }`}
             >
               Sign In
@@ -103,10 +109,10 @@ export const LoginPage: React.FC = () => {
                 setIsRegister(true);
                 setError(null);
               }}
-              className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-all ${
+              className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-all min-h-[36px] ${
                 isRegister
-                  ? "bg-brand-600 text-white shadow-md shadow-brand-500/20"
-                  : "text-slate-400 hover:text-white"
+                  ? "bg-surface text-primary shadow-sm"
+                  : "text-muted hover:text-heading"
               }`}
             >
               Create Account
@@ -114,7 +120,7 @@ export const LoginPage: React.FC = () => {
           </div>
 
           {error && (
-            <div className="mb-5 p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-2">
+            <div className="mb-5 p-3 rounded-xl bg-error-light border border-error/25 text-error text-xs flex items-center gap-2">
               <AlertCircle className="w-4 h-4 shrink-0" />
               <span>{error}</span>
             </div>
@@ -122,7 +128,7 @@ export const LoginPage: React.FC = () => {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+              <label className="block text-xs font-semibold text-heading mb-1.5">
                 Email Address
               </label>
               <input
@@ -131,12 +137,12 @@ export const LoginPage: React.FC = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="student@example.com"
-                className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700/80 text-white placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/50 focus:border-brand-500 transition"
+                className="w-full px-3.5 py-2.5 rounded-btn bg-subtle border border-line text-heading placeholder:text-muted text-sm focus:outline-none focus:border-primary focus:bg-surface transition"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+              <label className="block text-xs font-semibold text-heading mb-1.5">
                 Password
               </label>
               <input
@@ -146,14 +152,14 @@ export const LoginPage: React.FC = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
-                className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700/80 text-white placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/50 focus:border-brand-500 transition"
+                className="w-full px-3.5 py-2.5 rounded-btn bg-subtle border border-line text-heading placeholder:text-muted text-sm focus:outline-none focus:border-primary focus:bg-surface transition"
               />
             </div>
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-2.5 px-4 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-brand-600 to-indigo-600 hover:from-brand-500 hover:to-indigo-500 shadow-lg shadow-brand-500/25 transition disabled:opacity-50 flex items-center justify-center gap-2"
+              className="w-full py-2.5 px-4 rounded-btn text-sm font-semibold text-white bg-primary hover:bg-primary-hover shadow-sm transition disabled:opacity-50 flex items-center justify-center gap-2 min-h-[44px]"
             >
               {isRegister ? (
                 <>
@@ -171,9 +177,9 @@ export const LoginPage: React.FC = () => {
 
           <div className="relative my-6 text-center">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-slate-800" />
+              <div className="w-full border-t border-line" />
             </div>
-            <span className="relative px-3 text-xs text-slate-500 bg-slate-950 uppercase font-semibold">
+            <span className="relative px-3 text-xs text-muted bg-surface uppercase font-semibold">
               Or continue with
             </span>
           </div>
@@ -183,7 +189,7 @@ export const LoginPage: React.FC = () => {
               type="button"
               onClick={handleGoogleSignIn}
               disabled={loading}
-              className="w-full py-2.5 px-4 rounded-xl text-xs font-semibold text-slate-200 bg-slate-900 border border-slate-800 hover:bg-slate-800 hover:border-slate-700 transition flex items-center justify-center gap-2"
+              className="w-full py-2.5 px-4 rounded-btn text-xs font-semibold text-body bg-surface border border-line hover:bg-subtle hover:border-primary/30 transition flex items-center justify-center gap-2 min-h-[44px]"
             >
               <svg className="w-4 h-4" viewBox="0 0 24 24">
                 <path
@@ -210,9 +216,9 @@ export const LoginPage: React.FC = () => {
               type="button"
               onClick={handleQuickDemoLogin}
               disabled={loading}
-              className="w-full py-2 px-3 rounded-xl text-xs font-medium text-brand-300/80 bg-brand-500/5 hover:bg-brand-500/10 border border-brand-500/20 transition flex items-center justify-center gap-1.5"
+              className="w-full py-2 px-3 rounded-btn text-xs font-semibold text-primary bg-primary-light hover:opacity-90 border border-primary/25 transition flex items-center justify-center gap-1.5 min-h-[44px]"
             >
-              <Sparkles className="w-3.5 h-3.5 text-brand-400" />
+              <Sparkles className="w-3.5 h-3.5 text-primary" />
               <span>Quick Demo Sign-In (Local Test)</span>
             </button>
           </div>
